@@ -1,12 +1,12 @@
-// hunt-reward-flow 화면에서 사용하는 Figma export 에셋 경로 모음
+// hunt-reward-flow 에셋 경로 (MD 스펙 파일명 기준)
 const BASE = "/assets";
 
 export const HUNT_ASSETS = {
   icons: {
-    backArrow: `${BASE}/icons/nav/icon_nav_back_arrow_rough_default_18.svg`,
-    gnbBell: `${BASE}/icons/gnb/icon_gnb_bell_rough_default_20.svg`,
-    gnbHelp: `${BASE}/icons/gnb/icon_gnb_help_circle_rough_default_20.svg`,
-    gnbSettings: `${BASE}/icons/gnb/icon_gnb_settings_rough_default_20.svg`,
+    backCircle: `${BASE}/icons/nav/icon_nav_back_circle_rough_default_24.svg`,
+    gnbNotification: `${BASE}/icons/gnb/icon_gnb_notification_rough_default_24.svg`,
+    gnbHelp: `${BASE}/icons/gnb/icon_gnb_help_rough_default_24.svg`,
+    gnbSetting: `${BASE}/icons/gnb/icon_gnb_setting_rough_default_24.svg`,
     tabMapBlack: `${BASE}/icons/tab/icon_tab_map_pin_black_20.svg`,
     tabMapWhite: `${BASE}/icons/tab/icon_tab_map_pin_white_20.svg`,
     tabHuntBlack: `${BASE}/icons/tab/icon_tab_hunt_black_20.svg`,
@@ -18,18 +18,17 @@ export const HUNT_ASSETS = {
     mapCrosshair: `${BASE}/icons/map/icon_map_crosshair_rough_default_22.svg`,
     mapRefresh: `${BASE}/icons/map/icon_map_refresh_rough_default_16.svg`,
     closeCircle: `${BASE}/icons/action/icon_action_close_circle_rough_default_24.svg`,
-    arrowRightBlack: `${BASE}/icons/action/icon_action_arrow_right_black_18.svg`,
+    arrowRight: `${BASE}/icons/action/icon_action_arrow_right_rough_default_20.svg`,
     arrowRightWhite: `${BASE}/icons/action/icon_action_arrow_right_white_18.svg`,
     arTapTarget: `${BASE}/icons/ar/icon_ar_tap_target_red_32.svg`,
     resultHuntLogRefresh: `${BASE}/icons/result/icon_result_hunt_log_refresh_12.svg`,
     resultFailBadge: `${BASE}/icons/result/icon_result_fail_badge_rough_default.svg`,
-    resultFailHouse: `${BASE}/icons/result/icon_result_fail_empty_house_rough_default.svg`,
+    resultFailEmptyBox: `${BASE}/icons/result/icon_result_fail_empty_box_rough_default.svg`,
     resultFailSadFace: `${BASE}/icons/result/icon_result_fail_sad_face_rough_default.svg`,
     inventoryTitleBox: `${BASE}/icons/inventory/icon_inventory_title_box_rough_default_32.svg`,
-    inventoryErrorCircle: `${BASE}/icons/inventory/icon_inventory_error_circle_red_25.svg`,
-    inventoryRetry: `${BASE}/icons/inventory/icon_inventory_retry_red_16.svg`,
-    inventoryCheckCircle: `${BASE}/icons/inventory/icon_inventory_check_circle_gray_20.svg`,
-    inventoryChevronRight: `${BASE}/icons/inventory/icon_inventory_chevron_right_12.svg`,
+    inventoryError: `${BASE}/icons/inventory/icon_inventory_error_rough_default_24.svg`,
+    inventoryRetry: `${BASE}/icons/inventory/icon_inventory_retry_red_rough_default_20.svg`,
+    inventoryUsedCheck: `${BASE}/icons/inventory/icon_inventory_used_check_rough_default_20.svg`,
   },
   markers: {
     yellow: `${BASE}/markers/map/marker_treasure_box_yellow_shadow_40.svg`,
@@ -37,11 +36,10 @@ export const HUNT_ASSETS = {
     claimed: `${BASE}/markers/map/marker_treasure_box_claimed_40.svg`,
   },
   frames: {
-    ctaBlack: `${BASE}/ui/frames/global/ui_frame_cta_button_black_rough_default.svg`,
-    ctaWhite: `${BASE}/ui/frames/global/ui_frame_cta_button_white_rough_default.svg`,
-    ctaWhiteWide: `${BASE}/ui/frames/global/ui_frame_cta_button_white_wide_rough_default.svg`,
+    resultButtonPrimaryBlack: `${BASE}/ui/frames/result/ui_frame_result_button_primary_black_rough_default.svg`,
+    resultButtonSecondaryWhite: `${BASE}/ui/frames/result/ui_frame_result_button_secondary_white_rough_default.svg`,
+    resultButtonWhiteWide: `${BASE}/ui/frames/global/ui_frame_cta_button_white_wide_rough_default.svg`,
     hintPopupSheet: `${BASE}/ui/frames/treasure/ui_frame_treasure_hint_popup_sheet_rough_default.svg`,
-    hintPopup: `${BASE}/ui/frames/treasure/ui_frame_treasure_hint_popup_rough_default.svg`,
     hintCtaChip: `${BASE}/ui/frames/treasure/ui_frame_filter_chip_active_sm_rough_default.svg`,
     distanceInfo: `${BASE}/ui/frames/treasure/ui_frame_treasure_distance_info_rough_default.svg`,
     guideStepCardEven: `${BASE}/ui/frames/treasure/ui_frame_guide_step_card_even_rough_default.svg`,
@@ -51,10 +49,11 @@ export const HUNT_ASSETS = {
     resultFailCardFill: `${BASE}/ui/frames/result/ui_frame_result_fail_empty_card_fill_rough_default.svg`,
     resultFailCardStroke: `${BASE}/ui/frames/result/ui_frame_result_fail_empty_card_stroke_rough_default.svg`,
     grugQuoteDivider: `${BASE}/ui/frames/result/ui_divider_grug_quote_rough_default.svg`,
-    inventoryCardOdd: `${BASE}/ui/frames/inventory/ui_frame_guide_step_card_odd_rough_default.svg`,
+    inventoryCardAvailable: `${BASE}/ui/frames/inventory/ui_frame_inventory_reward_card_available_rough_default.svg`,
     inventoryCardFailed: `${BASE}/ui/frames/inventory/ui_frame_inventory_reward_card_failed_rough_default.svg`,
-    rewardDetailCard: `${BASE}/ui/frames/reward-detail/ui_frame_reward_detail_barcode_box_rough_default.svg`,
-    rewardDetailCloseButton: `${BASE}/ui/frames/reward-detail/ui_frame_profile_logout_button_white_rough_default.svg`,
+    rewardDetailModal: `${BASE}/ui/frames/reward-detail/ui_frame_reward_detail_modal_rough_default.svg`,
+    rewardDetailBarcode: `${BASE}/ui/frames/reward-detail/ui_frame_reward_detail_barcode_box_rough_default.svg`,
+    rewardDetailButtonSecondaryWhite: `${BASE}/ui/frames/reward-detail/ui_frame_reward_detail_button_secondary_white_rough_default.svg`,
   },
   images: {
     mapMockBg: `${BASE}/images/map/img_map_mock_bg.png`,
@@ -62,5 +61,6 @@ export const HUNT_ASSETS = {
     rewardCoffee: `${BASE}/images/inventory/img_inventory_reward_coffee.png`,
     rewardSandwich: `${BASE}/images/inventory/img_inventory_reward_sandwich.png`,
     resultRewardCoffee: `${BASE}/images/result/img_result_reward_coffee.png`,
+    resultRewardFallback: `${BASE}/images/result/img_result_reward_fallback_rough_default.png`,
   },
 } as const;

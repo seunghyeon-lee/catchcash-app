@@ -1,5 +1,5 @@
 // hunt-reward-flow Mock Data
-// 다음 단계에서 Supabase 연동으로 교체 예정. 화면 데이터 구조는 실제 스키마에 맞춰 정의.
+// 이번 단계: UI 껍데기용 Mock. 다음 단계에서 Supabase 연동으로 교체.
 
 export type TreasureStatus = "active" | "claimed";
 export type TreasureVariant = "yellow" | "purple";
@@ -47,17 +47,19 @@ export const MOCK_CLAIMED_TREASURE = {
   position: { left: 16, top: 45 },
 };
 
-export type RewardStatus = "available" | "failed" | "used";
+export type RewardStatus = "available" | "failed" | "used" | "expired";
 
 export type MockReward = {
   id: string;
   rewardCode: string;
+  couponNumber?: string;
   name: string;
   brand: string;
   status: RewardStatus;
   image: "coffee" | "sandwich" | null;
   expiresAt: string;
   expiresLabel: string;
+  remainingDaysLabel?: string;
   usedAtLabel?: string;
   failReason?: string;
 };
@@ -66,12 +68,14 @@ export const MOCK_REWARDS: MockReward[] = [
   {
     id: "reward-1",
     rewardCode: "#CC-8829-X",
+    couponNumber: "1234-5678-9012",
     name: "아메리카노 Tall",
     brand: "스타벅스",
     status: "available",
     image: "coffee",
     expiresAt: "2024-12-31",
     expiresLabel: "2024.12.31 까지",
+    remainingDaysLabel: "5일 남음",
   },
   {
     id: "reward-2",
@@ -95,15 +99,27 @@ export const MOCK_REWARDS: MockReward[] = [
     expiresLabel: "-",
     usedAtLabel: "2023.10.15 사용됨",
   },
+  {
+    id: "reward-4",
+    rewardCode: "#CC-2201-E",
+    name: "카페라떼",
+    brand: "스타벅스",
+    status: "expired",
+    image: "coffee",
+    expiresAt: "2023-01-01",
+    expiresLabel: "2023.01.01 만료",
+  },
 ];
 
+/** MD 08 카피 기준 */
 export const MOCK_HUNT_RESULT = {
   success: {
-    badge: "직이노",
+    badge: "건졌다",
     titleLines: ["잘했네.", "하나 건졌다."],
     subtitle: "전리품은 보관함에 넣어뒀다.",
     rewardName: "아메리카노 기프티콘",
     rewardBrand: "STARBUCKS",
+    noticeLines: ["실물은 보관함에서 확인할 수 있습니다.", "쿠폰 코드는 보관함에서 직접 받으세요."],
     huntLog: ["보물 상자 접근", "상자 열기 시도", "보상 발견!"],
     quote: '"세상에 공짜는 없다지만, 이건 진짜인가 보네."',
   },
@@ -112,6 +128,7 @@ export const MOCK_HUNT_RESULT = {
     titleLines: ["아쉽네. 빈 상자다."],
     subtitle: "다른 상자나 뒤져봐.",
     emptyLines: ["상자 안이 텅 비었다.", "아쉽네 ㅋ"],
+    supportLinkLabel: "문의하기",
     huntLog: ["보물 상자 접근", "상자 열기 시도", "보상 없음"],
   },
 } as const;

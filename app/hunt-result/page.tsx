@@ -64,21 +64,22 @@ function SuccessResult() {
       </div>
 
       <div className="mt-8 text-center text-xs font-medium leading-5 tracking-[0.6px] text-[#4c4546] opacity-70">
-        <p>상품은 보관함에서 확인할 수 있습니다.</p>
-        <p>쿠폰 코드는 보관함에서 직접 받으세요.</p>
+        {data.noticeLines.map((line) => (
+          <p key={line}>{line}</p>
+        ))}
       </div>
 
       {/* CTA */}
       <div className="mt-6 flex w-full flex-col gap-5">
         <Link href="/inventory" className="relative flex h-[68px] items-center justify-center">
-          <img src={frames.ctaBlack} alt="" className="absolute inset-0 size-full" />
+          <img src={frames.resultButtonPrimaryBlack} alt="" className="absolute inset-0 size-full" />
           <span className="relative text-[15px] font-medium text-white">보관함으로 가기</span>
           <img src={icons.arrowRightWhite} alt="" className="absolute right-[68px] top-1/2 size-[18px] -translate-y-1/2" />
         </Link>
         <Link href="/map" className="relative flex h-[68px] items-center justify-center">
-          <img src={frames.ctaWhite} alt="" className="absolute inset-0 size-full" />
+          <img src={frames.resultButtonSecondaryWhite} alt="" className="absolute inset-0 size-full" />
           <span className="relative text-[15px] font-medium text-[#0b0b0b]">지도에서 더 찾기</span>
-          <img src={icons.arrowRightBlack} alt="" className="absolute right-[68px] top-1/2 size-[18px] -translate-y-1/2" />
+          <img src={icons.arrowRight} alt="" className="absolute right-[68px] top-1/2 size-[18px] -translate-y-1/2" />
         </Link>
       </div>
 
@@ -115,7 +116,7 @@ function FailResult() {
         <img src={frames.resultFailCardStroke} alt="" className="absolute inset-0 size-full" />
         <div className="relative flex flex-col items-center px-8 py-16">
           <div className="relative flex size-32 items-center justify-center -rotate-[0.5deg]">
-            <img src={icons.resultFailHouse} alt="" className="absolute inset-0 size-full" />
+            <img src={icons.resultFailEmptyBox} alt="" className="absolute inset-0 size-full" />
             <img src={icons.resultFailSadFace} alt="" className="size-[30px]" />
           </div>
           <div className="mt-10 text-center -rotate-[0.5deg]">
@@ -128,16 +129,16 @@ function FailResult() {
         </div>
       </div>
 
-      {/* CTA */}
+      {/* CTA — MD: 꽝 화면 1차 버튼은 검정 프레임 */}
       <Link href="/map" className="relative mt-10 flex h-[66px] w-full items-center justify-center">
-        <img src={frames.ctaWhiteWide} alt="" className="absolute inset-0 size-full" />
-        <span className="relative text-[15px] font-medium text-[#0b0b0b]">지도에서 더 찾기</span>
-        <img src={icons.arrowRightBlack} alt="" className="absolute right-[60px] top-1/2 size-[18px] -translate-y-1/2" />
+        <img src={frames.resultButtonPrimaryBlack} alt="" className="absolute inset-0 size-full" />
+        <span className="relative text-[15px] font-medium text-white">지도에서 더 찾기</span>
+        <img src={icons.arrowRightWhite} alt="" className="absolute right-[60px] top-1/2 size-[18px] -translate-y-1/2" />
       </Link>
 
-      <button type="button" className="mt-8 text-base font-medium text-[#5d5f5f] underline">
-        찡찡거리기
-      </button>
+      <Link href="/support" className="mt-8 text-base font-medium text-[#5d5f5f] underline">
+        {data.supportLinkLabel}
+      </Link>
 
       <div className="mt-8 w-full">
         <HuntLogCard items={data.huntLog} lastLabelRed />
