@@ -100,9 +100,14 @@ export default function GuidePage() {
 
         <Link
           href="/map"
-          className="mb-4 flex h-[68px] w-full items-center justify-center bg-ink text-center text-2xl font-medium text-white"
+          className="relative mb-4 flex h-[68px] w-full items-center justify-center"
+          style={{
+            backgroundImage: `url(${ui.huntJoinButton})`,
+            backgroundSize: "100% 100%",
+            backgroundRepeat: "no-repeat",
+          }}
         >
-          지도 뒤지러 가기 →
+          <span className="relative z-10 text-2xl font-medium text-white">지도 뒤지러 가기 →</span>
         </Link>
       </div>
 

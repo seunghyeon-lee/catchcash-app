@@ -35,12 +35,12 @@ export default function HomePage() {
               unoptimized
               priority
             />
+            {/* SVG 안 버튼과 글자 중복 방지: 클릭 영역만 투명 링크로 둠 */}
             <Link
               href="/map"
-              className="absolute bottom-3 right-3 border-2 border-ink bg-white px-3 py-1.5 text-sm font-medium text-ink"
-            >
-              지도 뒤지러 가기 →
-            </Link>
+              className="absolute bottom-[6%] right-[3%] h-[16%] w-[44%]"
+              aria-label="지도 뒤지러 가기"
+            />
           </div>
         </section>
 

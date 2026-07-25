@@ -21,8 +21,12 @@ export function TopBar({
     <header className="sticky top-0 z-10 flex h-[53px] items-center justify-between border-b-2 border-ink bg-surface px-5">
       <div className="flex min-w-0 items-center gap-2">
         {showBack ? (
-          <Link href={backHref} className="flex h-10 w-10 items-center justify-center" aria-label="뒤로가기">
-            <Image src={icons.navBack} alt="" width={40} height={40} unoptimized />
+          <Link
+            href={backHref}
+            className="mr-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-paper"
+            aria-label="뒤로가기"
+          >
+            <Image src={icons.navBack} alt="" width={18} height={18} unoptimized />
           </Link>
         ) : null}
         <p className="truncate text-[15px] font-bold lowercase tracking-tight text-ink">{brand}</p>

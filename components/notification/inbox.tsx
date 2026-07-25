@@ -68,13 +68,9 @@ export function NotificationInbox({ open, onClose }: NotificationInboxProps) {
                   key={chip.id}
                   type="button"
                   onClick={() => setFilter(chip.id)}
-                  className="relative h-8 shrink-0 px-4 text-sm font-medium"
-                  style={{
-                    backgroundImage: `url(${active ? ui.filterChipActive : ui.filterChipInactive})`,
-                    backgroundSize: "100% 100%",
-                    backgroundRepeat: "no-repeat",
-                    color: active ? "#fff" : "#000",
-                  }}
+                  className={`h-8 shrink-0 rounded-md border-2 border-ink px-3.5 text-sm font-medium tracking-wide ${
+                    active ? "bg-ink text-white" : "bg-white text-ink"
+                  }`}
                 >
                   {chip.label}
                 </button>
