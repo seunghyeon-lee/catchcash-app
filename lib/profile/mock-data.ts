@@ -1,0 +1,164 @@
+// profile-support Mock Data
+// 이번 단계: UI 껍데기용 Mock. 다음 단계에서 Supabase 연동으로 교체.
+// 값/카피는 Figma 화면(10_My_Profile_Screen, 13_Profile_Edit_Screen, 문의하기) 기준.
+
+import { PROFILE_ASSETS } from "@/lib/profile/assets";
+
+export type ProfileStats = {
+  /** 찾은 보물 */
+  treasuresFound: number;
+  /** 보유 쿠폰 */
+  couponsOwned: number;
+  /** 현재 순위 */
+  rank: number;
+};
+
+export type MockProfile = {
+  nickname: string;
+  /** 선택한 캐릭터 key — 한 줄 소개는 여기서 파생된다 */
+  characterKey: string;
+  /** 선택한 색상 key */
+  colorKey: string;
+  stats: ProfileStats;
+};
+
+/**
+ * 프로필/프로필 수정 화면이 함께 쓰는 현재 프로필.
+ * 수정 화면도 이 값에서 시작하므로 두 화면의 아바타·닉네임·소개가 항상 일치한다.
+ */
+export const MOCK_PROFILE: MockProfile = {
+  nickname: "최고의 헌터",
+  characterKey: "chest",
+  colorKey: "white",
+  stats: { treasuresFound: 8, couponsOwned: 3, rank: 458 },
+};
+
+/**
+ * 닉네임 규칙 — 길이는 가입 화면과 동일하게 맞춘다.
+ * 출처: `docs/frontend/user-app/03_Nickname_Terms_Screen.md` 14.1
+ * (Figma 수정 화면 시안의 "6 / 10자" 표기는 따르지 않는다.
+ *  가입 때 만든 11~12자 닉네임을 수정 화면에서 못 고치는 문제가 생기기 때문)
+ *
+ * ⚠️ 문자 규칙은 가입 정의서 정규식 `^[가-힣a-zA-Z0-9_-]+$` 에서 **공백을 추가로 허용**했다.
+ * 그 정규식대로면 `10_My_Profile_Screen` 정의서가 지정한 닉네임 `최고의 헌터` 가 검증에 걸린다.
+ * 정의서 간 충돌이라 가입 담당과 통일 필요 — handoff.md 참고.
+ * (양끝 공백은 trim, 연속 공백은 불허)
+ */
+export const NICKNAME_MIN_LENGTH = 2;
+export const NICKNAME_MAX_LENGTH = 12;
+export const NICKNAME_PATTERN = /^[가-힣a-zA-Z0-9_-]+(?: [가-힣a-zA-Z0-9_-]+)*$/;
+
+/** 닉네임 검증 — 통과하면 null, 아니면 에러 문구 */
+export function validateNickname(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed.length < NICKNAME_MIN_LENGTH) return `닉네임은 ${NICKNAME_MIN_LENGTH}자 이상 입력해주세요.`;
+  if (trimmed.length > NICKNAME_MAX_LENGTH) return `닉네임은 ${NICKNAME_MAX_LENGTH}자 이하로 입력해주세요.`;
+  if (!NICKNAME_PATTERN.test(trimmed)) return "사용할 수 없는 문자가 포함되어 있어요.";
+  return null;
+}
+
+/**
+ * 캐릭터 선택지.
+ *
+ * `tagline`(한 줄 소개)은 **사용자 입력이 아니라 캐릭터별 고정 문구**다.
+ * 어느 화면에도 소개 편집 UI가 없고, 화면 정의서가 소개 문구를 코드 텍스트로 지정한다.
+ * - `chest` → "상자 냄새는 좀 맡는 편" (10_My_Profile_Screen 정의서)
+ * - `wanderer` → "오늘도 보물을 향해 달리는 중!" (13_Profile_Edit_Screen 시안)
+ * - 나머지는 톤에 맞춰 창작.
+ *
+ * `kind` 는 그리는 방식이 달라서 나눈다.
+ * - `glyph` — 단색 선화(상자). 원 안에 여백을 두고 넣고, 어두운 배경에서는 반전시킨다.
+ * - `portrait` — 랭킹 아바타 초상 이미지. 원을 가득 채우고 반전하지 않는다.
+ *
+ * 초상 이미지는 `09_Hall_Of_Fame_Screen` 의 헌터 랭킹 아바타를 반입한 것(팀장 요청).
+ */
+export type ProfileCharacter = {
+  key: string;
+  label: string;
+  /** 캐릭터별 고정 한 줄 소개 */
+  tagline: string;
+  icon: string;
+  kind: "glyph" | "portrait";
+  /** glyph 전용 — 원본 비율을 지켜야 안 찌그러진다 */
+  iconWidth?: number;
+  iconHeight?: number;
+  /** glyph 전용 — 원 지름 대비 아이콘 높이 비율 */
+  avatarScale?: number;
+};
+
+export const PROFILE_CHARACTERS: ProfileCharacter[] = [
+  {
+    key: "chest",
+    label: "보물상자",
+    tagline: "상자 냄새는 좀 맡는 편",
+    icon: PROFILE_ASSETS.images.avatarChest,
+    kind: "glyph",
+    iconWidth: 104,
+    iconHeight: 104,
+    avatarScale: 0.86,
+  },
+  {
+    key: "mackerel",
+    label: "힘찬 고등어",
+    tagline: "물 밖에서도 펄떡인다",
+    icon: PROFILE_ASSETS.images.characterMackerel,
+    kind: "portrait",
+  },
+  {
+    key: "wanderer",
+    label: "나약한 나그네",
+    tagline: "오늘도 보물을 향해 달리는 중!",
+    icon: PROFILE_ASSETS.images.characterWanderer,
+    kind: "portrait",
+  },
+  {
+    key: "resting",
+    label: "쉬었음 청년",
+    tagline: "일단 눕고 생각한다",
+    icon: PROFILE_ASSETS.images.characterResting,
+    kind: "portrait",
+  },
+  {
+    key: "hunter",
+    label: "헌터",
+    tagline: "발로 뛰는 게 제일 빠르다",
+    icon: PROFILE_ASSETS.images.characterHunter,
+    kind: "portrait",
+  },
+];
+
+/** 캐릭터 key로 찾기 — 없으면 첫 번째(기본 캐릭터) */
+export function findCharacter(key: string): ProfileCharacter {
+  return PROFILE_CHARACTERS.find((item) => item.key === key) ?? PROFILE_CHARACTERS[0];
+}
+
+/** 색상 key로 찾기 — 없으면 첫 번째 */
+export function findColor(key: string): ProfileColor {
+  return PROFILE_COLOR_OPTIONS.find((item) => item.key === key) ?? PROFILE_COLOR_OPTIONS[0];
+}
+
+/** 색상 선택지 (Mock) — Figma 3종 + 브랜드 옐로 1종 */
+export type ProfileColor = { key: string; label: string; value: string };
+
+export const PROFILE_COLOR_OPTIONS: ProfileColor[] = [
+  { key: "pink", label: "분홍", value: "#ffa3a3" },
+  { key: "black", label: "검정", value: "#000000" },
+  { key: "white", label: "흰색", value: "#ffffff" },
+  { key: "yellow", label: "노랑", value: "#f5c542" },
+];
+
+/**
+ * 문의 유형 — `15_3_Support_Inquiry_Write_Screen` 정의서 기준.
+ * 라벨은 5.3 카테고리 목록, key 는 12절 `SupportCategory` 타입을 따른다.
+ */
+export type SupportCategory = { key: string; label: string };
+
+export const SUPPORT_CATEGORIES: SupportCategory[] = [
+  { key: "general", label: "이용 문의" },
+  { key: "coupon", label: "쿠폰 문의" },
+  { key: "reward", label: "보상 문의" },
+  { key: "account", label: "계정 문의" },
+  { key: "bug", label: "오류 제보" },
+  { key: "improvement", label: "개선 문의" },
+  { key: "etc", label: "기타 문의" },
+];
