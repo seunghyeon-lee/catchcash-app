@@ -55,7 +55,7 @@ admin_users ── 1:N ── operation_logs / support_replies / reward_retry_re
 - 홈·지도는 로그인 사용자가 `active`, 미삭제 보물상자와 활성 보상 매핑을 읽는다.
 - AR 사냥은 `treasure_claims`에 결과를 남긴다. 실제 출시 전에는 클라이언트 직접 insert보다 서버/RPC에서 위치·기간·수량을 검증해야 한다.
 - 성공 결과는 서버 작업이 `inventory_items`의 `ready` row를 만든다. 보관함 목록은 `inventory_item_list` view를 사용해 쿠폰 코드/바코드를 조회하지 않는다.
-- 명예의 전당은 다른 사용자의 민감 프로필을 노출하지 않는 `hall_of_fame` view를 사용한다.
+- 명예의 전당은 다른 사용자의 민감 프로필을 노출하지 않는 `hall_of_fame` view를 사용한다. 이 view만 랭킹 노출을 위해 `security_invoker=false`를 명시하며, 내부 user ID·소개·약관 시각은 투영하지 않는다.
 - 알림함은 `notifications`를 사용자별로 필터링하고 읽음 처리한다.
 
 ## 6. 관리자 CMS 플로우와 DB 연결
@@ -93,6 +93,7 @@ Migration은 프로필/관리자/보물/상품/보상/사냥/보관함/재처리
 - 사용자는 자신의 profile, claim, inventory, 문의, 답변, 알림만 읽고 허용된 데이터만 작성/수정한다.
 - 지도/상품/보상 매핑은 로그인 사용자에게 활성 데이터만 보인다.
 - `has_admin_role()` security definer helper가 활성 관리자 역할을 판정한다.
+- `current_admin_user_id()` security definer helper는 현재 세션의 활성 관리자 row만 반환한다. 답변, 재처리 요청, 운영 로그 insert는 이 값과 작성자 FK가 같아야 하므로 다른 관리자 ID를 가장할 수 없다.
 - viewer는 운영 데이터 조회만 가능하고, operator는 일반 운영 mutation·문의 답변·재처리를 수행하며, super_admin은 관리자 계정·보안 로그까지 접근한다.
 - `security_logs`는 CMS 기능 명세에 맞춰 super_admin만 읽는다. 일반 operation log는 super_admin/operator가 읽는다.
 - `inventory_items`의 민감 컬럼은 본인 또는 관리자 행에서만 접근 가능하다. 앱 목록 API는 반드시 민감 컬럼을 제외한 `inventory_item_list` view를 사용한다.
@@ -129,5 +130,6 @@ RLS는 프론트에서 service role key를 사용하지 않는 전제다. servic
 - [ ] Giftishow 쿠폰 코드·바코드는 암호화/마스킹, detail 전용 API, 감사 로그를 설계한다.
 - [ ] RLS 정책을 사용자·viewer·operator·super_admin 시나리오로 e2e 테스트한다.
 - [ ] View의 `security_invoker` 설정과 grant를 실제 Supabase PostgreSQL 버전에서 검증한다.
+- [ ] `hall_of_fame`의 의도적 security-definer 공개 범위(닉네임·아바타 키·발견 수·순위) 외 컬럼이 추가되지 않는지 검토한다.
 - [ ] soft delete/종료 상태와 scheduled·sold-out 같은 계산 상태를 CMS query에서 확정한다.
 - [ ] 운영 로그 작성 지점과 보안 로그 보존 기간·접근 감사 기준을 확정한다.

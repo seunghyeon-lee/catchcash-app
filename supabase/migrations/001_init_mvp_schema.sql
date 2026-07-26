@@ -248,6 +248,23 @@ $$;
 revoke all on function public.has_admin_role(public.admin_role[]) from public;
 grant execute on function public.has_admin_role(public.admin_role[]) to authenticated;
 
+create function public.current_admin_user_id()
+returns uuid
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select au.id
+  from public.admin_users au
+  where au.user_id = auth.uid()
+    and au.status = 'active'
+  limit 1;
+$$;
+
+revoke all on function public.current_admin_user_id() from public;
+grant execute on function public.current_admin_user_id() to authenticated;
+
 create function public.resolve_inquiry_after_reply()
 returns trigger
 language plpgsql
@@ -349,7 +366,12 @@ create policy inventory_items_manage_admin on public.inventory_items for all to 
 
 create policy reward_retry_requests_select_admin on public.reward_retry_requests for select to authenticated
   using (public.has_admin_role(array['super_admin', 'operator']::public.admin_role[]));
-create policy reward_retry_requests_manage_admin on public.reward_retry_requests for all to authenticated
+create policy reward_retry_requests_insert_admin on public.reward_retry_requests for insert to authenticated
+  with check (
+    public.has_admin_role(array['super_admin', 'operator']::public.admin_role[])
+    and requested_by_admin_id = public.current_admin_user_id()
+  );
+create policy reward_retry_requests_update_admin on public.reward_retry_requests for update to authenticated
   using (public.has_admin_role(array['super_admin', 'operator']::public.admin_role[]))
   with check (public.has_admin_role(array['super_admin', 'operator']::public.admin_role[]));
 
@@ -365,9 +387,20 @@ create policy support_inquiries_update_admin on public.support_inquiries for upd
 create policy support_replies_select_owner_or_admin on public.support_replies for select to authenticated
   using (exists (select 1 from public.support_inquiries si where si.id = inquiry_id and si.user_id = auth.uid())
     or public.has_admin_role(array['super_admin', 'operator', 'viewer']::public.admin_role[]));
-create policy support_replies_manage_admin on public.support_replies for all to authenticated
-  using (public.has_admin_role(array['super_admin', 'operator']::public.admin_role[]))
-  with check (public.has_admin_role(array['super_admin', 'operator']::public.admin_role[]));
+create policy support_replies_insert_admin on public.support_replies for insert to authenticated
+  with check (
+    public.has_admin_role(array['super_admin', 'operator']::public.admin_role[])
+    and admin_user_id = public.current_admin_user_id()
+  );
+create policy support_replies_update_admin on public.support_replies for update to authenticated
+  using (
+    public.has_admin_role(array['super_admin', 'operator']::public.admin_role[])
+    and admin_user_id = public.current_admin_user_id()
+  )
+  with check (
+    public.has_admin_role(array['super_admin', 'operator']::public.admin_role[])
+    and admin_user_id = public.current_admin_user_id()
+  );
 
 create policy notifications_select_own_or_admin on public.notifications for select to authenticated
   using (user_id = auth.uid() or public.has_admin_role(array['super_admin', 'operator', 'viewer']::public.admin_role[]));
@@ -377,7 +410,10 @@ create policy notifications_update_own on public.notifications for update to aut
 create policy operation_logs_select_operator_or_super_admin on public.operation_logs for select to authenticated
   using (public.has_admin_role(array['super_admin', 'operator']::public.admin_role[]));
 create policy operation_logs_insert_operator_or_super_admin on public.operation_logs for insert to authenticated
-  with check (public.has_admin_role(array['super_admin', 'operator']::public.admin_role[]));
+  with check (
+    public.has_admin_role(array['super_admin', 'operator']::public.admin_role[])
+    and admin_user_id = public.current_admin_user_id()
+  );
 create policy security_logs_select_super_admin on public.security_logs for select to authenticated
   using (public.has_admin_role(array['super_admin']::public.admin_role[]));
 
@@ -386,9 +422,10 @@ select id, user_id, treasure_claim_id, treasure_box_id, treasure_reward_id, gift
        status, issued_at, used_at, expired_at, issue_failed_reason, created_at, updated_at
 from public.inventory_items;
 
-create view public.hall_of_fame as
+-- This view intentionally bypasses base-table RLS so authenticated hunters can see ranks.
+-- It exposes only public display data; internal auth user IDs and profile text are excluded.
+create view public.hall_of_fame with (security_invoker = false) as
 select
-  p.user_id,
   p.nickname,
   p.avatar_key,
   count(tc.id) filter (where tc.result = 'success') as find_count,
