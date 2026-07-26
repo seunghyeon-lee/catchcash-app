@@ -266,8 +266,8 @@ begin
   values (
     inquiry_owner,
     'support',
-    '臾몄쓽 ?듬? ?꾩갑',
-    '?깅줉??臾몄쓽??愿由ъ옄???듬????꾩갑?덉뼱??',
+    '문의 답변 도착',
+    '등록한 문의에 관리자의 답변이 도착했어요.',
     '/support/' || new.inquiry_id::text
   );
 

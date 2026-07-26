@@ -1,128 +1,133 @@
 # CatchCash Supabase DB Schema MVP
 
-## 1. DB ?ㅺ퀎 紐⑹쟻
+## 1. DB 설계 목적
 
-???ㅺ퀎??罹먯튂罹먯돩 ?ъ슜???깃낵 愿由ъ옄 CMS??MVP ?댁쁺 ?곗씠?곕? Supabase PostgreSQL濡?遺꾨━쨌蹂댄샇?섍린 ?꾪븳 湲곗??대떎. ?ъ슜???몄쬆? `auth.users`媛 ?대떦?섍퀬, ???꾨찓???곗씠?곗? 愿由ъ옄 ??븷? `public` ?ㅽ궎留덉뿉??愿由ы븳?? ??PR? SQL怨?臾몄꽌留??쒓났?섎ŉ ?ㅼ젣 Supabase ?꾨줈?앺듃?먮뒗 ?곸슜?섏? ?딅뒗??
+이 설계는 캐치캐쉬 사용자 앱과 관리자 CMS의 MVP 운영 데이터를 Supabase PostgreSQL로 분리·보호하기 위한 기준이다. 사용자 인증은 `auth.users`가 담당하고, 앱 도메인 데이터와 관리자 역할은 `public` 스키마에서 관리한다. 이 PR은 SQL과 문서만 제공하며 실제 Supabase 프로젝트에는 적용하지 않는다.
 
-## 2. ?꾩껜 ?뚯씠釉?紐⑸줉
+## 2. 전체 테이블 목록
 
-| ?곸뿭 | ?뚯씠釉?| ??븷 |
+| 영역 | 테이블 | 역할 |
 | --- | --- | --- |
-| 怨꾩젙 | `profiles` | ?ъ슜???꾨줈?꽷룹빟愿 ?숈쓽쨌?곹깭 |
-| 怨꾩젙 | `admin_users` | 愿由ъ옄 ??븷쨌?곹깭쨌留덉?留?濡쒓렇??|
-| 蹂대Ъ | `treasure_boxes` | ?꾩튂, ?댁쁺 湲곌컙, 諛섍꼍, ?섎웾???덈뒗 蹂대Ъ?곸옄 |
-| 蹂댁긽 移댄깉濡쒓렇 | `gift_products` | Giftishow Biz ?먮뒗 mock ?곹뭹 硫뷀??곗씠??|
-| 蹂댁긽 留ㅽ븨 | `treasure_rewards` | 蹂대Ъ?곸옄? ?곹뭹/鍮?蹂댁긽???곌껐 |
-| ?щ깷 | `treasure_claims` | ?ъ슜?먯쓽 ?щ깷 ?쒕룄? 寃곌낵 |
-| 蹂닿???| `inventory_items` | 諛쒓툒 媛?ν븳 蹂댁긽怨?諛쒓툒 ?곹깭 |
-| ?ъ쿂由?| `reward_retry_requests` | 愿由ъ옄 ?щ컻湲??ъ쿂由??붿껌 ?대젰 |
-| 臾몄쓽 | `support_inquiries` | ?ъ슜??臾몄쓽 |
-| 臾몄쓽 | `support_replies` | 愿由ъ옄 ?듬? |
-| ?뚮┝ | `notifications` | ?ъ슜???뚮┝???곗씠??|
-| 媛먯궗 | `operation_logs` | ?쇰컲 愿由ъ옄 ?묒뾽 濡쒓렇 |
-| 蹂댁븞 | `security_logs` | 濡쒓렇?맞룰텒?쑣룸?媛??뺣낫 ?대깽??|
+| 계정 | `profiles` | 사용자 프로필·약관 동의·상태 |
+| 계정 | `admin_users` | 관리자 역할·상태·마지막 로그인 |
+| 보물 | `treasure_boxes` | 위치, 운영 기간, 반경, 수량이 있는 보물상자 |
+| 보상 카탈로그 | `gift_products` | Giftishow Biz 또는 mock 상품 메타데이터 |
+| 보상 매핑 | `treasure_rewards` | 보물상자와 상품/빈 보상의 연결 |
+| 사냥 | `treasure_claims` | 사용자의 사냥 시도와 결과 |
+| 보관함 | `inventory_items` | 발급 가능한 보상과 발급 상태 |
+| 재처리 | `reward_retry_requests` | 관리자 재발급/재처리 요청 이력 |
+| 문의 | `support_inquiries` | 사용자 문의 |
+| 문의 | `support_replies` | 관리자 답변 |
+| 알림 | `notifications` | 사용자 알림함 데이터 |
+| 감사 | `operation_logs` | 일반 관리자 작업 로그 |
+| 보안 | `security_logs` | 로그인·권한·민감 정보 이벤트 |
 
-## 3. ?뚯씠釉붾퀎 ??븷怨?二쇱슂 而щ읆
+## 3. 테이블별 역할과 주요 컬럼
 
-- `profiles`: `auth.users.id`? `user_id`濡?1:1 ?곌껐?쒕떎. ?됰꽕?? ?꾨컮?/諛곌꼍 ?? ?뚭컻, ?댁슜?쎄?쨌留덉????숈쓽 ?쒓컖, 怨꾩젙 ?곹깭瑜??붾떎.
-- `admin_users`: 蹂꾨룄 `auth.users` 怨꾩젙??李몄“?쒕떎. `super_admin`, `operator`, `viewer` ??븷怨?`active`, `inactive`, `locked` ?곹깭瑜??붾떎. `locked`??CMS 湲곕뒫 紐낆꽭??愿由ъ옄 ?좉툑 ?곹깭瑜?諛섏쁺??蹂댁“ ?곹깭??
-- `treasure_boxes`: `numeric(9,6)` ?꾨룄쨌寃쎈룄? 誘명꽣 ?⑥쐞 諛섍꼍????ν븳?? `deleted_at`怨?`status=deleted`瑜??④퍡 ?ъ슜??soft delete瑜?紐낇솗?섍쾶 ?쒗쁽?쒕떎.
-- `gift_products`: ?몃? ?곹뭹???꾩쭅 ?몄텧?섏? ?딄퀬 ?쒓났???앸퀎?? ?쒖떆紐? 媛寃? ?대?吏 URL, ?곹깭留???ν븳??
-- `treasure_rewards`: MVP?먯꽌??partial unique index濡?蹂대Ъ?곸옄??`active` 留ㅽ븨???섎굹留??덉슜?쒕떎. `empty` 蹂댁긽? ?곹뭹 FK ?놁씠 ??ν븳??
-- `treasure_claims`: ?깃났쨌?ㅽ뙣쨌嫄곕━ 珥덇낵 ??紐⑤뱺 ?щ깷 寃곌낵? ?뱀떆 醫뚰몴/嫄곕━瑜??④릿??
-- `inventory_items`: 蹂닿??④낵 蹂댁긽 ?곸꽭???먮낯?대떎. 荑좏룿 肄붾뱶쨌諛붿퐫?쑣룰났湲됱옄 ?앸퀎?먮뒗 ???뚯씠釉붿뿉留??붾떎.
-- `reward_retry_requests`: ?ㅽ뙣 蹂댁긽?????愿由ъ옄 ?ъ쿂由??붿껌怨?怨듦툒???묐떟 JSON??蹂닿??쒕떎.
-- `support_inquiries`/`support_replies`: ?ъ슜??臾몄쓽? 愿由ъ옄 ?듬???遺꾨━?쒕떎. MVP 臾몄쓽 ?곹깭???붽뎄?ы빆?濡?`reading`, `resolved` ???④퀎??
-- `notifications`: ?뚮┝ ?좏삎, ?쎌쓬 泥섎━, ?????대룞 寃쎈줈瑜???ν븳??
-- 濡쒓렇 ?뚯씠釉? JSONB `metadata`濡?蹂寃??꾪썑 媛? ?붿껌 ?먯씤 ???뺤옣 硫뷀??곗씠?곕? 湲곕줉?쒕떎.
+- `profiles`: `auth.users.id`와 `user_id`로 1:1 연결한다. 닉네임, 아바타/배경 키, 소개, 이용약관·마케팅 동의 시각, 계정 상태를 둔다.
+- `admin_users`: 별도 `auth.users` 계정을 참조한다. `super_admin`, `operator`, `viewer` 역할과 `active`, `inactive`, `locked` 상태를 둔다. `locked`는 CMS 기능 명세의 관리자 잠금 상태를 반영한 보조 상태다.
+- `treasure_boxes`: `numeric(9,6)` 위도·경도와 미터 단위 반경을 저장한다. `deleted_at`과 `status=deleted`를 함께 사용해 soft delete를 명확하게 표현한다.
+- `gift_products`: 외부 상품을 아직 호출하지 않고 제공자 식별자, 표시명, 가격, 이미지 URL, 상태만 저장한다.
+- `treasure_rewards`: MVP에서는 partial unique index로 보물상자당 `active` 매핑을 하나만 허용한다. `empty` 보상은 상품 FK 없이 저장한다.
+- `treasure_claims`: 성공·실패·거리 초과 등 모든 사냥 결과와 당시 좌표/거리를 남긴다.
+- `inventory_items`: 보관함과 보상 상세의 원본이다. 쿠폰 코드·바코드·공급자 식별자는 이 테이블에만 둔다.
+- `reward_retry_requests`: 실패 보상에 대한 관리자 재처리 요청과 공급자 응답 JSON을 보관한다.
+- `support_inquiries`/`support_replies`: 사용자 문의와 관리자 답변을 분리한다. MVP 문의 상태는 요구사항대로 `reading`, `resolved` 두 단계다.
+- `notifications`: 알림 유형, 읽음 처리, 앱 내 이동 경로를 저장한다.
+- 로그 테이블: JSONB `metadata`로 변경 전후 값, 요청 원인 등 확장 메타데이터를 기록한다.
 
-## 4. 愿怨??ㅻ챸
+## 4. 관계 설명
 
 ```text
-auth.users ?? 1:1 ?? profiles
-auth.users ?? 1:0..1 ?? admin_users
-treasure_boxes ?? 1:N ?? treasure_rewards ?? N:1 ?? gift_products
-auth.users ?? 1:N ?? treasure_claims ?? 0..1:1 ?? inventory_items
-auth.users ?? 1:N ?? support_inquiries ?? 1:N ?? support_replies
-auth.users ?? 1:N ?? notifications
-inventory_items ?? 1:N ?? reward_retry_requests
-admin_users ?? 1:N ?? operation_logs / support_replies / reward_retry_requests
+auth.users ── 1:1 ── profiles
+auth.users ── 1:0..1 ── admin_users
+treasure_boxes ── 1:N ── treasure_rewards ── N:1 ── gift_products
+auth.users ── 1:N ── treasure_claims ── 0..1:1 ── inventory_items
+auth.users ── 1:N ── support_inquiries ── 1:N ── support_replies
+auth.users ── 1:N ── notifications
+inventory_items ── 1:N ── reward_retry_requests
+admin_users ── 1:N ── operation_logs / support_replies / reward_retry_requests
 ```
 
-## 5. ?ъ슜?????뚮줈?곗? DB ?곌껐
+## 5. 사용자 앱 플로우와 DB 연결
 
-- 濡쒓렇?????꾨줈?꾩씠 ?놁쑝硫?`/nickname`?먯꽌 `profiles`瑜??앹꽦?섍퀬 ?숈쓽 ?쒓컖??湲곕줉?쒕떎.
-- ?댟룹??꾨뒗 濡쒓렇???ъ슜?먭? `active`, 誘몄궘??蹂대Ъ?곸옄? ?쒖꽦 蹂댁긽 留ㅽ븨???쎈뒗??
-- AR ?щ깷? `treasure_claims`??寃곌낵瑜??④릿?? ?ㅼ젣 異쒖떆 ?꾩뿉???대씪?댁뼵??吏곸젒 insert蹂대떎 ?쒕쾭/RPC?먯꽌 ?꾩튂쨌湲곌컙쨌?섎웾??寃利앺빐???쒕떎.
-- ?깃났 寃곌낵???쒕쾭 ?묒뾽??`inventory_items`??`ready` row瑜?留뚮뱺?? 蹂닿???紐⑸줉? `inventory_item_list` view瑜??ъ슜??荑좏룿 肄붾뱶/諛붿퐫?쒕? 議고쉶?섏? ?딅뒗??
-- 紐낆삁???꾨떦? ?ㅻⅨ ?ъ슜?먯쓽 誘쇨컧 ?꾨줈?꾩쓣 ?몄텧?섏? ?딅뒗 `hall_of_fame` view瑜??ъ슜?쒕떎.
-- ?뚮┝?⑥? `notifications`瑜??ъ슜?먮퀎濡??꾪꽣留곹븯怨??쎌쓬 泥섎━?쒕떎.
+- 로그인 후 프로필이 없으면 `/nickname`에서 `profiles`를 생성하고 동의 시각을 기록한다.
+- 홈·지도는 로그인 사용자가 `active`, 미삭제 보물상자와 활성 보상 매핑을 읽는다.
+- AR 사냥은 `treasure_claims`에 결과를 남긴다. 실제 출시 전에는 클라이언트 직접 insert보다 서버/RPC에서 위치·기간·수량을 검증해야 한다.
+- 성공 결과는 서버 작업이 `inventory_items`의 `ready` row를 만든다. 보관함 목록은 `inventory_item_list` view를 사용해 쿠폰 코드/바코드를 조회하지 않는다.
+- 명예의 전당은 다른 사용자의 민감 프로필을 노출하지 않는 `hall_of_fame` view를 사용한다.
+- 알림함은 `notifications`를 사용자별로 필터링하고 읽음 처리한다.
 
-## 6. 愿由ъ옄 CMS ?뚮줈?곗? DB ?곌껐
+## 6. 관리자 CMS 플로우와 DB 연결
 
-- ??쒕낫?쒕뒗 `admin_dashboard_stats`, ?ъ슜???곸꽭??`admin_user_statistics`, 蹂댁긽 紐⑸줉? `admin_reward_list`瑜?湲곕컲?쇰줈 ?쒕떎.
-- 蹂대Ъ쨌?곹뭹쨌留ㅽ븨 CRUD??媛곴컖 `treasure_boxes`, `gift_products`, `treasure_rewards`瑜??ъ슜?쒕떎.
-- 愿由ъ옄 怨꾩젙 愿由щ뒗 `admin_users`?대ŉ super_admin留?蹂寃쏀븳??
-- 蹂댁긽 ?곸꽭/?ъ쿂由??붾㈃? `inventory_items`, `reward_retry_requests`瑜??ъ슜?쒕떎. CMS 紐⑸줉/?곸꽭 ?묐떟?먮뒗 荑좏룿 肄붾뱶쨌諛붿퐫?쒕? ?ы븿?섏? ?딅뒗 寃껋씠 ?먯튃?대떎.
-- 紐⑤뱺 愿由ъ옄 mutation? ?좏뵆由ъ??댁뀡 ?쒕쾭?먯꽌 `operation_logs`瑜??④릿?? RLS??諛⑹뼱?좎씠硫? route handler/server action?먯꽌 ??븷????踰???寃利앺븳??
+- 대시보드는 `admin_dashboard_stats`, 사용자 상세는 `admin_user_statistics`, 보상 목록은 `admin_reward_list`를 기반으로 한다.
+- 보물·상품·매핑 CRUD는 각각 `treasure_boxes`, `gift_products`, `treasure_rewards`를 사용한다.
+- 관리자 계정 관리는 `admin_users`이며 super_admin만 변경한다.
+- 보상 상세/재처리 화면은 `inventory_items`, `reward_retry_requests`를 사용한다. CMS 목록/상세 응답에는 쿠폰 코드·바코드를 포함하지 않는 것이 원칙이다.
+- 모든 관리자 mutation은 애플리케이션 서버에서 `operation_logs`를 남긴다. RLS는 방어선이며, route handler/server action에서 역할을 한 번 더 검증한다.
 
-## 7. 臾몄쓽 ?뚮줈?곗? ?뚮┝ 援ъ“
+## 7. 문의 플로우와 알림 구조
 
-?ъ슜?먮뒗 `/support`?먯꽌 ?먭린 `support_inquiries`留?蹂닿퀬 `/support/new`?먯꽌 ?묒꽦?쒕떎. `/support/{inquiryId}`??蹂몄씤 臾몄쓽? 洹?臾몄쓽???듬?留??쎈뒗?? 愿由ъ옄媛 `support_replies`瑜?insert?섎㈃ `resolve_inquiry_after_reply` trigger媛 臾몄쓽 ?곹깭瑜?`resolved`濡?諛붽씀怨?`notifications`??`type=support`, `target_route=/support/{inquiryId}` ?뚮┝??留뚮뱺??
+사용자는 `/support`에서 자기 `support_inquiries`만 보고 `/support/new`에서 작성한다. `/support/{inquiryId}`는 본인 문의와 그 문의의 답변만 읽는다. 관리자가 `support_replies`를 insert하면 `resolve_inquiry_after_reply` trigger가 문의 상태를 `resolved`로 바꾸고 `notifications`에 `type=support`, `target_route=/support/{inquiryId}` 알림을 만든다.
 
-MVP?먯꽌???곗씠???쇨??깆쓣 ?꾪빐 trigger瑜??ъ슜?쒕떎. ?ν썑 諛쒖넚 梨꾨꼸, ?쒗뵆由? ?ъ떆???먭? ?꾩슂?섎㈃ trigger??outbox row留?留뚮뱾怨?Edge Function/worker媛 ?몃? ?꾨떖??泥섎━?섎룄濡??뺤옣?쒕떎.
+MVP에서는 데이터 일관성을 위해 trigger를 사용한다. 향후 발송 채널, 템플릿, 재시도 큐가 필요하면 trigger는 outbox row만 만들고 Edge Function/worker가 외부 전달을 처리하도록 확장한다.
 
-## 8. 蹂대Ъ ?щ깷쨌蹂댁긽 吏湲됀룹옱諛쒓툒 ?뚮줈??
-1. ?꾩튂쨌湲곌컙쨌?섎웾 寃利앹쓣 ?듦낵???щ깷 寃곌낵瑜?`treasure_claims`??湲곕줉?쒕떎.
-2. ?깃났 ???쒖꽦 `treasure_rewards`瑜?李몄“??`inventory_items(status=ready)`瑜?留뚮뱺??
-3. ?쒕쾭 ?꾩슜 諛쒓툒 ?묒뾽??Giftishow Biz瑜??몄텧?섎뒗 誘몃옒 ?④퀎?먯꽌 `issued` ?먮뒗 `failed`濡?媛깆떊?쒕떎. ??migration? ?몃? ?몄텧???ы븿?섏? ?딅뒗??
-4. ?ㅽ뙣 蹂댁긽? ?댁쁺?먭? `reward_retry_requests`???붿껌???④릿?? Worker媛 泥섎━??寃곌낵留?`provider_response`, `after_status`, `processed_at`??湲곕줉?쒕떎.
+## 8. 보물 사냥·보상 지급·재발급 플로우
 
-`current_claim_count`? `remaining_quantity` 媛깆떊? 寃쎌웳 議곌굔???덉쑝誘濡??ㅼ젣 援ы쁽 ???⑥씪 RPC/transaction?먯꽌 `FOR UPDATE` ?먮뒗 議곌굔遺 update濡?泥섎━?쒕떎. ?대씪?댁뼵?멸? 吏곸젒 ?섎웾??媛깆떊?섎㈃ ???쒕떎.
+1. 위치·기간·수량 검증을 통과한 사냥 결과를 `treasure_claims`에 기록한다.
+2. 성공 시 활성 `treasure_rewards`를 참조해 `inventory_items(status=ready)`를 만든다.
+3. 서버 전용 발급 작업이 Giftishow Biz를 호출하는 미래 단계에서 `issued` 또는 `failed`로 갱신한다. 이 migration은 외부 호출을 포함하지 않는다.
+4. 실패 보상은 운영자가 `reward_retry_requests`에 요청을 남긴다. Worker가 처리한 결과만 `provider_response`, `after_status`, `processed_at`에 기록한다.
 
-## 9. enum, ?쒖빟, index
+`current_claim_count`와 `remaining_quantity` 갱신은 경쟁 조건이 있으므로 실제 구현 시 단일 RPC/transaction에서 `FOR UPDATE` 또는 조건부 update로 처리한다. 클라이언트가 직접 수량을 갱신하면 안 된다.
 
-Migration? ?꾨줈??愿由ъ옄/蹂대Ъ/?곹뭹/蹂댁긽/?щ깷/蹂닿????ъ쿂由?臾몄쓽/?뚮┝ ?곹깭瑜?PostgreSQL enum?쇰줈 ?뺤쓽?쒕떎. 醫뚰몴 踰붿쐞, 諛섍꼍, ?섎웾, 湲곌컙, ?됰꽕?꽷룸Ц??湲몄씠, 鍮?蹂댁긽 ?곹뭹 FK 愿怨꾨? check constraint濡??쒗븳?쒕떎.
+## 9. enum, 제약, index
 
-二쇱슂 index??吏?꾩슜 蹂대Ъ ?곹깭쨌醫뚰몴, ?ъ슜?먮퀎 ?щ깷/蹂닿???臾몄쓽/?뚮┝, 愿由ъ옄 蹂댁긽 ?곹깭, 臾몄쓽 ?곹깭, ?듬?, ?ъ쿂由?諛?濡쒓렇 議고쉶瑜???곸쑝濡??쒕떎. `treasure_rewards_one_active_per_box_idx`??蹂대Ъ?곸옄???쒖꽦 ?곹뭹 ?섎굹?쇰뒗 MVP 紐낆꽭瑜?媛뺤젣?쒕떎.
+Migration은 프로필/관리자/보물/상품/보상/사냥/보관함/재처리/문의/알림 상태를 PostgreSQL enum으로 정의한다. 좌표 범위, 반경, 수량, 기간, 닉네임·문의 길이, 빈 보상 상품 FK 관계를 check constraint로 제한한다.
 
-## 10. RLS ?뺤콉 ?붿빟
+주요 index는 지도용 보물 상태·좌표, 사용자별 사냥/보관함/문의/알림, 관리자 보상 상태, 문의 상태, 답변, 재처리 및 로그 조회를 대상으로 한다. `treasure_rewards_one_active_per_box_idx`는 보물상자당 활성 상품 하나라는 MVP 명세를 강제한다.
 
-- 紐⑤뱺 ?꾨찓???뚯씠釉붿뿉 RLS瑜?enable?쒕떎.
-- ?ъ슜?먮뒗 ?먯떊??profile, claim, inventory, 臾몄쓽, ?듬?, ?뚮┝留??쎄퀬 ?덉슜???곗씠?곕쭔 ?묒꽦/?섏젙?쒕떎.
-- 吏???곹뭹/蹂댁긽 留ㅽ븨? 濡쒓렇???ъ슜?먯뿉寃??쒖꽦 ?곗씠?곕쭔 蹂댁씤??
-- `has_admin_role()` security definer helper媛 ?쒖꽦 愿由ъ옄 ??븷???먯젙?쒕떎.
-- viewer???댁쁺 ?곗씠??議고쉶留?媛?ν븯怨? operator???쇰컲 ?댁쁺 mutation쨌臾몄쓽 ?듬?쨌?ъ쿂由щ? ?섑뻾?섎ŉ, super_admin? 愿由ъ옄 怨꾩젙쨌蹂댁븞 濡쒓렇源뚯? ?묎렐?쒕떎.
-- `security_logs`??CMS 湲곕뒫 紐낆꽭??留욎떠 super_admin留??쎈뒗?? ?쇰컲 operation log??super_admin/operator媛 ?쎈뒗??
-- `inventory_items`??誘쇨컧 而щ읆? 蹂몄씤 ?먮뒗 愿由ъ옄 ?됱뿉?쒕쭔 ?묎렐 媛?ν븯?? ??紐⑸줉 API??諛섎뱶??誘쇨컧 而щ읆???쒖쇅??`inventory_item_list` view瑜??ъ슜?쒕떎.
+## 10. RLS 정책 요약
 
-RLS???꾨줎?몄뿉??service role key瑜??ъ슜?섏? ?딅뒗 ?꾩젣?? service role? RLS瑜??고쉶?섎?濡?Edge Function/?쒕쾭 ?섍꼍?먯꽌留?蹂닿??쒕떎.
+- 모든 도메인 테이블에 RLS를 enable한다.
+- 사용자는 자신의 profile, claim, inventory, 문의, 답변, 알림만 읽고 허용된 데이터만 작성/수정한다.
+- 지도/상품/보상 매핑은 로그인 사용자에게 활성 데이터만 보인다.
+- `has_admin_role()` security definer helper가 활성 관리자 역할을 판정한다.
+- viewer는 운영 데이터 조회만 가능하고, operator는 일반 운영 mutation·문의 답변·재처리를 수행하며, super_admin은 관리자 계정·보안 로그까지 접근한다.
+- `security_logs`는 CMS 기능 명세에 맞춰 super_admin만 읽는다. 일반 operation log는 super_admin/operator가 읽는다.
+- `inventory_items`의 민감 컬럼은 본인 또는 관리자 행에서만 접근 가능하다. 앱 목록 API는 반드시 민감 컬럼을 제외한 `inventory_item_list` view를 사용한다.
 
-## 11. Seed data ?ㅻ챸
+RLS는 프론트에서 service role key를 사용하지 않는 전제다. service role은 RLS를 우회하므로 Edge Function/서버 환경에서만 보관한다.
 
-`supabase/seed.sql`? 濡쒖뺄 媛쒕컻 ?꾩슜?대떎. ?뚯뒪?몄슜 auth fixture 4媛? 愿由ъ옄 2紐? ?ъ슜???꾨줈??2紐? 蹂대Ъ?곸옄 3媛? ?곹뭹 3媛? 留ㅽ븨 3媛? ?щ깷/蹂닿????덉떆, 臾몄쓽 3媛쒖? ?듬? 1媛? ?뚮┝쨌?묒뾽쨌蹂댁븞 濡쒓렇 ?덉떆瑜?留뚮뱺?? 紐⑤뱺 ?대찓?쇱? `.test` ?꾨찓?몄씠怨?荑좏룿 肄붾뱶쨌諛붿퐫?쑣룹떎??媛쒖씤?뺣낫???ｌ? ?딅뒗??
+## 11. Seed data 설명
 
-## 12. ?꾩쭅 援ы쁽?섏? ?딅뒗 寃?
-- ?ㅼ젣 Supabase ?꾨줈?앺듃 ?곸슜 諛?Auth provider ?ㅼ젙
-- Naver Map, 移대찓??AR, Giftishow Biz API ?몄텧
-- ?곹뭹 ?ш퀬 ?숆린?? ?ㅼ젣 荑좏룿 諛쒓툒/?ъ슜 ?뺤씤
-- 泥⑤? ?뚯씪, ?ㅼ떆媛??곷떞, 愿由ъ옄 珥덈?/鍮꾨?踰덊샇 ?ъ꽕??- PostGIS 諛섍꼍 寃?? outbox worker, Cron 留뚮즺 泥섎━
-- 愿由ъ옄 ?붾㈃蹂??몃? permission matrix??DB ?뚯씠釉뷀솕
+`supabase/seed.sql`은 로컬 개발 전용이다. 테스트용 auth fixture 4개, 관리자 2명, 사용자 프로필 2명, 보물상자 3개, 상품 3개, 매핑 3개, 사냥/보관함 예시, 문의 3개와 답변 1개, 알림·작업·보안 로그 예시를 만든다. 모든 이메일은 `.test` 도메인이고 쿠폰 코드·바코드·실제 개인정보는 넣지 않는다.
 
-## 13. 異뷀썑 ?뺤옣 ?ъ씤??
-- ?꾩튂 ?깅뒫???꾩슂?섎㈃ `postgis`??`geography(Point, 4326)`? GIST index瑜?異붽??섍퀬 `latitude`/`longitude`瑜?留덉씠洹몃젅?댁뀡?쒕떎.
-- 蹂대Ъ?곸옄 ?ㅼ쨷 蹂댁긽, ?뺣쪧??蹂댁긽, ?ъ씤??吏媛묒? reward allocation ?먮뒗 ledger ?뚯씠釉붾줈 ?뺤옣?쒕떎.
-- 怨듦툒???먮Ц payload, 荑좏룿 ?뷀샇?? outbox ?대깽?? 愿由ъ옄 沅뚰븳 permission ?뚯씠釉? 臾몄쓽 泥⑤?/?대? 硫붾え瑜?蹂꾨룄 ?뚯씠釉붾줈 遺꾨━?쒕떎.
-- 紐낆삁???꾨떦? 湲곌컙蹂?materialized view ?먮뒗 吏묎퀎 ?뚯씠釉붾줈 ?꾪솚?쒕떎.
+## 12. 아직 구현하지 않는 것
 
-## 14. ?ㅼ젣 Supabase ?곸슜 ???뺤씤 泥댄겕由ъ뒪??
-- [ ] Supabase CLI濡?鍮?媛쒕컻 ?꾨줈?앺듃??migration??癒쇱? 寃利앺븳??
-- [ ] `auth.users` seed fixture媛 ???Supabase Auth 踰꾩쟾???쒖빟怨??명솚?섎뒗吏 濡쒖뺄?먯꽌 ?뺤씤?쒕떎.
-- [ ] ?댁쁺?먯꽌??seed??媛쒕컻??鍮꾨?踰덊샇/?대찓?쇱쓣 ?덈? ?ㅽ뻾?섏? ?딅뒗??
-- [ ] Auth 媛??吏곹썑 profile ?앹꽦 諛⑹떇??trigger, server action, RPC 以??섎굹濡??뺤젙?쒕떎.
-- [ ] ?щ깷 ?깃났쨌?섎웾 李④컧쨌inventory ?앹꽦? ?먯옄??RPC/transaction?쇰줈 援ы쁽?쒕떎.
-- [ ] Giftishow 荑좏룿 肄붾뱶쨌諛붿퐫?쒕뒗 ?뷀샇??留덉뒪?? detail ?꾩슜 API, 媛먯궗 濡쒓렇瑜??ㅺ퀎?쒕떎.
-- [ ] RLS ?뺤콉???ъ슜?먃톢iewer쨌operator쨌super_admin ?쒕굹由ъ삤濡?e2e ?뚯뒪?명븳??
-- [ ] View??`security_invoker` ?ㅼ젙怨?grant瑜??ㅼ젣 Supabase PostgreSQL 踰꾩쟾?먯꽌 寃利앺븳??
-- [ ] soft delete/醫낅즺 ?곹깭? scheduled쨌sold-out 媛숈? 怨꾩궛 ?곹깭瑜?CMS query?먯꽌 ?뺤젙?쒕떎.
-- [ ] ?댁쁺 濡쒓렇 ?묒꽦 吏?먭낵 蹂댁븞 濡쒓렇 蹂댁〈 湲곌컙쨌?묎렐 媛먯궗 湲곗????뺤젙?쒕떎.
+- 실제 Supabase 프로젝트 적용 및 Auth provider 설정
+- Naver Map, 카메라/AR, Giftishow Biz API 호출
+- 상품 재고 동기화, 실제 쿠폰 발급/사용 확인
+- 첨부 파일, 실시간 상담, 관리자 초대/비밀번호 재설정
+- PostGIS 반경 검색, outbox worker, Cron 만료 처리
+- 관리자 화면별 세부 permission matrix의 DB 테이블화
+
+## 13. 추후 확장 포인트
+
+- 위치 성능이 필요하면 `postgis`의 `geography(Point, 4326)`와 GIST index를 추가하고 `latitude`/`longitude`를 마이그레이션한다.
+- 보물상자 다중 보상, 확률형 보상, 포인트 지갑은 reward allocation 또는 ledger 테이블로 확장한다.
+- 공급자 원문 payload, 쿠폰 암호화, outbox 이벤트, 관리자 권한 permission 테이블, 문의 첨부/내부 메모를 별도 테이블로 분리한다.
+- 명예의 전당은 기간별 materialized view 또는 집계 테이블로 전환한다.
+
+## 14. 실제 Supabase 적용 전 확인 체크리스트
+
+- [ ] Supabase CLI로 빈 개발 프로젝트에 migration을 먼저 검증한다.
+- [ ] `auth.users` seed fixture가 대상 Supabase Auth 버전의 제약과 호환되는지 로컬에서 확인한다.
+- [ ] 운영에서는 seed의 개발용 비밀번호/이메일을 절대 실행하지 않는다.
+- [ ] Auth 가입 직후 profile 생성 방식을 trigger, server action, RPC 중 하나로 확정한다.
+- [ ] 사냥 성공·수량 차감·inventory 생성은 원자적 RPC/transaction으로 구현한다.
+- [ ] Giftishow 쿠폰 코드·바코드는 암호화/마스킹, detail 전용 API, 감사 로그를 설계한다.
+- [ ] RLS 정책을 사용자·viewer·operator·super_admin 시나리오로 e2e 테스트한다.
+- [ ] View의 `security_invoker` 설정과 grant를 실제 Supabase PostgreSQL 버전에서 검증한다.
+- [ ] soft delete/종료 상태와 scheduled·sold-out 같은 계산 상태를 CMS query에서 확정한다.
+- [ ] 운영 로그 작성 지점과 보안 로그 보존 기간·접근 감사 기준을 확정한다.
