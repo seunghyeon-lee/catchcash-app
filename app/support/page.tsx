@@ -1,6 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { BottomTab } from "@/components/bottom-tab";
@@ -8,19 +9,56 @@ import { RoughImageFrame } from "@/components/profile/rough-image-frame";
 import { SupportStatusBadge } from "@/components/profile/support-status-badge";
 import { ProfileTopAppBar } from "@/components/profile/top-app-bar";
 import { PROFILE_ASSETS } from "@/lib/profile/assets";
-import { MOCK_SUPPORT_INQUIRIES } from "@/lib/profile/support-mock";
+import { MOCK_SUPPORT_INQUIRIES, type SupportInquiry } from "@/lib/profile/support-mock";
+import { getAuthenticatedSupportSession, toSupportInquiry } from "@/lib/profile/support-service";
 
 const { frames } = PROFILE_ASSETS;
 
-/**
- * 문의 내역 리스트 — `15_1_Support_Inquiry_List_Screen` (`/support`)
- *
- * 정의서가 지정한 카드/배지 전용 에셋(`ui_frame_support_inquiry_card_*`,
- * `ui_badge_support_status_*`, `ui_frame_support_write_button_*`)은 Figma에 시안이 아직 없다.
- * 앱에 이미 쓰는 rough CSS(검정 3px 테두리 + 하드 섀도)로 재현했고, 에셋이 나오면 교체하면 된다.
- */
+/** 문의 내역 리스트 — `15_1_Support_Inquiry_List_Screen` (`/support`) */
 export default function SupportListPage() {
   const router = useRouter();
+  const [inquiries, setInquiries] = useState<SupportInquiry[]>(MOCK_SUPPORT_INQUIRIES);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [isMockFallback, setIsMockFallback] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadInquiries = async () => {
+      const session = await getAuthenticatedSupportSession();
+
+      if (!isMounted) return;
+
+      if (!session) {
+        setIsMockFallback(true);
+        setIsLoading(false);
+        return;
+      }
+
+      const { data, error } = await session.client
+        .from("support_inquiries")
+        .select("id, title, content, status, created_at")
+        .eq("user_id", session.userId)
+        .order("created_at", { ascending: false });
+
+      if (!isMounted) return;
+
+      if (error) {
+        setInquiries([]);
+        setLoadError("문의 내역을 불러오지 못했어. 잠시 후 다시 확인해줘.");
+      } else {
+        setInquiries((data ?? []).map((inquiry) => toSupportInquiry(inquiry)));
+      }
+      setIsLoading(false);
+    };
+
+    void loadInquiries();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <>
@@ -31,11 +69,18 @@ export default function SupportListPage() {
           <h2 className="text-2xl font-bold leading-[31.2px] text-black">뭔 일 있었냐?</h2>
           <span aria-hidden="true" className="mt-2 block h-1 w-14 rounded-full bg-black" />
 
-          {MOCK_SUPPORT_INQUIRIES.length === 0 ? (
+          {isMockFallback ? (
+            <p className="mt-4 text-xs leading-5 text-[#5d5f5f]">로그인 연결 전이라 예시 문의를 보여주고 있어.</p>
+          ) : null}
+          {loadError ? <p className="mt-4 text-sm text-[#b42318]">{loadError}</p> : null}
+
+          {isLoading ? (
+            <p className="mt-10 text-center text-sm text-[#5d5f5f]">문의 내역을 불러오는 중이야.</p>
+          ) : inquiries.length === 0 ? (
             <p className="mt-10 text-center text-sm text-[#5d5f5f]">아직 남긴 문의가 없다.</p>
           ) : (
             <ul className="mt-6 space-y-4">
-              {MOCK_SUPPORT_INQUIRIES.map((inquiry) => (
+              {inquiries.map((inquiry) => (
                 <li key={inquiry.id}>
                   <button
                     type="button"
