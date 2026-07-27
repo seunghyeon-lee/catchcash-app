@@ -29,7 +29,7 @@ export const MOCK_SUPPORT_INQUIRIES: SupportInquiry[] = [
     date: "10.24",
     status: "resolved",
     question: "스타벅스 아메리카노 사냥 성공했는데 보관함에 안 뜬다. 이거 사기 아님? 빨리 내놔라.",
-    answer: "데이터 좀 꼬였다. 다시 던져놨으니까 보관함이나 가봐라. 이제 됐지?",
+    answer: "데이터 좀 꼬였더라. 다시 던져놨으니까 보관함이나 가봐라. 이제 됐지?",
   },
   {
     id: "inquiry_002",

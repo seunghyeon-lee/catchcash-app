@@ -5,7 +5,12 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 import { BottomTab } from "@/components/bottom-tab";
-import { CharacterArt, CharacterAvatar, isDarkColor } from "@/components/profile/character-avatar";
+import {
+  CharacterArt,
+  CharacterAvatar,
+  isDarkColor,
+  PROFILE_AVATAR_SIZE,
+} from "@/components/profile/character-avatar";
 import { RoughImageFrame } from "@/components/profile/rough-image-frame";
 import { Toast } from "@/components/profile/toast";
 import { ProfileTopAppBar } from "@/components/profile/top-app-bar";
@@ -15,10 +20,12 @@ import { PROFILE_ASSETS } from "@/lib/profile/assets";
 import {
   findCharacter,
   findColor,
+  INTRO_MAX_LENGTH,
   MOCK_PROFILE,
   NICKNAME_MAX_LENGTH,
   PROFILE_CHARACTERS,
   PROFILE_COLOR_OPTIONS,
+  resolveIntro,
   validateNickname,
   type ProfileCharacter,
 } from "@/lib/profile/mock-data";
@@ -105,6 +112,7 @@ export default function ProfileEditPage() {
   const { message, show } = useToast();
   // 수정 화면은 현재 프로필에서 시작한다 — 프로필 화면과 같은 소스.
   const [nickname, setNickname] = useState<string>(MOCK_PROFILE.nickname);
+  const [intro, setIntro] = useState<string>(MOCK_PROFILE.intro);
   const [characterKey, setCharacterKey] = useState<string>(MOCK_PROFILE.characterKey);
   const [colorKey, setColorKey] = useState<string>(MOCK_PROFILE.colorKey);
   const [saving, setSaving] = useState(false);
@@ -114,21 +122,30 @@ export default function ProfileEditPage() {
   const colorStripRef = useHorizontalWheel<HTMLDivElement>();
 
   const trimmedNickname = nickname.trim();
+  const trimmedIntro = intro.trim();
   const nicknameError = validateNickname(nickname);
   // 비어 있는 상태부터 빨갛게 띄우지는 않는다.
   const showNicknameError = trimmedNickname.length > 0 && nicknameError !== null;
   const canSave = nicknameError === null && !saving;
 
-  // 미리보기는 선택한 캐릭터의 아이콘·소개 문구 + 선택한 색상을 그대로 반영한다.
+  // 미리보기는 선택한 캐릭터의 아이콘 + 선택한 색상을 그대로 반영한다.
   const selectedCharacter = findCharacter(characterKey);
   const selectedColor = findColor(colorKey);
+  // 한 줄 소개를 비워 두면 캐릭터 기본 문구가 보인다.
+  const previewIntro = resolveIntro(intro, selectedCharacter);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!canSave) return;
     setSaving(true);
     // Mock: 실제 저장 없이 UI 상태만 처리 (다음 단계에서 Supabase update로 교체)
-    console.log("[CatchCash] mock profile save", { nickname: trimmedNickname, characterKey, colorKey });
+    // intro 는 비면 빈 문자열로 보낸다 — DB `profiles.intro_text` 는 nullable 이라 그대로 매핑된다.
+    console.log("[CatchCash] mock profile save", {
+      nickname: trimmedNickname,
+      intro: trimmedIntro,
+      characterKey,
+      colorKey,
+    });
     show("저장했다");
     window.setTimeout(() => router.push("/profile"), 900);
   };
@@ -145,10 +162,14 @@ export default function ProfileEditPage() {
           {/* 미리보기 카드 */}
           <RoughImageFrame src={frames.editPreviewCard} className="w-full">
             <div className="flex flex-col items-center px-6 pb-9 pt-5">
-              <CharacterAvatar character={selectedCharacter} color={selectedColor.value} size={128} />
+              <CharacterAvatar
+                character={selectedCharacter}
+                color={selectedColor.value}
+                size={PROFILE_AVATAR_SIZE}
+              />
               <p className="mt-4 text-2xl leading-[31.2px] text-[#1b1b1b]">{trimmedNickname || "이름 없음"}</p>
-              <p className="mt-1 text-sm leading-[19.6px] tracking-[0.7px] text-[#5d5f5f]">
-                {selectedCharacter.tagline}
+              <p className="mt-1 text-center text-sm leading-[19.6px] tracking-[0.7px] text-[#5d5f5f]">
+                {previewIntro}
               </p>
             </div>
           </RoughImageFrame>
@@ -224,6 +245,34 @@ export default function ProfileEditPage() {
                 {nicknameError}
               </p>
             ) : null}
+          </div>
+
+          {/* 한 줄 소개 — 선택 입력. 비우면 캐릭터 기본 문구가 대신 들어간다 */}
+          <div>
+            <div className="flex items-end justify-between">
+              <label htmlFor="intro" className="text-sm leading-[19.6px] tracking-[0.7px] text-[#1b1b1b]">
+                한 줄 소개
+              </label>
+              <span className="text-xs tracking-[0.6px] text-[#5d5f5f]">
+                {trimmedIntro.length} / {INTRO_MAX_LENGTH}자
+              </span>
+            </div>
+            <div className="mt-3 rounded border-2 border-black bg-white p-2.5">
+              <input
+                id="intro"
+                name="intro"
+                value={intro}
+                onChange={(event) => setIntro(event.target.value)}
+                maxLength={INTRO_MAX_LENGTH}
+                autoComplete="off"
+                placeholder={selectedCharacter.tagline}
+                aria-describedby="intro-help"
+                className="w-full bg-transparent px-2 py-1 text-lg leading-[28.8px] text-[#1b1b1b] outline-none placeholder:text-[#9ca3af]"
+              />
+            </div>
+            <p id="intro-help" className="mt-2 text-xs leading-[18px] text-[#5d5f5f]">
+              비워 두면 캐릭터 기본 문구가 들어간다.
+            </p>
           </div>
 
           {/* 안내 카드 */}

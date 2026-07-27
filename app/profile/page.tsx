@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { BottomTab } from "@/components/bottom-tab";
-import { CharacterAvatar } from "@/components/profile/character-avatar";
+import { CharacterAvatar, PROFILE_AVATAR_SIZE } from "@/components/profile/character-avatar";
 import { LogoutConfirmPopup } from "@/components/profile/logout-confirm-popup";
 import { RoughImageFrame } from "@/components/profile/rough-image-frame";
 import { Toast } from "@/components/profile/toast";
 import { ProfileTopAppBar } from "@/components/profile/top-app-bar";
 import { useToast } from "@/components/profile/use-toast";
 import { PROFILE_ASSETS } from "@/lib/profile/assets";
-import { findCharacter, findColor, MOCK_PROFILE } from "@/lib/profile/mock-data";
+import { findCharacter, findColor, MOCK_PROFILE, resolveIntro } from "@/lib/profile/mock-data";
 
 const { icons, frames } = PROFILE_ASSETS;
 
@@ -85,10 +85,11 @@ export default function ProfilePage() {
   const { message, show } = useToast();
   const [showLogout, setShowLogout] = useState(false);
 
-  const { nickname, characterKey, colorKey, stats } = MOCK_PROFILE;
-  // 한 줄 소개는 캐릭터에서 파생 — 수정 화면 미리보기와 같은 소스를 쓴다.
+  const { nickname, intro, characterKey, colorKey, stats } = MOCK_PROFILE;
   const character = findCharacter(characterKey);
   const color = findColor(colorKey);
+  // 사용자가 쓴 한 줄 소개 우선, 비었으면 캐릭터 기본 문구 — 수정 화면 미리보기와 같은 규칙.
+  const introText = resolveIntro(intro, character);
 
   const comingSoon = () => show("곧 만들어 준다");
 
@@ -107,10 +108,10 @@ export default function ProfilePage() {
           {/* 프로필 메인 카드 */}
           <RoughImageFrame src={frames.profileMainCard} className="w-full">
             <div className="flex flex-col items-center px-6 pb-7 pt-9">
-              <CharacterAvatar character={character} color={color.value} size={112} />
+              <CharacterAvatar character={character} color={color.value} size={PROFILE_AVATAR_SIZE} />
 
               <h2 className="mt-4 text-2xl font-bold leading-[31.2px] text-black">{nickname}</h2>
-              <p className="mt-1.5 text-sm leading-5 text-[#5d5f5f]">{character.tagline}</p>
+              <p className="mt-1.5 text-center text-sm leading-5 text-[#5d5f5f]">{introText}</p>
 
               <button
                 type="button"

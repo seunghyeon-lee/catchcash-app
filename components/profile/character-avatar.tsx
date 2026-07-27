@@ -54,6 +54,13 @@ export function CharacterArt({
 }
 
 /**
+ * 프로필 아바타 원 지름.
+ * `/profile` 과 `/profile/edit` 미리보기가 같은 값을 쓰도록 여기 한 곳에 둔다.
+ * (예전엔 각각 112 / 128 이라 화면을 오갈 때 아바타 크기가 미묘하게 달라 보였다)
+ */
+export const PROFILE_AVATAR_SIZE = 128;
+
+/**
  * 프로필 아바타 원.
  * 프로필 화면과 프로필 수정 미리보기가 같은 컴포넌트를 써서 항상 동일하게 보인다.
  */

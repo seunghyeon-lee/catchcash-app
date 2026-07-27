@@ -115,6 +115,53 @@ Figma 노드를 열어 보면 벡터가 아니라 CSS 박스인 것들이다. �
 - 프로필 수정 캐릭터/색상 선택 카드, 닉네임 입력, 안내 카드 — 전부 CSS 박스
 - 문의 작성 한 줄 요약 input(`1:2858`) / 핵심 요약 textarea(`1:2860`) /
   점선 안내 카드(`1:2863`) — 정의서는 에셋으로 지정하지만 Figma 노드가 CSS 박스다
-- **문의 목록(15_1) / 문의 상세(15_2) 전체** — Figma에 시안 자체가 없다.
-  앱의 rough CSS 스타일로 재현했고, 필요한 전용 에셋 11종은 `handoff.md` 의 `#논의필요` D-1 참고.
+- **문의 목록(15_1)의 카드 · 상태 배지 · `문의하기` CTA** — 시안(`36:54`, `36:62`, `36:82`)이
+  전부 CSS 박스다. 정의서 4-1~4-5가 파일명을 지정하지만 벡터 노드가 없어 CSS로 구현했다.
   상태 배지는 `components/profile/support-status-badge.tsx` 한 곳에 모아 뒀다.
+
+---
+
+## 문의하기 15_1 · 15_2 (`feature/profile-support`) — Figma 실 디자인 반영 완료
+
+대상 Figma 프레임
+| 화면 | node id |
+|---|---|
+| 15_1_Support_Inquiry_List_Screen | `36:3` |
+| 15_2_Support_Inquiry_Detail_Screen | `36:93` |
+
+### 신규 반입 에셋
+
+| 파일 | 출처 node | 비고 |
+|---|---|---|
+| `icons/support/icon_support_user_person_dark_16.svg` | `36:157` | 문의 카드 헤더 사용자 아이콘 |
+| `icons/support/icon_support_admin_headset_dark_20.svg` | `36:168` | 관리자 답변 헤더 아이콘 |
+| `icons/support/icon_support_back_exit_white_18.svg` | `36:101` | 하단 CTA 우측 아이콘 |
+| `ui/frames/support/ui_frame_support_title_underline_rough_default.svg` | `36:52` | 15_1 타이틀 밑줄 (96x2) |
+| `ui/frames/support/ui_badge_support_status_stamp_rough_default.svg` | `36:148` | 15_2 상태 도장 |
+| `ui/frames/support/ui_frame_support_detail_user_question_card_rough_default.svg` | `36:153` | 정의서 4-3 |
+| `ui/frames/support/ui_frame_support_detail_admin_reply_card_rough_default.svg` | `36:164` | 정의서 4-4 |
+| `ui/frames/support/ui_frame_support_detail_back_button_black_rough_default.svg` | `36:98` | 정의서 4-6 |
+| `images/support/img_support_paper_grain_rough_default.png` | `36:3` 배경 | 523x384 타일, 흰 반점 α≈15% |
+
+### mask 방식 (`RoughMaskFrame`)
+
+위 5종 프레임 SVG는 배경 이미지가 아니라 **Figma "Mask Group" 노드**다.
+`<img>`로 깔면 검정 실루엣만 보이므로, 배경·테두리는 CSS로 그리고 SVG는 `mask-image`로 씌워야
+테두리가 삐뚤게 잘린 rough 실루엣이 나온다. 이 처리를 `components/profile/rough-mask-frame.tsx`에 모았다.
+`preserveAspectRatio="none"` 이라 `mask-size: 100% 100%`로 콘텐츠 높이에 맞춰 늘려 쓴다.
+상태 도장(`36:148`)만 Figma가 지정한 `mask-size` / `mask-position` px 값을 그대로 넘긴다.
+
+관리자 답변 카드의 그림자는 마스크된 자식이 아니라 **래퍼에 `filter: drop-shadow`** 로 건다.
+같은 엘리먼트에 걸면 마스크가 그림자까지 잘라내 사라진다.
+
+### 시안과 다르게 간 부분
+
+- **15_2 배경 질감** — Figma는 15_1(흰 반점 α≈15%)과 15_2(회색 `#BABABA` α≈51%)에
+  서로 다른 텍스처를 깔아, 시안상 15_2만 회색 화면이 된다.
+  앱 전 화면이 크림색(`#f7f5ef`) 기준이라 두 화면 모두 15_1 텍스처로 통일했다.
+  의도된 회색이면 `cd7e3be…png`를 다시 뽑아 `PROFILE_ASSETS.images` 에 추가하면 된다.
+- **폰트** — 시안은 `WenQuanYi Zen Hei` / `Space Grotesk` / `Plus Jakarta Sans` 를 쓰지만
+  앱은 아직 웹폰트를 싣지 않아 기존 화면과 같은 시스템 폰트 스택을 유지했다.
+- **15_1 카드 기울기** — 시안은 3번째 카드만 `0.22deg` 회전인데, 목록이 동적이라 적용하지 않았다.
+- **하단 탭바** — 시안대로 `components/hunt/bottom-nav.tsx`(지도/사냥하기/랭킹/내정보)를 붙였다.
+  `/profile`은 아직 구버전 `components/bottom-tab`을 쓰고 있어 서로 다르다.
