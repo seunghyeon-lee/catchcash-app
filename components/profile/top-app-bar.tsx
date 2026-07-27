@@ -14,9 +14,12 @@ const { icons } = PROFILE_ASSETS;
 export function ProfileTopAppBar({
   backHref,
   onGnbClick,
+  title = "catch cash",
 }: {
   backHref?: string;
   onGnbClick?: () => void;
+  /** 화면별 타이틀. 기본은 서비스명이고, 15_2 문의 상세는 `뭐라카노 답변`을 쓴다. */
+  title?: string;
 }) {
   const router = useRouter();
 
@@ -39,7 +42,9 @@ export function ProfileTopAppBar({
         <img src={icons.backCircle} alt="" className="size-[17.7px]" />
       </button>
 
-      <h1 className="flex-1 text-xl font-bold lowercase tracking-tight text-black">catch cash</h1>
+      <h1 className="flex-1 truncate text-xl font-bold lowercase leading-[31.2px] tracking-tight text-black">
+        {title}
+      </h1>
 
       <div className="flex items-center gap-4">
         <button type="button" aria-label="알림" onClick={onGnbClick} className="flex items-center justify-center">

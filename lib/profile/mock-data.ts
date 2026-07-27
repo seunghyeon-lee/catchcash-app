@@ -15,7 +15,9 @@ export type ProfileStats = {
 
 export type MockProfile = {
   nickname: string;
-  /** 선택한 캐릭터 key — 한 줄 소개는 여기서 파생된다 */
+  /** 사용자가 직접 쓴 한 줄 소개. 비우면 캐릭터 기본 문구를 쓴다 (`resolveIntro`) */
+  intro: string;
+  /** 선택한 캐릭터 key */
   characterKey: string;
   /** 선택한 색상 key */
   colorKey: string;
@@ -28,10 +30,30 @@ export type MockProfile = {
  */
 export const MOCK_PROFILE: MockProfile = {
   nickname: "최고의 헌터",
+  // 빈 값 = 아직 직접 안 씀 → 캐릭터 기본 문구가 보인다
+  intro: "",
   characterKey: "hunter",
   colorKey: "white",
   stats: { treasuresFound: 8, couponsOwned: 3, rank: 458 },
 };
+
+/**
+ * 한 줄 소개 길이 제한.
+ *
+ * DB(`profiles.intro_text`)는 160자까지 허용하지만, 프로필 카드 한 줄에 들어가는 문구라
+ * 화면에서는 더 짧게 받는다. (미리보기 카드 기준 30자면 최대 2줄)
+ * DB 제약보다 느슨하지 않으므로 저장이 막힐 일은 없다 — handoff.md N-1 참고.
+ */
+export const INTRO_MAX_LENGTH = 30;
+
+/**
+ * 화면에 보여줄 한 줄 소개.
+ * 사용자가 직접 쓴 게 있으면 그걸 쓰고, 없으면 선택한 캐릭터의 기본 문구로 채운다.
+ * 프로필/프로필 수정 두 화면이 같은 규칙을 쓰도록 여기 모아 둔다.
+ */
+export function resolveIntro(intro: string, character: ProfileCharacter): string {
+  return intro.trim() || character.tagline;
+}
 
 /**
  * 닉네임 규칙 — 길이는 가입 화면과 동일하게 맞춘다.
@@ -60,9 +82,9 @@ export function validateNickname(value: string): string | null {
 /**
  * 캐릭터 선택지.
  *
- * `tagline`(한 줄 소개)은 **사용자 입력이 아니라 캐릭터별 고정 문구**다.
- * 어느 화면에도 소개 편집 UI가 없고, 화면 정의서가 소개 문구를 코드 텍스트로 지정한다.
- * - `chest` → "상자 냄새는 좀 맡는 편" (10_My_Profile_Screen 정의서)
+ * `tagline`(한 줄 소개)은 **캐릭터별 기본 문구**다. 사용자가 프로필 수정에서 직접 쓰면
+ * 그 값이 우선하고(`MockProfile.intro`), 비워 두면 이 문구가 대신 보인다(`resolveIntro`).
+ * 입력란 placeholder 로도 그대로 쓴다.
  * - `wanderer` → "오늘도 보물을 향해 달리는 중!" (13_Profile_Edit_Screen 시안)
  * - 나머지는 톤에 맞춰 창작.
  *
@@ -75,7 +97,7 @@ export function validateNickname(value: string): string | null {
 export type ProfileCharacter = {
   key: string;
   label: string;
-  /** 캐릭터별 고정 한 줄 소개 */
+  /** 캐릭터별 기본 한 줄 소개 — 사용자가 직접 안 썼을 때 쓰인다 */
   tagline: string;
   icon: string;
   kind: "glyph" | "portrait";
