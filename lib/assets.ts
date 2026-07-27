@@ -32,6 +32,8 @@ export const illust = {
 } as const;
 
 export const ui = {
+  homeTreasureCard: `${ASSET}/ui/ui_frame_home_treasure_card_rough_default.svg`,
+  infoViewButton: `${ASSET}/ui/ui_frame_button_info_view_rough_default.svg`,
   huntJoinButton: `${ASSET}/ui/ui_frame_button_hunt_join_rough_default.svg`,
   filterChipActive: `${ASSET}/ui/ui_frame_filter_chip_active_sm_rough_pressed.svg`,
   filterChipInactive: `${ASSET}/ui/ui_frame_filter_chip_inactive_sm_rough_pressed.svg`,
