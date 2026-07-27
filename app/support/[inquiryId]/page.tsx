@@ -2,13 +2,15 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { BottomNav } from "@/components/hunt/bottom-nav";
 import { RoughMaskFrame } from "@/components/profile/rough-mask-frame";
 import { SupportStatusStamp } from "@/components/profile/support-status-stamp";
 import { ProfileTopAppBar } from "@/components/profile/top-app-bar";
 import { PROFILE_ASSETS } from "@/lib/profile/assets";
-import { findInquiry, SUPPORT_ANSWER_WAITING } from "@/lib/profile/support-mock";
+import { findInquiry, SUPPORT_ANSWER_WAITING, type SupportInquiry } from "@/lib/profile/support-mock";
+import { getAuthenticatedSupportSession, toSupportInquiry } from "@/lib/profile/support-service";
 
 const { icons, masks, images } = PROFILE_ASSETS;
 
@@ -21,13 +23,86 @@ const SCREEN_BG_STYLE = { backgroundImage: `url("${images.supportPaperGrain}")` 
  *
  * 상태 도장 · 문의/답변 카드 · 하단 CTA는 전부 Figma "Mask Group" 노드다.
  * 배경/테두리는 CSS로 그리고 rough 마스크 SVG로 잘라내 삐뚤어진 실루엣을 만든다.
+ *
+ * 데이터는 Supabase `support_inquiries` + `support_replies` 에서 읽는다.
+ * 세션이 없으면(로그인 연동 전) mock 문의를 그대로 보여준다.
  */
 export default function SupportDetailPage() {
   const router = useRouter();
   const params = useParams<{ inquiryId: string }>();
-  const inquiry = findInquiry(params.inquiryId);
+  const [inquiry, setInquiry] = useState<SupportInquiry | undefined>();
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadInquiry = async () => {
+      const session = await getAuthenticatedSupportSession();
+
+      if (!session) {
+        if (isMounted) {
+          setInquiry(findInquiry(params.inquiryId));
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      const { data: inquiryRow, error: inquiryError } = await session.client
+        .from("support_inquiries")
+        .select("id, title, content, status, created_at")
+        .eq("id", params.inquiryId)
+        .eq("user_id", session.userId)
+        .maybeSingle();
+
+      if (!isMounted) return;
+
+      if (inquiryError) {
+        setLoadError("문의를 불러오지 못했어. 잠시 후 다시 확인해줘.");
+        setIsLoading(false);
+        return;
+      }
+
+      if (!inquiryRow) {
+        setIsLoading(false);
+        return;
+      }
+
+      const { data: replies, error: repliesError } = await session.client
+        .from("support_replies")
+        .select("content, created_at")
+        .eq("inquiry_id", inquiryRow.id)
+        .order("created_at", { ascending: true });
+
+      if (!isMounted) return;
+
+      if (repliesError) {
+        setLoadError("답변을 불러오지 못했어. 잠시 후 다시 확인해줘.");
+      }
+      setInquiry(toSupportInquiry(inquiryRow, replies?.[0]?.content ?? null));
+      setIsLoading(false);
+    };
+
+    void loadInquiry();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [params.inquiryId]);
 
   const goList = () => router.push("/support");
+
+  if (isLoading) {
+    return (
+      <>
+        <section className={`${SCREEN_BG} pb-28`} style={SCREEN_BG_STYLE}>
+          <ProfileTopAppBar backHref="/support" title="뭐라카노 답변" />
+          <p className="px-5 pt-16 text-center text-base text-[#5d5f5f]">문의 내용을 불러오는 중이야.</p>
+        </section>
+        <BottomNav active="myinfo" />
+      </>
+    );
+  }
 
   if (!inquiry) {
     return (
@@ -37,6 +112,7 @@ export default function SupportDetailPage() {
           <div className="px-5 pt-16 text-center">
             <p className="text-2xl leading-[30px] text-[#1b1b1b]">그런 문의는 없다.</p>
             <p className="mt-2 text-base text-[#5d5f5f]">목록에서 다시 골라봐.</p>
+            {loadError ? <p className="mt-3 text-sm leading-5 text-[#b42318]">{loadError}</p> : null}
             <button
               type="button"
               onClick={goList}
@@ -66,6 +142,9 @@ export default function SupportDetailPage() {
       */}
       <section className={`${SCREEN_BG} flex flex-col pb-20`} style={SCREEN_BG_STYLE}>
         <ProfileTopAppBar backHref="/support" title="뭐라카노 답변" />
+
+        {/* 문의는 읽혔는데 답변 조회만 실패한 경우 — 본문 레이아웃은 건드리지 않고 위에 한 줄만 */}
+        {loadError ? <p className="px-5 pt-4 text-sm leading-5 text-[#b42318]">{loadError}</p> : null}
 
         <div className="flex flex-1 flex-col px-5 pt-4">
           {/* 남는 공간 1 — 아래 스페이서보다 작아서 묶음이 위로 붙는다 */}

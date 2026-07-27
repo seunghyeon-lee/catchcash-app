@@ -25,7 +25,7 @@ export default function HomePage() {
           </h1>
           <p className="mt-2 text-[15px] text-muted">지도 열고 근처 보물부터 뒤져봐.</p>
 
-          <div className="relative mt-5 overflow-hidden rough-border bg-white">
+          <div className="relative mt-5">
             <Image
               src={illust.homeMinimap}
               alt="홈 미니맵"
@@ -48,8 +48,16 @@ export default function HomePage() {
           <h2 className="mb-4 inline-block border-b-2 border-ink pb-1 text-[15px] font-medium">근처 보물상자</h2>
           <ul className="flex flex-col gap-3">
             {nearbyTreasures.map((item) => (
-              <li key={item.id} className="flex items-center gap-3 rough-card px-3 py-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-paper">
+              <li
+                key={item.id}
+                className="relative flex min-h-[72px] items-stretch bg-paper"
+                style={{
+                  backgroundImage: `url(${ui.homeTreasureCard})`,
+                  backgroundSize: "100% 100%",
+                  backgroundRepeat: "no-repeat",
+                }}
+              >
+                <div className="relative flex w-[68px] shrink-0 items-center justify-center self-stretch">
                   <Image
                     src={item.icon === "chest" ? icons.treasureChest : icons.placeTree}
                     alt=""
@@ -57,16 +65,30 @@ export default function HomePage() {
                     height={32}
                     unoptimized
                   />
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute right-0 top-1/2 h-10 w-px -translate-y-1/2 bg-soft/80"
+                  />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[15px] font-medium text-ink">{item.title}</p>
-                  <p className="text-sm text-muted">
-                    {item.place} {item.distance}
-                  </p>
+                <div className="flex min-w-0 flex-1 items-center gap-3 px-3 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] font-medium text-ink">{item.title}</p>
+                    <p className="text-sm text-muted">
+                      {item.place} {item.distance}
+                    </p>
+                  </div>
+                  <Link
+                    href="/map"
+                    className="relative flex h-7 shrink-0 items-center justify-center bg-paper px-3.5"
+                    style={{
+                      backgroundImage: `url(${ui.infoViewButton})`,
+                      backgroundSize: "100% 100%",
+                      backgroundRepeat: "no-repeat",
+                    }}
+                  >
+                    <span className="text-xs font-medium text-ink">정보보기</span>
+                  </Link>
                 </div>
-                <Link href="/map" className="shrink-0 rounded-full border-2 border-ink bg-paper px-3 py-1 text-xs font-medium">
-                  정보보기
-                </Link>
               </li>
             ))}
           </ul>
