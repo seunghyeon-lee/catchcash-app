@@ -31,8 +31,8 @@ export function CharacterArt({
   onDark: boolean;
 }) {
   if (character.kind === "portrait") {
-    // 원을 꽉 채우면 선택한 색상이 가려지므로 살짝 안쪽에 넣어 색이 링으로 보이게 한다.
-    const diameter = size * (character.avatarScale ?? 0.78);
+    // 원을 꽉 채운다(object-cover). avatarScale 로 개별 여백을 줄 수 있다.
+    const diameter = size * (character.avatarScale ?? 1);
     return (
       <img
         src={character.icon}

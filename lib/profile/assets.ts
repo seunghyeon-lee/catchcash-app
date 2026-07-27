@@ -52,17 +52,18 @@ export const PROFILE_ASSETS = {
     supportSubmitButton: `${BASE}/ui/frames/support/ui_frame_support_submit_button_black_rough_default.svg`,
   },
   images: {
-    avatarChest: `${BASE}/images/profile/img_profile_avatar_chest_rough_default.png`,
     editBgPattern: `${BASE}/images/profile/img_profile_edit_bg_pattern.png`,
     /**
-     * 캐릭터 초상 — `09_Hall_Of_Fame_Screen` 랭킹 아바타에서 반입(팀장 요청).
-     * 1위 `1:2165` · 2위 `1:2188` · 3위 `1:2209` · 오늘의 사냥군 `1:2113`
-     * Figma가 JPEG로 내보내므로 확장자는 `.jpg`.
+     * 캐릭터 아트 7종 — 사용자가 직접 제작해 전달한 SVG(정사각 viewBox 52x52).
+     * 파일명 슬러그(key)는 ASCII, 화면 표시 이름은 mock-data.ts 의 label(한글)에서 온다.
      */
-    characterMackerel: `${BASE}/images/profile/img_profile_character_mackerel_rough_default.jpg`,
-    characterWanderer: `${BASE}/images/profile/img_profile_character_wanderer_rough_default.jpg`,
-    characterResting: `${BASE}/images/profile/img_profile_character_resting_rough_default.jpg`,
-    characterHunter: `${BASE}/images/profile/img_profile_character_hunter_rough_default.jpg`,
+    characterNewbie: `${BASE}/images/profile/img_profile_character_newbie_rough_default.svg`,
+    characterGuide: `${BASE}/images/profile/img_profile_character_guide_rough_default.svg`,
+    characterWanderer: `${BASE}/images/profile/img_profile_character_wanderer_rough_default.svg`,
+    characterCat: `${BASE}/images/profile/img_profile_character_cat_rough_default.svg`,
+    characterExplorer: `${BASE}/images/profile/img_profile_character_explorer_rough_default.svg`,
+    characterTracker: `${BASE}/images/profile/img_profile_character_tracker_rough_default.svg`,
+    characterHunter: `${BASE}/images/profile/img_profile_character_hunter_rough_default.svg`,
   },
 } as const;
 
