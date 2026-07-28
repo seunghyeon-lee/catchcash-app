@@ -28,7 +28,11 @@ export function BottomNav({ active }: { active: BottomNavTab }) {
                 isActive ? "border-2 border-black bg-black" : ""
               }`}
             >
-              <img src={isActive ? tab.iconWhite : tab.iconBlack} alt="" className="h-5 w-5 object-contain" />
+              <img
+                src={isActive ? tab.iconWhite : tab.iconBlack}
+                alt=""
+                className={`h-5 w-5 shrink-0 object-contain ${isActive && tab.key === "rank" ? "invert" : ""}`}
+              />
               <span
                 className={`text-[13px] font-medium tracking-[0.6px] ${isActive ? "text-white" : "text-[#5d5f5f]"}`}
               >
