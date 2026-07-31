@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 import { RoughImageFrame } from "@/components/profile/rough-image-frame";
+import { RoughMaskFrame } from "@/components/profile/rough-mask-frame";
 import { SubHeader } from "@/components/profile/sub-header";
 import { Toast } from "@/components/profile/toast";
 import { useToast } from "@/components/profile/use-toast";
@@ -12,7 +13,7 @@ import { PROFILE_ASSETS } from "@/lib/profile/assets";
 import { SUPPORT_CATEGORIES } from "@/lib/profile/mock-data";
 import { getAuthenticatedSupportSession } from "@/lib/profile/support-service";
 
-const { icons, frames } = PROFILE_ASSETS;
+const { icons, frames, masks, images } = PROFILE_ASSETS;
 
 function FieldLabel({ htmlFor, children }: { htmlFor: string; children: string }) {
   return (
@@ -70,7 +71,11 @@ export default function SupportNewPage() {
   };
 
   return (
-    <section className="min-h-screen bg-[#f7f5ef] pb-12">
+    // 배경 종이 질감은 리스트(15_1)·상세(15_2)와 같은 타일을 쓴다 — 문의 3화면 배경을 통일한다.
+    <section
+      className="min-h-screen bg-[#f7f5ef] bg-[length:523px_384px] bg-repeat pb-12"
+      style={{ backgroundImage: `url("${images.supportPaperGrain}")` }}
+    >
       <SubHeader title="뭐가 문젠데?" backHref="/support" />
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-8 px-5 pt-8">
@@ -102,35 +107,53 @@ export default function SupportNewPage() {
             </RoughImageFrame>
           </div>
 
+          {/*
+            정의서 5.4 가 지정한 제목 입력 전용 프레임은 Figma에 없다.
+            회색 1px 테두리는 이 화면에서 유일하게 흑백 rough 톤을 벗어나 있어서,
+            바로 위 카테고리 필드와 같은 rough 프레임을 씌워 한 쌍으로 보이게 맞춘다.
+          */}
           <div>
             <FieldLabel htmlFor="title">한 줄 요약</FieldLabel>
-            <input
-              id="title"
-              name="title"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="한 줄로 요약해"
-              maxLength={60}
-              autoComplete="off"
-              className="mt-1.5 w-full border border-[#6b7280] bg-white px-3 pb-2 pt-2.5 text-base text-black outline-none placeholder:text-[#9ca3af]"
-            />
+            <RoughImageFrame src={frames.supportCategorySelect} className="mt-3 w-full">
+              <input
+                id="title"
+                name="title"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="한 줄로 요약해"
+                maxLength={60}
+                autoComplete="off"
+                className="w-full bg-transparent px-8 py-5 text-base leading-6 text-black outline-none placeholder:text-soft"
+              />
+            </RoughImageFrame>
           </div>
 
+          {/*
+            textarea 는 세로로 길어서 카테고리 프레임(350x66)을 늘리면 선 굵기가 뭉개진다.
+            대신 상세 화면 답변 카드와 같은 사각 마스크를 씌운다 — 마스크는 꼭짓점 4개짜리라
+            어떤 높이로 늘려도 손그림 실루엣이 유지된다.
+          */}
           <div>
             <FieldLabel htmlFor="content">핵심 요약</FieldLabel>
-            <textarea
-              id="content"
-              name="content"
-              value={content}
-              onChange={(event) => setContent(event.target.value)}
-              placeholder="길게 쓰면 안 읽는다. 핵심만 써."
-              maxLength={500}
-              rows={7}
-              className="mt-1.5 w-full resize-none rounded-md border-[3px] border-black bg-white p-4 text-base leading-6 text-black outline-none placeholder:text-[#9ca3af]"
-            />
+            <RoughMaskFrame
+              src={masks.supportAdminReplyCard}
+              className="mt-3 border-[3px] border-black bg-white p-4"
+            >
+              <textarea
+                id="content"
+                name="content"
+                value={content}
+                onChange={(event) => setContent(event.target.value)}
+                placeholder="길게 쓰면 안 읽는다. 핵심만 써."
+                maxLength={500}
+                rows={7}
+                className="block w-full resize-none bg-transparent text-base leading-6 text-black outline-none placeholder:text-soft"
+              />
+            </RoughMaskFrame>
           </div>
 
-          <div className="rounded-lg border-[3px] border-dashed border-black bg-white/40 p-5">
+          {/* 점선 rough 에셋은 없어 CSS 유지. 반경만 걷어내 다른 카드들과 각을 맞춘다. */}
+          <div className="border-2 border-dashed border-black bg-white/60 p-5">
             <div className="flex items-center gap-2">
               <img src={icons.supportWarning} alt="" className="h-[11.083px] w-[12.833px] shrink-0" />
               <span className="text-base leading-6 text-black">똑바로 읽어</span>
