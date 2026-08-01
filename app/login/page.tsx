@@ -1,15 +1,46 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 const loginProviders = [
-  { id: "google", label: "Google로 계속하기", mark: "G" },
-  { id: "kakao", label: "Kakao로 계속하기", mark: "K" },
-  { id: "apple", label: "Apple로 계속하기", mark: "●" },
+  {
+    id: "kakao",
+    label: "카카오 로그인",
+    iconSrc: "/assets/icons/icon_social_kakao_default_24.svg",
+    iconClassName: "h-6 w-6",
+    buttonClassName: "bg-[#FEE500] text-black/85 hover:bg-[#F4DC00]",
+  },
+  {
+    id: "apple",
+    label: "Apple 로그인",
+    iconSrc: "/assets/icons/icon_social_apple_default_24.svg",
+    iconClassName: "h-6 w-6",
+    buttonClassName: "bg-black text-white hover:bg-[#333333]",
+  },
+  {
+    id: "google",
+    label: "Google 로그인",
+    iconSrc: "/assets/icons/icon_social_google_default_24.svg",
+    iconClassName: "h-5 w-5",
+    buttonClassName: "border border-[#DADCE0] bg-white text-[#3C4043] hover:bg-[#F8F9FA]",
+  },
 ] as const;
 
 type LoginProvider = (typeof loginProviders)[number];
+
+function TreasureLogo() {
+  return (
+    <span aria-hidden="true" className="flex h-32 w-32 items-center justify-center">
+      <span
+        className="block h-28 w-32 bg-contain bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/assets/icons/icon_treasure_chest_rough_default_32.svg')" }}
+      />
+    </span>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,68 +58,58 @@ export default function LoginPage() {
   return (
     <section
       aria-label="캐치캐쉬 로그인"
-      className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-[#F7F5EF] px-7 pb-8 pt-10 text-[#171717]"
+      className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-[#F7F5EF] text-[#050505]"
     >
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-30">
-        <span className="absolute left-[10%] top-[15%] h-2 w-2 rounded-full bg-[#171717]" />
-        <span className="absolute right-[12%] top-[20%] h-3 w-3 rotate-45 border-2 border-[#171717]" />
-        <span className="absolute bottom-[25%] left-[7%] text-xl">✦</span>
-        <span className="absolute bottom-[19%] right-[10%] h-2 w-2 rounded-full border-2 border-[#171717]" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.08]">
+        <span className="absolute -left-1 top-[44px] h-[355px] w-[78px] skew-x-[-8deg] border-l-[3px] border-r-[3px] border-[#050505]" />
+        <span className="absolute left-[83px] top-[165px] h-[103px] w-[3px] -rotate-12 bg-[#050505]" />
+        <span className="absolute left-[77px] top-[210px] h-[6px] w-[3px] -rotate-12 bg-[#050505]" />
+        <span className="absolute left-[104px] top-[287px] h-[9px] w-[3px] -rotate-[18deg] bg-[#050505]" />
+        <span className="absolute left-[140px] top-[474px] h-[9px] w-[3px] -rotate-[30deg] bg-[#050505]" />
+        <span className="absolute left-[173px] top-[619px] h-[4px] w-[4px] rounded-full bg-[#050505]" />
+        <span className="absolute left-[191px] top-[698px] h-[18px] w-[8px] rounded-full bg-[#050505]" />
+        <span className="absolute right-[36px] top-[88px] h-[710px] w-[8px] border-r-[5px] border-dashed border-[#050505]" />
+        <span className="absolute right-[-24px] bottom-[-92px] h-[368px] w-[84px] rotate-12 border-l-[3px] border-r-[3px] border-[#050505]" />
+        <span className="absolute right-[71px] top-[521px] h-[18px] w-[8px] rounded-full bg-[#050505]" />
       </div>
 
-      <header className="relative flex items-center justify-between">
-        <p className="font-mono text-xl font-black tracking-[-0.08em]">catchcash</p>
-        <span aria-hidden="true" className="rotate-6 text-2xl">✧</span>
-      </header>
-
-      <main className="relative flex flex-1 flex-col justify-center">
-        <div className="mb-11">
-          <div aria-hidden="true" className="mb-7 flex items-end gap-1.5">
-            <span className="h-11 w-11 -rotate-6 rounded-full border-[3px] border-[#171717] bg-[#F7F5EF]" />
-            <span className="mb-1 h-8 w-8 rotate-6 rounded-[0.4rem] border-[3px] border-[#171717] bg-[#F7F5EF]" />
-            <span className="mb-5 h-4 w-4 rounded-full border-[3px] border-[#171717]" />
-          </div>
-          <h1 className="max-w-[295px] text-[2rem] font-black leading-[1.2] tracking-[-0.075em]">
-            현실에 숨겨둔 보물,
-            <br />
-            찾을 자신 있냐?
+      <main className="relative flex min-h-[884px] flex-1 flex-col items-center px-5 pb-16 pt-[138px]">
+        <div className="flex flex-col items-center">
+          <TreasureLogo />
+          <h1 className="mt-4 text-2xl font-bold leading-6 tracking-[-0.4px] text-black">
+            catchcash
           </h1>
-          <p className="mt-4 text-sm font-medium leading-6 text-[#171717]/65">
-            잠깐의 로그인 후, 진짜 보물찾기가 시작돼요.
+          <p className="mt-2 text-center text-[15px] font-medium leading-6 text-[#4C4546]/80">
+            현실에 숨겨둔 보물, 찾을 자신 있냐?
           </p>
         </div>
 
-        <div className="rounded-[1.3rem] border-2 border-[#171717] bg-[#F7F5EF] p-4 shadow-[5px_5px_0_#171717]">
-          <p className="mb-3 text-center text-xs font-bold tracking-[0.08em]">3초면 탐험 준비 끝!</p>
-          <div className="space-y-3">
-            {loginProviders.map((provider) => {
-              const isLoading = selectedProvider === provider.id;
+        <div className="mt-[93px] flex w-full max-w-[350px] flex-col gap-3">
+          {loginProviders.map((provider) => {
+            const isLoading = selectedProvider === provider.id;
 
-              return (
-                <button
-                  key={provider.id}
-                  type="button"
-                  onClick={() => handleMockLogin(provider)}
-                  disabled={selectedProvider !== null}
-                  className="flex h-14 w-full items-center justify-center gap-3 rounded-xl border-2 border-[#171717] bg-[#F7F5EF] px-4 text-sm font-bold transition-transform active:translate-x-0.5 active:translate-y-0.5 disabled:cursor-wait disabled:opacity-70"
-                >
-                  <span
+            return (
+              <button
+                key={provider.id}
+                type="button"
+                onClick={() => handleMockLogin(provider)}
+                disabled={selectedProvider !== null}
+                className={`flex h-12 w-full items-center justify-center gap-3 rounded-[6px] px-4 text-base font-medium leading-none transition-colors disabled:cursor-wait disabled:opacity-70 ${provider.buttonClassName}`}
+              >
+                <span className="inline-flex items-center justify-center gap-4">
+                  <img
+                    src={provider.iconSrc}
+                    alt=""
                     aria-hidden="true"
-                    className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#171717] text-xs font-black"
-                  >
-                    {provider.mark}
-                  </span>
+                    className={`shrink-0 object-contain transition-none ${provider.iconClassName}`}
+                  />
                   <span>{isLoading ? "탐험 준비 중..." : provider.label}</span>
-                </button>
-              );
-            })}
-          </div>
+                </span>
+              </button>
+            );
+          })}
         </div>
       </main>
-
-      <p className="relative text-center text-[11px] font-medium leading-5 text-[#171717]/50">
-        로그인은 현재 화면 흐름을 확인하기 위한 mock 동작이에요.
-      </p>
     </section>
   );
 }
