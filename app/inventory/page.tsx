@@ -7,7 +7,8 @@ import { BottomNav } from "@/components/hunt/bottom-nav";
 import { RewardDetailPopup } from "@/components/hunt/reward-detail-popup";
 import { TopAppBar } from "@/components/hunt/top-app-bar";
 import { HUNT_ASSETS } from "@/lib/hunt/assets";
-import { MOCK_REWARDS, type MockReward, type RewardStatus } from "@/lib/hunt/mock-data";
+import { MOCK_REWARDS, type MockReward, type MockRewardDetail, type RewardStatus } from "@/lib/hunt/mock-data";
+import { getInventoryRewardDetail } from "@/lib/hunt/selectors";
 
 const { icons, frames, images } = HUNT_ASSETS;
 
@@ -118,7 +119,7 @@ function ExpiredCard({ reward }: { reward: MockReward }) {
 export default function InventoryPage() {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [rewards, setRewards] = useState<MockReward[]>(MOCK_REWARDS);
-  const [selected, setSelected] = useState<MockReward | null>(null);
+  const [selected, setSelected] = useState<MockRewardDetail | null>(null);
 
   const visible = rewards.filter((reward) => {
     if (filter === "all") return true;
@@ -175,7 +176,13 @@ export default function InventoryPage() {
         <div className="mt-6 flex flex-col gap-6">
           {visible.map((reward) => {
             if (reward.status === "available") {
-              return <AvailableCard key={reward.id} reward={reward} onClick={() => setSelected(reward)} />;
+              return (
+                <AvailableCard
+                  key={reward.id}
+                  reward={reward}
+                  onClick={() => setSelected(getInventoryRewardDetail(reward.id) ?? null)}
+                />
+              );
             }
             if (reward.status === "failed") {
               return <FailedCard key={reward.id} reward={reward} />;

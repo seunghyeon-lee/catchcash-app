@@ -1,6 +1,6 @@
 import { FAME_ASSETS } from "@/lib/fame/assets";
 import {
-  FAME_SUMMARY_BY_FILTER,
+  FAME_FIXED_SUMMARY,
   MOCK_HALL_OF_FAME,
   type FameFilter,
   type MockHallOfFame,
@@ -50,7 +50,7 @@ function resolveLocationLabel(filter: FameFilter, rank: number) {
     today: ["종로구", "광화문", "동작구", "성수동", "잠실", "한강공원"],
     week: ["동작구", "종로구", "한강공원", "성수동", "잠실", "망원동", "서촌"],
     month: ["한강공원", "종로구", "성수동", "잠실", "연남동", "광화문", "동작구", "서촌"],
-    nearby: ["동작구", "한강공원", "노량진", "흑석동", "상도동", "사당동"],
+    year: ["한강공원", "종로구", "성수동", "잠실", "연남동", "광화문", "동작구", "이태원", "망원동", "서촌"],
   };
 
   return byFilter[filter][rank - 1] ?? "근처";
@@ -62,14 +62,15 @@ function resolveTimeLabel(filter: FameFilter, rank: number) {
     today: ["방금 전", "5분 전", "12분 전", "34분 전", "1시간 전", "2시간 전"],
     week: ["3분 전", "12분 전", "1시간 전", "오늘", "어제", "2일 전", "3일 전"],
     month: ["1시간 전", "오늘", "어제", "2일 전", "4일 전", "6일 전", "1주 전", "2주 전"],
-    nearby: ["12분 전", "25분 전", "1시간 전", "오늘", "어제", "2일 전"],
+    year: ["오늘", "어제", "3일 전", "1주 전", "2주 전", "1달 전", "2달 전", "3달 전", "4달 전", "5달 전"],
   };
 
   return byFilter[filter][rank - 1] ?? "최근";
 }
 
-export function getFameTopHunter(filter: FameFilter): FameTopHunterCard {
-  const summary = FAME_SUMMARY_BY_FILTER[filter];
+/** 상단 고정: 오늘 최고의 사냥꾼 */
+export function getFameTopHunter(): FameTopHunterCard {
+  const summary = FAME_FIXED_SUMMARY;
 
   return {
     nickname: summary.topHunter.nickname,
@@ -79,8 +80,9 @@ export function getFameTopHunter(filter: FameFilter): FameTopHunterCard {
   };
 }
 
-export function getFameSummary(filter: FameFilter): FameSummaryCards {
-  const summary = FAME_SUMMARY_BY_FILTER[filter];
+/** 상단 고정: 이번 주 발견 수 / 최근 발견된 상자 */
+export function getFameSummary(): FameSummaryCards {
+  const summary = FAME_FIXED_SUMMARY;
 
   return {
     weeklyFindCount: `${summary.weeklyFindCount} finds`,
@@ -89,8 +91,9 @@ export function getFameSummary(filter: FameFilter): FameSummaryCards {
   };
 }
 
+/** 상단 고정: my record */
 export function getFameMyRecord(): FameMyRecordCard {
-  const base = FAME_SUMMARY_BY_FILTER.all;
+  const base = FAME_FIXED_SUMMARY;
 
   return {
     rankLabel: `#${MOCK_PROFILE.stats.rank}`,
@@ -100,6 +103,7 @@ export function getFameMyRecord(): FameMyRecordCard {
   };
 }
 
+/** 하단만 필터 연동: hunter rankings */
 export function getFameRankingRows(filter: FameFilter): FameRankingRow[] {
   return MOCK_HALL_OF_FAME[filter].map((row) => ({
     rank: row.rank,
