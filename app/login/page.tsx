@@ -93,13 +93,15 @@ export default function LoginPage() {
                 disabled={selectedProvider !== null}
                 className={`flex h-12 w-full items-center justify-center gap-3 rounded-[6px] px-4 text-base font-medium leading-none transition-transform active:scale-[0.98] disabled:cursor-wait disabled:opacity-70 ${provider.buttonClassName}`}
               >
-                <img
-                  src={provider.iconSrc}
-                  alt=""
-                  aria-hidden="true"
-                  className="h-6 w-6 shrink-0 object-contain"
-                />
-                <span>{isLoading ? "탐험 준비 중..." : provider.label}</span>
+                <span className="inline-flex items-center justify-center gap-4">
+                  <img
+                    src={provider.iconSrc}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-6 w-6 shrink-0 object-contain"
+                  />
+                  <span>{isLoading ? "탐험 준비 중..." : provider.label}</span>
+                </span>
               </button>
             );
           })}
