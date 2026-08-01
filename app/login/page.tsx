@@ -10,18 +10,21 @@ const loginProviders = [
     id: "kakao",
     label: "카카오 로그인",
     iconSrc: "/assets/icons/icon_social_kakao_default_24.svg",
+    iconClassName: "h-6 w-6",
     buttonClassName: "bg-[#FEE500] text-black/85 hover:bg-[#F4DC00]",
   },
   {
     id: "apple",
     label: "Apple 로그인",
     iconSrc: "/assets/icons/icon_social_apple_default_24.svg",
+    iconClassName: "h-6 w-6",
     buttonClassName: "bg-black text-white hover:bg-[#333333]",
   },
   {
     id: "google",
     label: "Google 로그인",
     iconSrc: "/assets/icons/icon_social_google_default_24.svg",
+    iconClassName: "h-5 w-5",
     buttonClassName: "border border-[#DADCE0] bg-white text-[#3C4043] hover:bg-[#F8F9FA]",
   },
 ] as const;
@@ -91,14 +94,14 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => handleMockLogin(provider)}
                 disabled={selectedProvider !== null}
-                className={`flex h-12 w-full items-center justify-center gap-3 rounded-[6px] px-4 text-base font-medium leading-none transition-transform active:scale-[0.98] disabled:cursor-wait disabled:opacity-70 ${provider.buttonClassName}`}
+                className={`flex h-12 w-full items-center justify-center gap-3 rounded-[6px] px-4 text-base font-medium leading-none transition-colors disabled:cursor-wait disabled:opacity-70 ${provider.buttonClassName}`}
               >
                 <span className="inline-flex items-center justify-center gap-4">
                   <img
                     src={provider.iconSrc}
                     alt=""
                     aria-hidden="true"
-                    className="h-6 w-6 shrink-0 object-contain"
+                    className={`shrink-0 object-contain transition-none ${provider.iconClassName}`}
                   />
                   <span>{isLoading ? "탐험 준비 중..." : provider.label}</span>
                 </span>
