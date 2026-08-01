@@ -39,7 +39,7 @@ export default function LandingPage() {
           <span
             aria-hidden="true"
             className="mb-6 block h-24 w-24 bg-contain bg-center bg-no-repeat"
-            style={{ backgroundImage: "url('/assets/brand/logo/brand_logo_catchcash_symbol_default.svg')" }}
+            style={{ backgroundImage: "url('/assets/images/splash/img_splash_treasure_box.svg')" }}
           />
 
           <h1 className="text-2xl font-bold leading-6 tracking-[-0.4px] text-black">catchcash</h1>
