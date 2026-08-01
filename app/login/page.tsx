@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -8,24 +10,18 @@ const loginProviders = [
     id: "kakao",
     label: "카카오 로그인",
     iconSrc: "/assets/icons/icon_social_kakao_default_24.svg",
-    iconClassName: "h-[42px] w-[42px]",
-    iconPositionClassName: "left-4",
     buttonClassName: "bg-[#FEE500] text-black/85 hover:bg-[#F4DC00]",
   },
   {
     id: "apple",
-    label: "Apple로 로그인",
+    label: "Apple 로그인",
     iconSrc: "/assets/icons/icon_social_apple_default_24.svg",
-    iconClassName: "h-[42px] w-[42px]",
-    iconPositionClassName: "left-4",
     buttonClassName: "bg-black text-white hover:bg-[#333333]",
   },
   {
     id: "google",
-    label: "Google로 로그인",
+    label: "Google 로그인",
     iconSrc: "/assets/icons/icon_social_google_default_24.svg",
-    iconClassName: "h-5 w-5",
-    iconPositionClassName: "left-6",
     buttonClassName: "border border-[#DADCE0] bg-white text-[#3C4043] hover:bg-[#F8F9FA]",
   },
 ] as const;
@@ -95,12 +91,13 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => handleMockLogin(provider)}
                 disabled={selectedProvider !== null}
-                className={`relative flex h-12 w-full items-center justify-center rounded-[6px] px-4 text-base font-medium leading-none transition-transform active:scale-[0.98] disabled:cursor-wait disabled:opacity-70 ${provider.buttonClassName}`}
+                className={`flex h-12 w-full items-center justify-center gap-3 rounded-[6px] px-4 text-base font-medium leading-none transition-transform active:scale-[0.98] disabled:cursor-wait disabled:opacity-70 ${provider.buttonClassName}`}
               >
-                <span
+                <img
+                  src={provider.iconSrc}
+                  alt=""
                   aria-hidden="true"
-                  className={`absolute top-1/2 -translate-y-1/2 bg-contain bg-center bg-no-repeat ${provider.iconPositionClassName} ${provider.iconClassName}`}
-                  style={{ backgroundImage: `url(${provider.iconSrc})` }}
+                  className="h-6 w-6 shrink-0 object-contain"
                 />
                 <span>{isLoading ? "탐험 준비 중..." : provider.label}</span>
               </button>
