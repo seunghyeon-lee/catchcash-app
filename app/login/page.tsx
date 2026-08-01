@@ -7,7 +7,7 @@ const loginProviders = [
   {
     id: "kakao",
     label: "카카오 로그인",
-    iconSrc: "https://www.figma.com/api/mcp/asset/3dcd30a5-e717-48b0-b1f3-a608a336248e",
+    iconSrc: "/assets/icons/social/icon_social_kakao_default_24.svg",
     iconClassName: "h-[42px] w-[42px]",
     iconPositionClassName: "left-4",
     buttonClassName: "bg-[#FEE500] text-black/85 hover:bg-[#F4DC00]",
@@ -15,7 +15,7 @@ const loginProviders = [
   {
     id: "apple",
     label: "Apple로 로그인",
-    iconSrc: "https://www.figma.com/api/mcp/asset/679f6dd4-2be8-4683-a14d-f1e8626591c7",
+    iconSrc: "/assets/icons/social/icon_social_apple_default_24.svg",
     iconClassName: "h-[42px] w-[42px]",
     iconPositionClassName: "left-4",
     buttonClassName: "bg-black text-white hover:bg-[#333333]",
@@ -23,7 +23,7 @@ const loginProviders = [
   {
     id: "google",
     label: "Google로 로그인",
-    iconSrc: "https://www.figma.com/api/mcp/asset/6354a776-f558-4ddb-b600-07c90b209134",
+    iconSrc: "/assets/icons/social/icon_social_google_default_24.svg",
     iconClassName: "h-5 w-5",
     iconPositionClassName: "left-6",
     buttonClassName: "border border-[#DADCE0] bg-white text-[#3C4043] hover:bg-[#F8F9FA]",
