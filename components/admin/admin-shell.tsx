@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 const navigation = [
   { label: "대시보드", href: "/admin/dashboard" },
   { label: "보물상자" },
-  { label: "상품" },
+  { label: "상품 관리", href: "/admin/products" },
   { label: "매칭" },
   { label: "보상" },
   { label: "유저" },
@@ -35,7 +35,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <nav aria-label="관리자 메뉴" className="space-y-1">
             {navigation.map((item) => {
               if (!item.href) return <span key={item.label} className="block rounded-md px-3 py-2.5 text-sm text-[#9ca3af]">{item.label}<small className="ml-2 text-[10px]">준비 중</small></span>;
-              const active = pathname === item.href || (item.href === "/admin/inquiries" && pathname.startsWith("/admin/inquiries"));
+              const active = pathname === item.href || (item.href === "/admin/inquiries" && pathname.startsWith("/admin/inquiries")) || (item.href === "/admin/products" && pathname.startsWith("/admin/products"));
               return <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={`block rounded-md px-3 py-2.5 text-sm font-medium ${active ? "bg-[#111827] text-white" : "text-[#4b5563] hover:bg-[#f3f4f6]"}`}>{item.label}</Link>;
             })}
           </nav>
