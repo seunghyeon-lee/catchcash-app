@@ -2,8 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { NotificationInbox } from "@/components/notification/inbox";
 import { TopBar } from "@/components/top-bar";
 import { icons, illust, ui } from "@/lib/assets";
 import { guideSteps } from "@/lib/mock/guide";
@@ -16,11 +14,9 @@ const stepIcons = {
 } as const;
 
 export default function GuidePage() {
-  const [inboxOpen, setInboxOpen] = useState(false);
-
   return (
     <div className="relative min-h-screen bg-paper pb-10">
-      <TopBar brand="catch cash" showBack backHref="/home" onNotificationClick={() => setInboxOpen(true)} />
+      <TopBar brand="catch cash" showBack backHref="/home" />
 
       <div className="px-5 pt-6">
         <section className="mb-8">
@@ -110,8 +106,6 @@ export default function GuidePage() {
           <span className="relative z-10 text-2xl font-medium text-white">지도 뒤지러 가기 →</span>
         </Link>
       </div>
-
-      <NotificationInbox open={inboxOpen} onClose={() => setInboxOpen(false)} />
     </div>
   );
 }

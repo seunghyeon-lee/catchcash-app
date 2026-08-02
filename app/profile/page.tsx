@@ -8,9 +8,7 @@ import { BottomTab } from "@/components/bottom-tab";
 import { CharacterAvatar, PROFILE_AVATAR_SIZE } from "@/components/profile/character-avatar";
 import { LogoutConfirmPopup } from "@/components/profile/logout-confirm-popup";
 import { RoughImageFrame } from "@/components/profile/rough-image-frame";
-import { Toast } from "@/components/profile/toast";
 import { ProfileTopAppBar } from "@/components/profile/top-app-bar";
-import { useToast } from "@/components/profile/use-toast";
 import { PROFILE_ASSETS } from "@/lib/profile/assets";
 import { findCharacter, findColor, MOCK_PROFILE, resolveIntro } from "@/lib/profile/mock-data";
 
@@ -82,7 +80,6 @@ function MenuRow({
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { message, show } = useToast();
   const [showLogout, setShowLogout] = useState(false);
 
   const { nickname, intro, characterKey, colorKey, stats } = MOCK_PROFILE;
@@ -90,8 +87,6 @@ export default function ProfilePage() {
   const color = findColor(colorKey);
   // 사용자가 쓴 한 줄 소개 우선, 비었으면 캐릭터 기본 문구 — 수정 화면 미리보기와 같은 규칙.
   const introText = resolveIntro(intro, character);
-
-  const comingSoon = () => show("곧 만들어 준다");
 
   const handleLogout = () => {
     // Mock: 실제 세션 정리 없이 로그인 화면으로 이동
@@ -102,7 +97,7 @@ export default function ProfilePage() {
   return (
     <>
       <section className="min-h-screen bg-[#f7f5ef] pb-28">
-        <ProfileTopAppBar backHref="/home" onGnbClick={comingSoon} />
+        <ProfileTopAppBar backHref="/home" />
 
         <div className="px-5 pt-4">
           {/* 프로필 메인 카드 */}
@@ -154,7 +149,6 @@ export default function ProfilePage() {
       {showLogout ? (
         <LogoutConfirmPopup onCancel={() => setShowLogout(false)} onConfirm={handleLogout} />
       ) : null}
-      {message ? <Toast message={message} /> : null}
     </>
   );
 }

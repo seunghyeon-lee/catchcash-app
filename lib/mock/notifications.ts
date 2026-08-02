@@ -23,13 +23,33 @@ export type AppNotification = {
   read_at: string | null;
 };
 
+/**
+ * 필터칩 목록 (04_1 4-1).
+ *
+ * 정의서 기준 6종(전체/안읽음/쿠폰/보물/공지/설정)에 **문의답변**(`support`)을 더했다.
+ * 관리자가 답변을 등록하면 DB 트리거가 `type = 'support'` 알림을 넣기 때문에
+ * 유형 필터에도 자리가 있어야 한다 — 유형 칩은 `NotificationType` 전부를 덮는다.
+ */
 export const notificationFilters: { id: NotificationFilter; label: string }[] = [
   { id: "all", label: "전체" },
   { id: "unread", label: "안읽음" },
   { id: "coupon", label: "쿠폰" },
   { id: "treasure", label: "보물" },
   { id: "notice", label: "공지" },
+  { id: "setting", label: "설정" },
+  { id: "support", label: "문의답변" },
 ];
+
+/**
+ * 정렬 규칙 (04_1 7-1): 안읽은 알림 먼저, 같은 상태 안에서는 최신순.
+ * DB에서 읽어올 때도 같은 순서(`order('is_read').order('created_at', desc)`)를 쓴다.
+ */
+export function sortNotifications<T extends Pick<AppNotification, "is_read" | "created_at">>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    if (a.is_read !== b.is_read) return a.is_read ? 1 : -1;
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+}
 
 /**
  * mock 이라 `created_at` 을 모듈 로드 시각 기준 상대값으로 만든다.

@@ -156,7 +156,7 @@ export default function ProfileEditPage() {
         className="min-h-screen bg-[#f7f5ef] pb-28"
         style={{ backgroundImage: `url("${images.editBgPattern}")`, backgroundSize: "8px 8px" }}
       >
-        <ProfileTopAppBar backHref="/profile" onGnbClick={() => show("곧 만들어 준다")} />
+        <ProfileTopAppBar backHref="/profile" />
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-8 px-5 pt-6">
           {/* 미리보기 카드 */}

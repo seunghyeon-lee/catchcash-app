@@ -20,6 +20,12 @@ export const icons = {
   notifCoupon: `${ASSET}/icons/icon_notification_coupon_rough_default_20.svg`,
   notifNotice: `${ASSET}/icons/icon_notification_notice_rough_default_20.svg`,
   notifSetting: `${ASSET}/icons/icon_notification_setting_rough_default_20.svg`,
+  /**
+   * 문의 답변 알림(`type = 'support'`) 아이콘.
+   * 04_1 정의서에 없던 유형이라 전용 에셋이 없어, 문의 상세(15_2)의 관리자 답변 헤더
+   * 아이콘(헤드셋)을 그대로 쓴다 — 공지 아이콘과 겹치지 않고 "관리자 답변"이 바로 읽힌다.
+   */
+  notifSupport: `${ASSET}/icons/support/icon_support_admin_headset_dark_20.svg`,
   guideStepMap: `${ASSET}/icons/icon_guide_step_map_rough_default_32.svg`,
   guideStepLocation: `${ASSET}/icons/icon_guide_step_location_rough_default_32.svg`,
   guideStepAr: `${ASSET}/icons/icon_guide_step_ar_rough_default_32.svg`,
