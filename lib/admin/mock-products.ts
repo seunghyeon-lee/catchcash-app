@@ -13,6 +13,15 @@ export type AdminProductListItem = {
   updatedAt: string;
 };
 
+export type AdminProductMappingStatus = "active" | "inactive";
+
+export type AdminProductMappingSummary = {
+  treasureId: string;
+  treasureName: string;
+  mappingStatus: AdminProductMappingStatus;
+  mappedAt: string;
+};
+
 export const ADMIN_PRODUCT_STATUS_LABEL: Record<AdminProductStatus, string> = {
   active: "active",
   inactive: "inactive",
@@ -117,6 +126,45 @@ export const MOCK_ADMIN_PRODUCTS: AdminProductListItem[] = [
   },
 ];
 
+export const MOCK_ADMIN_PRODUCT_MAPPINGS: Record<string, AdminProductMappingSummary[]> = {
+  "prod-starbucks-americano-tall": [
+    { treasureId: "treasure-gangnam-station-01", treasureName: "강남역 점심 보물", mappingStatus: "active", mappedAt: "2026-07-26T09:00:00+09:00" },
+    { treasureId: "treasure-seongsu-cafe-02", treasureName: "성수 카페거리 보물", mappingStatus: "active", mappedAt: "2026-07-27T11:30:00+09:00" },
+    { treasureId: "treasure-hongdae-night-03", treasureName: "홍대 야간 보물", mappingStatus: "active", mappedAt: "2026-07-28T19:00:00+09:00" },
+  ],
+  "prod-baskin-single-regular": [
+    { treasureId: "treasure-jamsil-weekend-01", treasureName: "잠실 주말 보물", mappingStatus: "active", mappedAt: "2026-07-24T10:10:00+09:00" },
+    { treasureId: "treasure-sinchon-campus-02", treasureName: "신촌 캠퍼스 보물", mappingStatus: "active", mappedAt: "2026-07-25T13:20:00+09:00" },
+    { treasureId: "treasure-yeonnam-park-03", treasureName: "연남 공원 보물", mappingStatus: "inactive", mappedAt: "2026-07-25T16:45:00+09:00" },
+  ],
+  "prod-cu-mobile-voucher-5000": [
+    { treasureId: "treasure-city-hall-01", treasureName: "시청 광장 보물", mappingStatus: "active", mappedAt: "2026-07-22T08:00:00+09:00" },
+    { treasureId: "treasure-busan-beach-02", treasureName: "부산 해변 보물", mappingStatus: "active", mappedAt: "2026-07-23T15:30:00+09:00" },
+  ],
+  "prod-gs25-mobile-voucher-3000": [
+    { treasureId: "treasure-digital-media-01", treasureName: "DMC 출근길 보물", mappingStatus: "active", mappedAt: "2026-07-19T08:30:00+09:00" },
+  ],
+  "prod-megabox-popcorn-r": [],
+  "prod-paris-baguette-10000": [
+    { treasureId: "treasure-pangyo-office-01", treasureName: "판교 오피스 보물", mappingStatus: "active", mappedAt: "2026-07-17T12:00:00+09:00" },
+  ],
+  "prod-kyochon-honey-combo": [
+    { treasureId: "treasure-itaewon-dinner-01", treasureName: "이태원 저녁 보물", mappingStatus: "inactive", mappedAt: "2026-07-13T18:20:00+09:00" },
+  ],
+  "prod-twosome-americano-r": [
+    { treasureId: "treasure-yeouido-lunch-01", treasureName: "여의도 점심 보물", mappingStatus: "active", mappedAt: "2026-07-11T11:10:00+09:00" },
+    { treasureId: "treasure-mapo-riverside-02", treasureName: "마포 강변 보물", mappingStatus: "active", mappedAt: "2026-07-12T17:20:00+09:00" },
+  ],
+};
+
+export function findAdminProduct(id: string) {
+  return MOCK_ADMIN_PRODUCTS.find((product) => product.id === id);
+}
+
+export function getAdminProductMappings(productId: string) {
+  return MOCK_ADMIN_PRODUCT_MAPPINGS[productId] ?? [];
+}
+
 export function formatAdminProductPrice(value: number) {
   return new Intl.NumberFormat("ko-KR").format(value) + "원";
 }
@@ -126,5 +174,16 @@ export function formatAdminProductDate(value: string) {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
+  }).format(new Date(value));
+}
+
+export function formatAdminProductDateTime(value: string) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
   }).format(new Date(value));
 }
