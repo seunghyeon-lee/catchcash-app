@@ -4,7 +4,7 @@
 import { useState } from "react";
 
 import { AppHeader } from "@/components/layout/app-header";
-import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import { TreasureHintPopup } from "@/components/hunt/treasure-hint-popup";
 import { HUNT_ASSETS } from "@/lib/hunt/assets";
 import { MOCK_CLAIMED_TREASURE, MOCK_TREASURES, type MockTreasure } from "@/lib/hunt/mock-data";
@@ -87,7 +87,7 @@ export default function MapPage() {
         </div>
       </section>
 
-      <BottomTabBar />
+      <BottomNav />
 
       {selected && <TreasureHintPopup treasure={selected} onClose={() => setSelected(null)} />}
     </div>

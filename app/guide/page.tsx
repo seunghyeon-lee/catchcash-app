@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { AppHeader } from "@/components/layout/app-header";
-import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import { icons, illust, ui } from "@/lib/assets";
 import { guideSteps } from "@/lib/mock/guide";
 
@@ -108,7 +108,7 @@ export default function GuidePage() {
         </Link>
       </div>
 
-      <BottomTabBar />
+      <BottomNav />
     </div>
   );
 }

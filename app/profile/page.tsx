@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { AppHeader } from "@/components/layout/app-header";
-import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import { CharacterAvatar, PROFILE_AVATAR_SIZE } from "@/components/profile/character-avatar";
 import { LogoutConfirmPopup } from "@/components/profile/logout-confirm-popup";
 import { RoughImageFrame } from "@/components/profile/rough-image-frame";
@@ -190,7 +190,7 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      <BottomTabBar />
+      <BottomNav />
 
       {showLogout ? (
         <LogoutConfirmPopup onCancel={() => setShowLogout(false)} onConfirm={() => void handleLogout()} />

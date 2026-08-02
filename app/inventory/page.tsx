@@ -4,7 +4,7 @@
 import { useState } from "react";
 
 import { AppHeader } from "@/components/layout/app-header";
-import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import { RewardDetailPopup } from "@/components/hunt/reward-detail-popup";
 import { HUNT_ASSETS } from "@/lib/hunt/assets";
 import { MOCK_REWARDS, type MockReward, type MockRewardDetail, type RewardStatus } from "@/lib/hunt/mock-data";
@@ -198,7 +198,7 @@ export default function InventoryPage() {
         </div>
       </main>
 
-      <BottomTabBar />
+      <BottomNav />
 
       {selected && (
         <RewardDetailPopup

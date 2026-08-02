@@ -2,7 +2,7 @@
 import Link from "next/link";
 
 import { AppHeader } from "@/components/layout/app-header";
-import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import { HUNT_ASSETS } from "@/lib/hunt/assets";
 import { getHuntResultByQuery } from "@/lib/hunt/selectors";
 
@@ -175,7 +175,7 @@ export default function HuntResultPage({ searchParams }: { searchParams?: { resu
     <div className="flex min-h-screen flex-col bg-[#f7f5ef] pb-20">
       <AppHeader variant="back-actions" backHref="/ar-hunt" />
       {isFail ? <FailResult data={failData} /> : <SuccessResult data={successData} />}
-      <BottomTabBar />
+      <BottomNav />
     </div>
   );
 }

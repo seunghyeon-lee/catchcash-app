@@ -13,8 +13,13 @@ type BottomTabItem = {
   matchPaths: string[];
   activeIcon: string;
   defaultIcon: string;
+  iconClass: string;
 };
 
+/**
+ * Common BNB — docs/frontend/common/00_Common_Bottom_Navigation_BNB.md
+ * Figma: 15:85 BottomNavBar
+ */
 const TABS: BottomTabItem[] = [
   {
     key: "home",
@@ -23,6 +28,7 @@ const TABS: BottomTabItem[] = [
     matchPaths: ["/home"],
     activeIcon: BNB_ASSETS.home.active,
     defaultIcon: BNB_ASSETS.home.default,
+    iconClass: "h-[18px] w-4",
   },
   {
     key: "map",
@@ -31,6 +37,7 @@ const TABS: BottomTabItem[] = [
     matchPaths: ["/map"],
     activeIcon: BNB_ASSETS.map.active,
     defaultIcon: BNB_ASSETS.map.default,
+    iconClass: "size-[18px]",
   },
   {
     key: "hunt",
@@ -39,6 +46,7 @@ const TABS: BottomTabItem[] = [
     matchPaths: ["/ar-hunt", "/hunt-result"],
     activeIcon: BNB_ASSETS.hunt.active,
     defaultIcon: BNB_ASSETS.hunt.default,
+    iconClass: "size-5",
   },
   {
     key: "fame",
@@ -47,6 +55,7 @@ const TABS: BottomTabItem[] = [
     matchPaths: ["/hall-of-fame"],
     activeIcon: BNB_ASSETS.fame.active,
     defaultIcon: BNB_ASSETS.fame.default,
+    iconClass: "size-[18px]",
   },
   {
     key: "profile",
@@ -55,6 +64,7 @@ const TABS: BottomTabItem[] = [
     matchPaths: ["/profile", "/support", "/inventory"],
     activeIcon: BNB_ASSETS.profile.active,
     defaultIcon: BNB_ASSETS.profile.default,
+    iconClass: "size-4",
   },
 ];
 
@@ -62,42 +72,42 @@ function isTabActive(pathname: string, matchPaths: string[]) {
   return matchPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
-/**
- * 공통 하단 BNB (5탭).
- * guide / notification 은 특정 탭에 묶지 않아 active 가 없을 수 있다.
- */
-export function BottomTabBar() {
+export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-1/2 z-30 h-20 w-full max-w-[480px] -translate-x-1/2 border-t-2 border-black bg-white">
-      <div className="flex h-full items-stretch justify-around px-1">
-        {TABS.map((tab) => {
-          const active = isTabActive(pathname, tab.matchPaths);
-          return (
-            <Link
-              key={tab.key}
-              href={tab.href}
-              className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 ${
-                active ? "bg-black text-white" : "text-[#5d5f5f]"
+    <nav
+      aria-label="하단 메뉴"
+      className="fixed bottom-0 left-1/2 z-30 flex h-[72px] w-full max-w-[480px] -translate-x-1/2 items-stretch border-t-4 border-black bg-white pt-1"
+    >
+      {TABS.map((tab) => {
+        const active = isTabActive(pathname, tab.matchPaths);
+        return (
+          <Link
+            key={tab.key}
+            href={tab.href}
+            className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 ${
+              active ? "border-2 border-black bg-black" : "bg-white"
+            }`}
+          >
+            <img
+              src={active ? tab.activeIcon : tab.defaultIcon}
+              alt=""
+              className={`${tab.iconClass} shrink-0 object-contain`}
+            />
+            <span
+              className={`max-w-full truncate text-center text-[12px] font-normal leading-3 tracking-[0.6px] ${
+                active ? "text-white" : "text-black"
               }`}
             >
-              <img
-                src={active ? tab.activeIcon : tab.defaultIcon}
-                alt=""
-                className="h-5 w-5 shrink-0 object-contain"
-              />
-              <span
-                className={`max-w-full truncate text-center text-[10px] font-medium leading-tight tracking-[0.2px] ${
-                  active ? "text-white" : "text-[#5d5f5f]"
-                }`}
-              >
-                {tab.label}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
+              {tab.label}
+            </span>
+          </Link>
+        );
+      })}
     </nav>
   );
 }
+
+/** @deprecated Prefer BottomNav. Compat alias. */
+export const BottomTabBar = BottomNav;
