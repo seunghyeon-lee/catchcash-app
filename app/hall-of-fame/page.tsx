@@ -59,7 +59,7 @@ export default function HallOfFamePage() {
           <div className="flex-1 text-center text-[20px] font-bold tracking-[0.3px]">CATCH CASH</div>
 
           <div className="flex items-center gap-4">
-            <Link href="/notifications" aria-label="알림">
+            <Link href="/notification" aria-label="알림">
               <img src={icons.gnbNotification} alt="" className="h-5 w-4" />
             </Link>
             <Link href="/profile" aria-label="설정">

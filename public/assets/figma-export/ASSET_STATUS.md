@@ -15,6 +15,24 @@
 
 ---
 
+## 공통 GNB/BNB (`feature/common-navigation-components`)
+
+코드: `lib/gnb/assets.ts` · `components/layout/app-header.tsx` · `components/layout/bottom-tab-bar.tsx`
+
+### GNB
+| 파일 | 비고 |
+|---|---|
+| `icons/navigation/top/icon_gnb_*.svg` | Figma `15:39`~`15:45` |
+| `ui/frames/navigation/top/ui_frame_gnb_paper_rough_default.svg` | Figma `15:25` |
+
+### BNB (임시 재사용)
+스펙 파일명으로 `icons/navigation/bottom/icon_bnb_*.svg` 10개 배치.
+소스는 기존 `icon_nav_*` 복사. **홈은 전용 에셋이 없어 map 아이콘을 임시 사용** — 후속 PR에서 교체.
+
+적용 화면(1차): `/profile`, `/profile/edit`, `/support*`, `/notification`
+
+---
+
 ## hunt-reward-flow (`feature/hunt-reward-flow`) — 완료
 
 - `/map` · 보물 힌트 팝업 · `/ar-hunt` · `/hunt-result` · `/inventory` · 보상 상세 팝업

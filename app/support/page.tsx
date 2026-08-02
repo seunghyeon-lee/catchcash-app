@@ -4,7 +4,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { BottomNav } from "@/components/hunt/bottom-nav";
+import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { RoughMaskFrame } from "@/components/profile/rough-mask-frame";
 import { SupportStatusBadge } from "@/components/profile/support-status-badge";
 import { ProfileTopAppBar } from "@/components/profile/top-app-bar";
@@ -159,7 +159,7 @@ export default function SupportListPage() {
         </div>
       </section>
 
-      <BottomNav active="myinfo" />
+      <BottomTabBar />
     </>
   );
 }

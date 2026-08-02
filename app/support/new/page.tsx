@@ -4,7 +4,7 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
-import { BottomNav } from "@/components/hunt/bottom-nav";
+import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { RoughImageFrame } from "@/components/profile/rough-image-frame";
 import { RoughMaskFrame } from "@/components/profile/rough-mask-frame";
 import { Toast } from "@/components/profile/toast";
@@ -239,7 +239,7 @@ export default function SupportNewPage() {
       </section>
 
       {/* BNB 문서 5-1: `/support/new` 도 내정보 탭 active — 리스트·상세와 같은 탭바를 붙인다 */}
-      <BottomNav active="myinfo" />
+      <BottomTabBar />
     </>
   );
 }

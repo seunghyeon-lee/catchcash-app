@@ -4,7 +4,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { BottomNav } from "@/components/hunt/bottom-nav";
+import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { RoughMaskFrame } from "@/components/profile/rough-mask-frame";
 import { SupportStatusStamp } from "@/components/profile/support-status-stamp";
 import { ProfileTopAppBar } from "@/components/profile/top-app-bar";
@@ -99,7 +99,7 @@ export default function SupportDetailPage() {
           <ProfileTopAppBar backHref="/support" title="뭐라카노 답변" />
           <p className="px-5 pt-16 text-center text-base text-[#5d5f5f]">문의 내용을 불러오는 중이야.</p>
         </section>
-        <BottomNav active="myinfo" />
+        <BottomTabBar />
       </>
     );
   }
@@ -127,7 +127,7 @@ export default function SupportDetailPage() {
             </button>
           </div>
         </section>
-        <BottomNav active="myinfo" />
+        <BottomTabBar />
       </>
     );
   }
@@ -241,7 +241,7 @@ export default function SupportDetailPage() {
         </div>
       </section>
 
-      <BottomNav active="myinfo" />
+      <BottomTabBar />
     </>
   );
 }
