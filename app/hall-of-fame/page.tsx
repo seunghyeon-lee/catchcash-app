@@ -1,11 +1,11 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import Link from "next/link";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 
-import { BottomNav } from "@/components/hunt/bottom-nav";
+import { AppHeader } from "@/components/layout/app-header";
+import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { FAME_ASSETS } from "@/lib/fame/assets";
 import { getFameMyRecord, getFameRankingRows, getFameSummary, getFameTopHunter } from "@/lib/fame/mappers";
 import { FAME_FILTERS, type FameFilter } from "@/lib/fame/mock-data";
@@ -44,30 +44,7 @@ export default function HallOfFamePage() {
 
   return (
     <section className="min-h-screen bg-[#f7f5ef] pb-28 text-[#1a1c1c]">
-      <header className="sticky top-0 z-20 border-b-2 border-black bg-[#f7f5ef]">
-        <div className="mx-auto flex h-16 max-w-[480px] items-center px-5">
-          <Link
-            href="/home"
-            aria-label="뒤로가기"
-            className="flex h-10 w-14 items-center justify-start"
-          >
-            <span className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-black bg-white">
-              <img src={icons.backCircle} alt="" className="h-[17px] w-[17px]" />
-            </span>
-          </Link>
-
-          <div className="flex-1 text-center text-[20px] font-bold tracking-[0.3px]">CATCH CASH</div>
-
-          <div className="flex items-center gap-4">
-            <Link href="/notification" aria-label="알림">
-              <img src={icons.gnbNotification} alt="" className="h-5 w-4" />
-            </Link>
-            <Link href="/profile" aria-label="설정">
-              <img src={icons.gnbSetting} alt="" className="h-5 w-5" />
-            </Link>
-          </div>
-        </div>
-      </header>
+      <AppHeader variant="main-actions" />
 
       <div className="mx-auto flex max-w-[480px] flex-col px-[18px] pb-8 pt-8">
         <h1 className="text-[32px] font-medium leading-[1.2]">명예의 전당</h1>
@@ -176,7 +153,7 @@ export default function HallOfFamePage() {
         </section>
       </div>
 
-      <BottomNav active="rank" />
+      <BottomTabBar />
     </section>
   );
 }

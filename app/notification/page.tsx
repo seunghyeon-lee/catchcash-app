@@ -1,6 +1,7 @@
 "use client";
 
 import { AppHeader } from "@/components/layout/app-header";
+import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { NotificationFeed } from "@/components/notification/notification-feed";
 
 /**
@@ -9,9 +10,10 @@ import { NotificationFeed } from "@/components/notification/notification-feed";
  */
 export default function NotificationPage() {
   return (
-    <section className="min-h-screen bg-[#f7f5ef] pb-10">
+    <section className="min-h-screen bg-[#f7f5ef] pb-28">
       <AppHeader variant="back-actions" title="알림" backHref="/home" />
       <NotificationFeed />
+      <BottomTabBar />
     </section>
   );
 }

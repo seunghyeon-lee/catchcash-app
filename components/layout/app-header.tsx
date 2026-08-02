@@ -25,7 +25,7 @@ export type AppHeaderProps = {
  * - Type B `back-actions`: 뒤로가기 + 타이틀 + 알림/도움말/설정
  * - Type C `back-title`: 뒤로가기 + 타이틀
  *
- * 알림 → `/notification` (단수). Supabase 연결 없음.
+ * 알림 → `/notification` (단수). 아이콘은 박스 없는 글리프형.
  */
 export function AppHeader({
   variant = "main-actions",
@@ -66,9 +66,9 @@ export function AppHeader({
                 type="button"
                 aria-label="뒤로가기"
                 onClick={handleBack}
-                className="flex shrink-0 items-center justify-center transition-transform active:translate-x-0.5 active:translate-y-0.5"
+                className="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-black bg-transparent transition-transform active:translate-x-0.5 active:translate-y-0.5"
               >
-                <img src={icons.back} alt="" className="h-8 w-[45px]" />
+                <img src={icons.back} alt="" className="size-[18px]" />
               </button>
             ) : null}
             <h1 className="-rotate-[1.5deg] skew-x-[-1deg] truncate text-[20px] font-black lowercase leading-none tracking-[-0.04em] text-black">
@@ -77,27 +77,27 @@ export function AppHeader({
           </div>
 
           {showActions ? (
-            <div className="ml-3 flex shrink-0 items-center gap-2">
+            <div className="ml-3 flex shrink-0 items-center gap-4">
               <Link
                 href="/notification"
                 aria-label="알림"
-                className="flex items-center justify-center transition-transform active:translate-x-0.5 active:translate-y-0.5"
+                className="flex size-8 items-center justify-center transition-transform active:translate-x-0.5 active:translate-y-0.5"
               >
-                <img src={icons.notification} alt="" className="h-8 w-[45px]" />
+                <img src={icons.notification} alt="" className="h-5 w-4" />
               </Link>
               <Link
                 href="/guide"
                 aria-label="도움말"
-                className="flex items-center justify-center transition-transform active:translate-x-0.5 active:translate-y-0.5"
+                className="flex size-8 items-center justify-center transition-transform active:translate-x-0.5 active:translate-y-0.5"
               >
-                <img src={icons.help} alt="" className="h-8 w-[45px]" />
+                <img src={icons.help} alt="" className="size-5" />
               </Link>
               <Link
                 href="/profile/edit"
                 aria-label="설정"
-                className="flex items-center justify-center transition-transform active:translate-x-0.5 active:translate-y-0.5"
+                className="flex size-8 items-center justify-center transition-transform active:translate-x-0.5 active:translate-y-0.5"
               >
-                <img src={icons.setting} alt="" className="h-8 w-[45px]" />
+                <img src={icons.setting} alt="" className="size-5" />
               </Link>
             </div>
           ) : null}

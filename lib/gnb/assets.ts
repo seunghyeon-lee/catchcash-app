@@ -1,12 +1,17 @@
-/** 공통 상·하단 네비게이션 에셋 — GNB/BNB MD 스펙 파일명 */
+/** 공통 상·하단 네비게이션 에셋 — GNB/BNB MD 스펙 */
 const BASE = "/assets";
 
+/**
+ * GNB 아이콘 — 프레임(검정 박스) 없는 글리프형.
+ * Figma 프레임형(`navigation/top/icon_gnb_*_default`)은 박스+그림자라
+ * 팀장 피드백(검정 박스 제거)에 맞춰 rough_default_24 / nav back 을 사용한다.
+ */
 export const GNB_ASSETS = {
   icons: {
-    back: `${BASE}/icons/navigation/top/icon_gnb_back_rough.svg`,
-    notification: `${BASE}/icons/navigation/top/icon_gnb_notification_default.svg`,
-    help: `${BASE}/icons/navigation/top/icon_gnb_help_default.svg`,
-    setting: `${BASE}/icons/navigation/top/icon_gnb_setting_default.svg`,
+    back: `${BASE}/icons/nav/icon_nav_back_circle_rough_default_24.svg`,
+    notification: `${BASE}/icons/gnb/icon_gnb_notification_rough_default_24.svg`,
+    help: `${BASE}/icons/gnb/icon_gnb_help_rough_default_24.svg`,
+    setting: `${BASE}/icons/gnb/icon_gnb_setting_rough_default_24.svg`,
   },
   frames: {
     paper: `${BASE}/ui/frames/navigation/top/ui_frame_gnb_paper_rough_default.svg`,

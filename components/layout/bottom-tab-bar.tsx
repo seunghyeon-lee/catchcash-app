@@ -36,7 +36,7 @@ const TABS: BottomTabItem[] = [
     key: "hunt",
     label: "사냥하기",
     href: "/ar-hunt",
-    matchPaths: ["/ar-hunt"],
+    matchPaths: ["/ar-hunt", "/hunt-result"],
     activeIcon: BNB_ASSETS.hunt.active,
     defaultIcon: BNB_ASSETS.hunt.default,
   },
@@ -52,7 +52,7 @@ const TABS: BottomTabItem[] = [
     key: "profile",
     label: "내정보",
     href: "/profile",
-    matchPaths: ["/profile", "/support"],
+    matchPaths: ["/profile", "/support", "/inventory"],
     activeIcon: BNB_ASSETS.profile.active,
     defaultIcon: BNB_ASSETS.profile.default,
   },
@@ -64,10 +64,7 @@ function isTabActive(pathname: string, matchPaths: string[]) {
 
 /**
  * 공통 하단 BNB (5탭).
- * 스펙: `docs/frontend/common/00_Common_Bottom_Navigation_BNB.md`
- *
- * `components/hunt/bottom-nav.tsx` 와 이름을 구분하기 위해 `BottomTabBar` 로 둔다.
- * 이번 PR에서는 profile/support 계열에만 적용한다.
+ * guide / notification 은 특정 탭에 묶지 않아 active 가 없을 수 있다.
  */
 export function BottomTabBar() {
   const pathname = usePathname();
