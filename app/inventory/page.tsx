@@ -3,9 +3,9 @@
 /* eslint-disable @next/next/no-img-element */
 import { useState } from "react";
 
-import { BottomNav } from "@/components/hunt/bottom-nav";
+import { AppHeader } from "@/components/layout/app-header";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import { RewardDetailPopup } from "@/components/hunt/reward-detail-popup";
-import { TopAppBar } from "@/components/hunt/top-app-bar";
 import { HUNT_ASSETS } from "@/lib/hunt/assets";
 import { MOCK_REWARDS, type MockReward, type MockRewardDetail, type RewardStatus } from "@/lib/hunt/mock-data";
 import { getInventoryRewardDetail } from "@/lib/hunt/selectors";
@@ -142,7 +142,7 @@ export default function InventoryPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f7f5ef] pb-20">
-      <TopAppBar />
+      <AppHeader variant="back-actions" backHref="/profile" />
 
       <main className="flex-1 px-5 pb-10 pt-8">
         <div className="flex items-center gap-4">
@@ -198,7 +198,7 @@ export default function InventoryPage() {
         </div>
       </main>
 
-      <BottomNav active="myinfo" />
+      <BottomNav />
 
       {selected && (
         <RewardDetailPopup

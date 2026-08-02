@@ -4,7 +4,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { BottomNav } from "@/components/hunt/bottom-nav";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import { HUNT_ASSETS } from "@/lib/hunt/assets";
 
 const { icons, frames, images } = HUNT_ASSETS;
@@ -89,7 +89,7 @@ export default function ArHuntPage() {
         </span>
       </div>
 
-      <BottomNav active="hunt" />
+      <BottomNav />
     </div>
   );
 }

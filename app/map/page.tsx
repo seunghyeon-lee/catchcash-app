@@ -3,8 +3,8 @@
 /* eslint-disable @next/next/no-img-element */
 import { useState } from "react";
 
-import { BottomNav } from "@/components/hunt/bottom-nav";
-import { TopAppBar } from "@/components/hunt/top-app-bar";
+import { AppHeader } from "@/components/layout/app-header";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import { TreasureHintPopup } from "@/components/hunt/treasure-hint-popup";
 import { HUNT_ASSETS } from "@/lib/hunt/assets";
 import { MOCK_CLAIMED_TREASURE, MOCK_TREASURES, type MockTreasure } from "@/lib/hunt/mock-data";
@@ -15,11 +15,11 @@ export default function MapPage() {
   const [selected, setSelected] = useState<MockTreasure | null>(null);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f7f5ef]">
-      <TopAppBar />
+    <div className="flex min-h-screen flex-col bg-[#f7f5ef] pb-20">
+      <AppHeader variant="main-actions" />
 
       {/* Map Canvas - 실제 Naver Map 대신 placeholder (다음 단계에서 교체) */}
-      <section className="relative flex-1 overflow-hidden bg-[#e0e0e0] pb-20">
+      <section className="relative flex-1 overflow-hidden bg-[#e0e0e0]">
         <img
           src={images.mapMockBg}
           alt="임시 지도 배경"
@@ -87,7 +87,7 @@ export default function MapPage() {
         </div>
       </section>
 
-      <BottomNav active="map" />
+      <BottomNav />
 
       {selected && <TreasureHintPopup treasure={selected} onClose={() => setSelected(null)} />}
     </div>

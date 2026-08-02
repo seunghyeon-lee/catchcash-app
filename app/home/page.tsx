@@ -2,15 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { BottomTab } from "@/components/bottom-tab";
-import { TopBar } from "@/components/top-bar";
+import { AppHeader } from "@/components/layout/app-header";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import { icons, illust, ui } from "@/lib/assets";
 import { huntLogs, nearbyTreasures } from "@/lib/mock/home";
 
 export default function HomePage() {
   return (
     <div className="relative min-h-screen bg-paper pb-28">
-      <TopBar />
+      <AppHeader variant="main-actions" />
 
       <div className="px-5 pt-6">
         <section className="mb-8">
@@ -125,7 +125,7 @@ export default function HomePage() {
         </Link>
       </div>
 
-      <BottomTab />
+      <BottomNav />
     </div>
   );
 }

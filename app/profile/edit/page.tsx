@@ -4,7 +4,7 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
-import { BottomTab } from "@/components/bottom-tab";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import {
   CharacterArt,
   CharacterAvatar,
@@ -350,7 +350,7 @@ export default function ProfileEditPage() {
         </form>
       </section>
 
-      <BottomTab />
+      <BottomNav />
 
       {message ? <Toast message={message} /> : null}
     </>

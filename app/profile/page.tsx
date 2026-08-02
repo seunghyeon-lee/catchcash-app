@@ -4,12 +4,12 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { BottomTab } from "@/components/bottom-tab";
+import { AppHeader } from "@/components/layout/app-header";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import { CharacterAvatar, PROFILE_AVATAR_SIZE } from "@/components/profile/character-avatar";
 import { LogoutConfirmPopup } from "@/components/profile/logout-confirm-popup";
 import { RoughImageFrame } from "@/components/profile/rough-image-frame";
 import { Toast } from "@/components/profile/toast";
-import { ProfileTopAppBar } from "@/components/profile/top-app-bar";
 import { useToast } from "@/components/profile/use-toast";
 import { PROFILE_ASSETS } from "@/lib/profile/assets";
 import { findCharacter, findColor, MOCK_PROFILE, resolveIntro, type MockProfile } from "@/lib/profile/mock-data";
@@ -136,7 +136,8 @@ export default function ProfilePage() {
   return (
     <>
       <section className="min-h-screen bg-[#f7f5ef] pb-28">
-        <ProfileTopAppBar backHref="/home" />
+        {/* MD: /profile = Type A (뒤로가기 없음) */}
+        <AppHeader variant="main-actions" />
 
         <div className="px-5 pt-4">
           {isMockFallback ? (
@@ -189,7 +190,7 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      <BottomTab />
+      <BottomNav />
 
       {showLogout ? (
         <LogoutConfirmPopup onCancel={() => setShowLogout(false)} onConfirm={() => void handleLogout()} />
