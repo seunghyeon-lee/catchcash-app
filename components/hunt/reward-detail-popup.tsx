@@ -4,7 +4,7 @@
 import { useState } from "react";
 
 import { HUNT_ASSETS } from "@/lib/hunt/assets";
-import type { MockReward } from "@/lib/hunt/mock-data";
+import type { MockRewardDetail } from "@/lib/hunt/mock-data";
 
 const { icons, frames } = HUNT_ASSETS;
 
@@ -13,12 +13,13 @@ export function RewardDetailPopup({
   onClose,
   onMarkUsed,
 }: {
-  reward: MockReward;
+  reward: MockRewardDetail;
   onClose: () => void;
   onMarkUsed?: (rewardId: string) => void;
 }) {
   const [copied, setCopied] = useState(false);
-  const couponNumber = reward.couponNumber ?? "1234-5678-9012";
+  const couponNumber = reward.couponNumber ?? "-";
+  const barcodeValue = reward.barcodeValue ?? "-";
 
   const handleCopy = async () => {
     try {
@@ -65,7 +66,10 @@ export function RewardDetailPopup({
             <img src={frames.rewardDetailBarcode} alt="" className="absolute inset-0 size-full" />
             <div className="relative flex flex-col items-center px-8 py-10">
               <div className="flex h-[68px] w-full max-w-[204px] items-center justify-center bg-[#d9d9d9]">
-                <span className="text-base uppercase text-black">바코드 영역</span>
+                <div className="text-center text-black">
+                  <p className="text-base uppercase">바코드 영역</p>
+                  <p className="mt-1 text-[10px] tracking-[0.8px]">{barcodeValue}</p>
+                </div>
               </div>
               <div className="mt-6 flex w-full max-w-[240px] items-center justify-between gap-3">
                 <p className="text-sm font-medium tracking-[0.6px] text-[#1b1b1b]">{couponNumber}</p>

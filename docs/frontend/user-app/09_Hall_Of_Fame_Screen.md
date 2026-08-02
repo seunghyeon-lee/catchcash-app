@@ -27,12 +27,12 @@
 이 화면은 아래 정보를 제공한다.
 
 ```txt
-최고의 사냥꾼
-이번 주 발견된 갯수
-최근 발견된 상자
-나의 기록
-기간 필터
-헌터 랭킹 리스트
+최고의 사냥꾼 (상단 고정)
+이번 주 발견된 갯수 (상단 고정)
+최근 발견된 상자 (상단 고정)
+나의 기록 (상단 고정)
+기간 필터 (하단 랭킹에만 적용)
+헌터 랭킹 리스트 (필터 연동)
 하단 탭바
 ```
 
@@ -209,7 +209,7 @@ recent
 | 종류 | UI frame |
 | 형식 | SVG |
 | 사용 위치 | 기간 필터 영역 |
-| 사용 예시 | `전체` |
+| 사용 예시 | `전체`, `오늘`, `이번 주`, `이번 달`, `이번 년도` |
 | 내부 텍스트 | 코드 텍스트 |
 | 설명 | 선택된 필터 버튼 프레임 |
 
@@ -223,9 +223,29 @@ recent
 | 종류 | UI frame |
 | 형식 | SVG |
 | 사용 위치 | 기간 필터 영역 |
-| 사용 예시 | `오늘`, `이번 주`, `이번 달` |
+| 사용 예시 | `오늘`, `이번 주`, `이번 달`, `이번 년도` |
 | 내부 텍스트 | 코드 텍스트 |
 | 설명 | 선택되지 않은 필터 버튼 프레임 |
+
+기간 필터 항목은 아래 5개만 사용한다.
+
+```txt
+전체
+오늘
+이번 주
+이번 달
+이번 년도
+```
+
+### 데이터 영역 분리 규칙
+
+| 영역 | 필터 영향 | 설명 |
+|---|---|---|
+| 오늘 최고의 사냥꾼 | 없음 (고정) | 기간 필터와 무관 |
+| 이번 주 발견된 갯수 | 없음 (고정) | 기간 필터와 무관 |
+| 최근 발견된 상자 | 없음 (고정) | 기간 필터와 무관 |
+| my record | 없음 (고정) | 기간 필터와 무관 |
+| hunter rankings | 있음 | `activeFilter`로만 갱신 |
 
 ---
 
@@ -368,7 +388,7 @@ export const FAME_ASSETS = {
 ## 9. 화면 데이터 구조
 
 ```ts
-export type FameFilter = 'all' | 'today' | 'week' | 'month';
+export type FameFilter = 'all' | 'today' | 'week' | 'month' | 'year';
 
 export interface FameTopHunter {
   nickname: string;
@@ -401,6 +421,10 @@ export interface FameRankingUser {
 }
 ```
 
+상단 고정 데이터(`FameTopHunter`, `FameSummary`, `FameMyRecord`)와
+하단 필터 연동 데이터(`FameRankingUser[]`)는 분리해서 관리한다.
+`activeFilter` state는 `hunter rankings` 리스트에만 사용한다.
+
 ---
 
 ## 10. QA 체크리스트
@@ -412,3 +436,6 @@ export interface FameRankingUser {
 - [ ] 캐릭터 fallback은 `img_fame_avatar_fallback_rough_default.svg` 하나만 사용한다.
 - [ ] 필터 버튼은 활성/비활성 프레임을 나눠 사용한다.
 - [ ] 모든 텍스트는 이미지에 포함하지 않는다.
+- [ ] 기간 필터는 `전체 / 오늘 / 이번 주 / 이번 달 / 이번 년도` 5개다.
+- [ ] 필터 변경 시 상단 4개 영역(최고 사냥꾼 / 주간 발견 / 최근 상자 / my record)은 고정이다.
+- [ ] 필터 변경 시 하단 `hunter rankings`만 변경된다.

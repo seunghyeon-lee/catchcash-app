@@ -34,10 +34,11 @@ function SectionCard({
 }
 
 export default function HallOfFamePage() {
+  // 기간 필터는 hunter rankings 리스트에만 적용. 상단 4개 영역은 고정.
   const [activeFilter, setActiveFilter] = useState<FameFilter>("all");
 
-  const topHunter = useMemo(() => getFameTopHunter(activeFilter), [activeFilter]);
-  const summary = useMemo(() => getFameSummary(activeFilter), [activeFilter]);
+  const topHunter = useMemo(() => getFameTopHunter(), []);
+  const summary = useMemo(() => getFameSummary(), []);
   const myRecord = useMemo(() => getFameMyRecord(), []);
   const rankingRows = useMemo(() => getFameRankingRows(activeFilter), [activeFilter]);
 

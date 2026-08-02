@@ -11,8 +11,8 @@ const agreements: Array<{
   required: boolean;
 }> = [
   { id: "terms", label: "이용약관 동의", required: true },
-  { id: "privacy", label: "개인정보 수집 동의", required: true },
-  { id: "marketing", label: "마케팅 수신 동의", required: false },
+  { id: "privacy", label: "개인정보 수집 및 이용 동의", required: true },
+  { id: "marketing", label: "새로운 사냥 알림 받기", required: false },
 ];
 
 export default function NicknamePage() {
@@ -25,7 +25,7 @@ export default function NicknamePage() {
   });
 
   const canComplete = useMemo(
-    () => nickname.trim().length > 0 && checked.terms && checked.privacy,
+    () => nickname.trim().length >= 2 && checked.terms && checked.privacy,
     [checked.privacy, checked.terms, nickname],
   );
 
@@ -38,85 +38,104 @@ export default function NicknamePage() {
   };
 
   return (
-    <section className="relative min-h-[100dvh] overflow-hidden bg-[#F7F5EF] px-7 pb-8 pt-8 text-[#171717]">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-30">
-        <span className="absolute left-[9%] top-[22%] text-xl">✦</span>
-        <span className="absolute right-[10%] top-[13%] h-3 w-3 rotate-45 border-2 border-[#171717]" />
-        <span className="absolute bottom-[18%] left-[12%] h-2 w-2 rounded-full border-2 border-[#171717]" />
-        <span className="absolute bottom-[9%] right-[16%] h-2 w-2 rounded-full bg-[#171717]" />
-      </div>
-
+    <section className="relative min-h-[100dvh] overflow-hidden bg-[#F7F5EF] text-black">
       <button
         type="button"
         onClick={() => router.push("/login")}
-        className="relative flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#171717] text-xl font-black transition-transform active:translate-x-0.5 active:translate-y-0.5"
+        className="absolute left-4 top-8 z-10 h-10 w-10 bg-contain bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/assets/images/nickname/icon_nickname_back_rough.svg')" }}
         aria-label="로그인 화면으로 돌아가기"
-      >
-        ←
-      </button>
+      />
 
-      <form onSubmit={handleSubmit} className="relative mx-auto flex min-h-[calc(100dvh-72px)] max-w-[360px] flex-col pt-9">
-        <div>
-          <div aria-hidden="true" className="mb-6 flex items-center gap-2">
-            <span className="h-9 w-9 -rotate-6 rounded-[0.7rem] border-[3px] border-[#171717]" />
-            <span className="h-5 w-5 rotate-12 rounded-full border-[3px] border-[#171717]" />
-            <span className="h-2 w-8 -rotate-6 rounded-full bg-[#171717]" />
-          </div>
-          <h1 className="text-[2rem] font-black tracking-[-0.08em]">널 뭐라 부르냐?</h1>
-          <p className="mt-3 text-sm font-medium text-[#171717]/65">별명 하나는 있어야지.</p>
+      <form onSubmit={handleSubmit} className="relative mx-auto flex min-h-[100dvh] max-w-[390px] flex-col px-4 pb-8 pt-[104px]">
+        <div className="w-full">
+          <h1 className="relative inline-block text-2xl font-medium leading-[38.4px] text-black">
+            널 뭐라 부르냐?
+            <span aria-hidden="true" className="absolute -bottom-1.5 left-0 h-1 w-full bg-black" />
+          </h1>
+          <p className="mt-3 text-[15px] font-medium leading-[25.6px] text-[#777777]">별명 하나는 있어야지.</p>
         </div>
 
-        <div className="mt-10">
-          <label htmlFor="nickname" className="text-sm font-bold">
-            닉네임
+        <div className="mt-[47px]">
+          <label htmlFor="nickname" className="text-[15px] font-medium uppercase leading-[19.6px] tracking-[0.7px]">
+            별명
           </label>
-          <div className="mt-3 rounded-2xl border-2 border-[#171717] bg-[#F7F5EF] p-1 shadow-[4px_4px_0_#171717]">
+          <div
+            className="relative mt-3 h-[75px] bg-center bg-no-repeat"
+            style={{
+              backgroundImage: "url('/assets/images/nickname/img_nickname_input_frame.svg')",
+              backgroundSize: "100% 75px",
+            }}
+          >
             <input
               id="nickname"
               name="nickname"
               value={nickname}
               onChange={(event) => setNickname(event.target.value)}
-              placeholder="예: 보물사냥꾼"
-              maxLength={20}
-              className="h-12 w-full rounded-xl bg-transparent px-4 text-base font-bold outline-none placeholder:text-[#171717]/35"
+              minLength={2}
+              maxLength={12}
+              className="absolute inset-x-[8px] top-[4px] h-[62px] w-[calc(100%-16px)] bg-transparent px-4 text-[18px] font-medium outline-none placeholder:text-black/30"
               autoComplete="nickname"
             />
           </div>
-          <p className="mt-3 text-xs font-medium text-[#171717]/50">나중에 프로필에서 바꿀 수 있어.</p>
+          <p className="mt-4 text-[15px] font-medium leading-[16.8px] tracking-[0.6px] text-[#777777]">
+            2~12자. 이상한 건 알아서 걸러낸다.
+          </p>
         </div>
 
-        <fieldset className="mt-9 border-0 p-0">
-          <legend className="text-sm font-bold">약속부터 확인하자</legend>
-          <div className="mt-3 space-y-2.5">
+        <fieldset className="mt-[50px] border-0 p-0">
+          <legend className="text-[15px] font-medium uppercase leading-[16.8px] tracking-[1.2px]">
+            CATCHCASH RULES
+          </legend>
+          <div className="mt-4 space-y-4">
             {agreements.map((agreement) => (
               <label
                 key={agreement.id}
-                className="flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border-2 border-[#171717] bg-[#F7F5EF] px-4"
+                className="flex h-[42px] cursor-pointer items-center justify-between rounded text-black"
               >
-                <input
-                  type="checkbox"
-                  checked={checked[agreement.id]}
-                  onChange={(event) =>
-                    setChecked((current) => ({ ...current, [agreement.id]: event.target.checked }))
-                  }
-                  className="h-5 w-5 accent-[#171717]"
-                />
-                <span className="text-sm font-bold">{agreement.label}</span>
-                <span className="ml-auto text-xs font-bold text-[#171717]/50">
-                  {agreement.required ? "필수" : "선택"}
+                <span className="flex items-center gap-4">
+                  <input
+                    type="checkbox"
+                    checked={checked[agreement.id]}
+                    onChange={(event) =>
+                      setChecked((current) => ({ ...current, [agreement.id]: event.target.checked }))
+                    }
+                    className="peer sr-only"
+                  />
+                  <span className="h-5 w-5 shrink-0 border-2 border-black bg-transparent peer-checked:bg-black" />
+                  <span className="text-[15px] font-medium leading-[25.6px]">
+                    [{agreement.required ? "필수" : "선택"}] {agreement.label}
+                  </span>
                 </span>
+                <span aria-hidden="true" className="mr-1 h-[13px] w-[13px] rotate-45 border-r-[3px] border-t-[3px] border-black" />
               </label>
             ))}
           </div>
         </fieldset>
 
-        <button
-          type="submit"
-          disabled={!canComplete}
-          className="mt-auto h-14 w-full rounded-2xl border-2 border-[#171717] bg-[#171717] text-base font-black text-[#F7F5EF] shadow-[4px_4px_0_#171717] transition-transform active:translate-x-0.5 active:translate-y-0.5 disabled:cursor-not-allowed disabled:border-[#171717]/20 disabled:bg-[#171717]/15 disabled:text-[#171717]/35 disabled:shadow-none"
-        >
-          준비 완료!
-        </button>
+        <div className="mt-auto pt-8">
+          <button
+            type="submit"
+            disabled={!canComplete}
+            className="relative flex h-[69px] w-full items-center justify-center bg-center bg-no-repeat text-[15px] font-medium leading-[31.2px] text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-25"
+            style={{
+              backgroundImage: "url('/assets/images/nickname/img_nickname_button_frame.svg')",
+              backgroundSize: "100% 69px",
+            }}
+          >
+            <span>사냥 합류하기</span>
+            <span aria-hidden="true" className="absolute right-[76px] text-[34px] leading-none">
+              →
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push("/login")}
+            className="mx-auto mt-7 block text-[15px] font-medium leading-[19.6px] tracking-[0.7px] text-[#777777] underline decoration-wavy underline-offset-2"
+          >
+            관둬
+          </button>
+        </div>
       </form>
     </section>
   );

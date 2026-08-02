@@ -4,9 +4,29 @@ import Link from "next/link";
 import { BottomNav } from "@/components/hunt/bottom-nav";
 import { TopAppBar } from "@/components/hunt/top-app-bar";
 import { HUNT_ASSETS } from "@/lib/hunt/assets";
-import { MOCK_HUNT_RESULT } from "@/lib/hunt/mock-data";
+import { getHuntResultByQuery } from "@/lib/hunt/selectors";
 
 const { icons, frames, images } = HUNT_ASSETS;
+
+type SuccessResultData = {
+  badge: string;
+  titleLines: readonly string[];
+  subtitle: string;
+  rewardName: string;
+  rewardBrand: string;
+  noticeLines: readonly string[];
+  huntLog: readonly string[];
+  quote: string;
+};
+
+type FailResultData = {
+  badge: string;
+  titleLines: readonly string[];
+  subtitle: string;
+  emptyLines: readonly string[];
+  supportLinkLabel: string;
+  huntLog: readonly string[];
+};
 
 function HuntLogCard({ items, lastLabelRed }: { items: readonly string[]; lastLabelRed: boolean }) {
   return (
@@ -31,8 +51,7 @@ function HuntLogCard({ items, lastLabelRed }: { items: readonly string[]; lastLa
   );
 }
 
-function SuccessResult() {
-  const data = MOCK_HUNT_RESULT.success;
+function SuccessResult({ data }: { data: SuccessResultData }) {
   return (
     <main className="flex flex-col items-center px-5 pb-10 pt-8">
       <div className="-rotate-[1.5deg] rounded-full border-2 border-black bg-[#f7f5ef] px-[18px] py-2 shadow-[2px_2px_0px_black]">
@@ -95,8 +114,7 @@ function SuccessResult() {
   );
 }
 
-function FailResult() {
-  const data = MOCK_HUNT_RESULT.fail;
+function FailResult({ data }: { data: FailResultData }) {
   return (
     <main className="flex flex-col items-center px-5 pb-10 pt-5">
       <img src={icons.resultFailBadge} alt={data.badge} className="h-[29px] w-[53px] -rotate-[1.5deg]" />
@@ -149,11 +167,14 @@ function FailResult() {
 
 export default function HuntResultPage({ searchParams }: { searchParams?: { result?: string } }) {
   const isFail = searchParams?.result === "fail";
+  const resultData = getHuntResultByQuery(searchParams?.result);
+  const successData = resultData.success as SuccessResultData;
+  const failData = resultData.fail as FailResultData;
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f7f5ef] pb-20">
       <TopAppBar />
-      {isFail ? <FailResult /> : <SuccessResult />}
+      {isFail ? <FailResult data={failData} /> : <SuccessResult data={successData} />}
       <BottomNav active="hunt" />
     </div>
   );

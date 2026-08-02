@@ -5,8 +5,17 @@ export type MockHallOfFame = {
   rank: number;
 };
 
-export type FameFilter = "all" | "today" | "week" | "month" | "nearby";
+/** 기간 필터. hunter rankings 리스트에만 적용한다. */
+export type FameFilter = "all" | "today" | "week" | "month" | "year";
 
+/**
+ * 상단 고정 영역 스냅샷.
+ * 기간 필터와 무관하게 항상 동일한 값을 쓴다.
+ * - 오늘 최고의 사냥꾼
+ * - 이번 주 발견된 갯수
+ * - 최근 발견된 상자
+ * - my record 의 recent 문구
+ */
 export type FameSummarySnapshot = {
   topHunter: {
     nickname: string;
@@ -32,9 +41,10 @@ export const FAME_FILTERS: FameFilterMeta[] = [
   { key: "today", label: "오늘", rotateClass: "rotate-[0.1deg]" },
   { key: "week", label: "이번 주", rotateClass: "-rotate-[0.4deg]" },
   { key: "month", label: "이번 달", rotateClass: "rotate-[0.6deg]" },
-  { key: "nearby", label: "내 주변", rotateClass: "rotate-[0.5deg]" },
+  { key: "year", label: "이번 년도", rotateClass: "rotate-[0.5deg]" },
 ];
 
+/** 하단 hunter rankings 전용. 필터별로 다른 리스트. */
 export const MOCK_HALL_OF_FAME: Record<FameFilter, MockHallOfFame[]> = {
   all: [
     { nickname: "진짜헌터", avatar_key: "tracker", find_count: 82, rank: 1 },
@@ -75,60 +85,27 @@ export const MOCK_HALL_OF_FAME: Record<FameFilter, MockHallOfFame[]> = {
     { nickname: "지도부수기", avatar_key: "guide", find_count: 49, rank: 7 },
     { nickname: "탐색왕김돌", avatar_key: "newbie", find_count: 44, rank: 8 },
   ],
-  nearby: [
-    { nickname: "보물지도주인", avatar_key: "wanderer", find_count: 15, rank: 1 },
-    { nickname: "루피너스", avatar_key: "hunter", find_count: 13, rank: 2 },
-    { nickname: "한강추적자", avatar_key: "explorer", find_count: 11, rank: 3 },
-    { nickname: "master", avatar_key: "hunter", find_count: 10, rank: 4 },
-    { nickname: "진짜헌터", avatar_key: "tracker", find_count: 9, rank: 5 },
-    { nickname: "모험파인", avatar_key: null, find_count: 8, rank: 6 },
+  year: [
+    { nickname: "진짜헌터", avatar_key: "tracker", find_count: 210, rank: 1 },
+    { nickname: "보물지도주인", avatar_key: "wanderer", find_count: 198, rank: 2 },
+    { nickname: "루피너스", avatar_key: "hunter", find_count: 176, rank: 3 },
+    { nickname: "master", avatar_key: "hunter", find_count: 165, rank: 4 },
+    { nickname: "반짝고등어", avatar_key: "cat", find_count: 142, rank: 5 },
+    { nickname: "한강추적자", avatar_key: "explorer", find_count: 131, rank: 6 },
+    { nickname: "지도부수기", avatar_key: "guide", find_count: 118, rank: 7 },
+    { nickname: "탐색왕김돌", avatar_key: "newbie", find_count: 104, rank: 8 },
+    { nickname: "노랑상자", avatar_key: "tracker", find_count: 96, rank: 9 },
+    { nickname: "모험파인", avatar_key: null, find_count: 88, rank: 10 },
   ],
 };
 
-export const FAME_SUMMARY_BY_FILTER: Record<FameFilter, FameSummarySnapshot> = {
-  all: {
-    topHunter: { nickname: "master", subtitle: "오늘 최고의 사냥꾼", findCount: 12 },
-    weeklyFindCount: 42,
-    recentTreasureName: "황금 상자",
-    recentTreasureLocation: "종로구",
-    recentTreasureTimeLabel: "3분 전",
-    myRecentTreasureName: "보물상자 명칭",
-    myRecentFoundAtLabel: "2일 전",
-  },
-  today: {
-    topHunter: { nickname: "master", subtitle: "오늘 최고의 사냥꾼", findCount: 12 },
-    weeklyFindCount: 12,
-    recentTreasureName: "광화문 상자",
-    recentTreasureLocation: "종로구",
-    recentTreasureTimeLabel: "방금 전",
-    myRecentTreasureName: "광화문 상자",
-    myRecentFoundAtLabel: "오늘",
-  },
-  week: {
-    topHunter: { nickname: "master", subtitle: "이번 주 최고의 사냥꾼", findCount: 42 },
-    weeklyFindCount: 42,
-    recentTreasureName: "한강 상자",
-    recentTreasureLocation: "동작구",
-    recentTreasureTimeLabel: "3분 전",
-    myRecentTreasureName: "보물상자 명칭",
-    myRecentFoundAtLabel: "2일 전",
-  },
-  month: {
-    topHunter: { nickname: "진짜헌터", subtitle: "이번 달 최고의 사냥꾼", findCount: 82 },
-    weeklyFindCount: 138,
-    recentTreasureName: "성수 상자",
-    recentTreasureLocation: "성동구",
-    recentTreasureTimeLabel: "1시간 전",
-    myRecentTreasureName: "성수 상자",
-    myRecentFoundAtLabel: "5일 전",
-  },
-  nearby: {
-    topHunter: { nickname: "보물지도주인", subtitle: "내 주변에서 잘 건지는 헌터", findCount: 15 },
-    weeklyFindCount: 9,
-    recentTreasureName: "골목 상자",
-    recentTreasureLocation: "동작구",
-    recentTreasureTimeLabel: "12분 전",
-    myRecentTreasureName: "한강 산책로 상자",
-    myRecentFoundAtLabel: "어제",
-  },
+/** 상단 고정 영역 전용. 필터 키와 무관. */
+export const FAME_FIXED_SUMMARY: FameSummarySnapshot = {
+  topHunter: { nickname: "master", subtitle: "오늘 최고의 사냥꾼", findCount: 12 },
+  weeklyFindCount: 42,
+  recentTreasureName: "황금 상자",
+  recentTreasureLocation: "종로구",
+  recentTreasureTimeLabel: "3분 전",
+  myRecentTreasureName: "보물상자 명칭",
+  myRecentFoundAtLabel: "2일 전",
 };
