@@ -2,15 +2,18 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { BottomTab } from "@/components/bottom-tab";
 import { CharacterAvatar, PROFILE_AVATAR_SIZE } from "@/components/profile/character-avatar";
 import { LogoutConfirmPopup } from "@/components/profile/logout-confirm-popup";
 import { RoughImageFrame } from "@/components/profile/rough-image-frame";
+import { Toast } from "@/components/profile/toast";
 import { ProfileTopAppBar } from "@/components/profile/top-app-bar";
+import { useToast } from "@/components/profile/use-toast";
 import { PROFILE_ASSETS } from "@/lib/profile/assets";
-import { findCharacter, findColor, MOCK_PROFILE, resolveIntro } from "@/lib/profile/mock-data";
+import { findCharacter, findColor, MOCK_PROFILE, resolveIntro, type MockProfile } from "@/lib/profile/mock-data";
+import { getProfile, signOutProfile } from "@/lib/profile/profile-service";
 
 const { icons, frames } = PROFILE_ASSETS;
 
@@ -80,17 +83,53 @@ function MenuRow({
 
 export default function ProfilePage() {
   const router = useRouter();
+  // 로그아웃 실패 안내용. GNB 아이콘이 배선된 뒤로는 이 토스트만 남았다.
+  const { message, show } = useToast();
   const [showLogout, setShowLogout] = useState(false);
+  const [profile, setProfile] = useState<MockProfile>(MOCK_PROFILE);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isMockFallback, setIsMockFallback] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const { nickname, intro, characterKey, colorKey, stats } = MOCK_PROFILE;
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadProfile = async () => {
+      const result = await getProfile();
+      if (!isMounted) return;
+
+      setProfile(result.profile);
+      setIsMockFallback(result.source === "mock");
+      setLoadError(result.errorMessage ?? null);
+      setIsLoading(false);
+    };
+
+    void loadProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const { nickname, intro, characterKey, colorKey, stats } = profile;
   const character = findCharacter(characterKey);
   const color = findColor(colorKey);
   // 사용자가 쓴 한 줄 소개 우선, 비었으면 캐릭터 기본 문구 — 수정 화면 미리보기와 같은 규칙.
   const introText = resolveIntro(intro, character);
 
-  const handleLogout = () => {
-    // Mock: 실제 세션 정리 없이 로그인 화면으로 이동
-    console.log("[CatchCash] mock logout");
+  const handleLogout = async () => {
+    // TODO(auth): Auth 연결 후에는 signOut 성공 시에만 /login 으로 보낸다.
+    const result = await signOutProfile();
+
+    if (!result.ok) {
+      show(result.errorMessage ?? "로그아웃에 실패했어.");
+      return;
+    }
+
+    if (result.source === "mock") {
+      console.log("[CatchCash] mock logout");
+    }
+
     router.push("/login");
   };
 
@@ -100,6 +139,12 @@ export default function ProfilePage() {
         <ProfileTopAppBar backHref="/home" />
 
         <div className="px-5 pt-4">
+          {isMockFallback ? (
+            <p className="mb-3 text-xs leading-5 text-[#5d5f5f]">로그인 연결 전이라 예시 프로필을 보여주고 있어.</p>
+          ) : null}
+          {loadError ? <p className="mb-3 text-sm leading-5 text-[#b42318]">{loadError}</p> : null}
+          {isLoading ? <p className="mb-3 text-sm leading-5 text-[#5d5f5f]">프로필을 불러오는 중이야.</p> : null}
+
           {/* 프로필 메인 카드 */}
           <RoughImageFrame src={frames.profileMainCard} className="w-full">
             <div className="flex flex-col items-center px-6 pb-7 pt-9">
@@ -147,8 +192,9 @@ export default function ProfilePage() {
       <BottomTab />
 
       {showLogout ? (
-        <LogoutConfirmPopup onCancel={() => setShowLogout(false)} onConfirm={handleLogout} />
+        <LogoutConfirmPopup onCancel={() => setShowLogout(false)} onConfirm={() => void handleLogout()} />
       ) : null}
+      {message ? <Toast message={message} /> : null}
     </>
   );
 }

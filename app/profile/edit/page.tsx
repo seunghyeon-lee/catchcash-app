@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 import { BottomTab } from "@/components/bottom-tab";
 import {
@@ -29,6 +29,7 @@ import {
   validateNickname,
   type ProfileCharacter,
 } from "@/lib/profile/mock-data";
+import { getProfile, updateProfile } from "@/lib/profile/profile-service";
 
 const { icons, frames, images } = PROFILE_ASSETS;
 
@@ -116,6 +117,34 @@ export default function ProfileEditPage() {
   const [characterKey, setCharacterKey] = useState<string>(MOCK_PROFILE.characterKey);
   const [colorKey, setColorKey] = useState<string>(MOCK_PROFILE.colorKey);
   const [saving, setSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isMockFallback, setIsMockFallback] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadProfile = async () => {
+      const result = await getProfile();
+      if (!isMounted) return;
+
+      setNickname(result.profile.nickname);
+      setIntro(result.profile.intro);
+      setCharacterKey(result.profile.characterKey);
+      setColorKey(result.profile.colorKey);
+      setIsMockFallback(result.source === "mock");
+      setIsLoading(false);
+
+      if (result.errorMessage) {
+        show(result.errorMessage);
+      }
+    };
+
+    void loadProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [show]);
 
   // 데스크톱에서 마우스 휠로 캐릭터/색상 스트립을 넘길 수 있게 한다.
   const characterStripRef = useHorizontalWheel<HTMLDivElement>();
@@ -126,7 +155,7 @@ export default function ProfileEditPage() {
   const nicknameError = validateNickname(nickname);
   // 비어 있는 상태부터 빨갛게 띄우지는 않는다.
   const showNicknameError = trimmedNickname.length > 0 && nicknameError !== null;
-  const canSave = nicknameError === null && !saving;
+  const canSave = nicknameError === null && !saving && !isLoading;
 
   // 미리보기는 선택한 캐릭터의 아이콘 + 선택한 색상을 그대로 반영한다.
   const selectedCharacter = findCharacter(characterKey);
@@ -134,19 +163,37 @@ export default function ProfileEditPage() {
   // 한 줄 소개를 비워 두면 캐릭터 기본 문구가 보인다.
   const previewIntro = resolveIntro(intro, selectedCharacter);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!canSave) return;
     setSaving(true);
-    // Mock: 실제 저장 없이 UI 상태만 처리 (다음 단계에서 Supabase update로 교체)
-    // intro 는 비면 빈 문자열로 보낸다 — DB `profiles.intro_text` 는 nullable 이라 그대로 매핑된다.
-    console.log("[CatchCash] mock profile save", {
+
+    // intro 는 비면 빈 문자열로 보낸다 — DB `profiles.intro_text` 는 nullable 이라 service에서 null로 매핑한다.
+    const result = await updateProfile({
       nickname: trimmedNickname,
       intro: trimmedIntro,
       characterKey,
       colorKey,
     });
-    show("저장했다");
+
+    if (!result.ok) {
+      setSaving(false);
+      show(result.errorMessage ?? "저장에 실패했어.");
+      return;
+    }
+
+    if (result.source === "mock") {
+      console.log("[CatchCash] mock profile save", {
+        nickname: trimmedNickname,
+        intro: trimmedIntro,
+        characterKey,
+        colorKey,
+      });
+      show("로그인 연결 전이라 예시 저장으로 처리했어.");
+    } else {
+      show("저장했다");
+    }
+
     window.setTimeout(() => router.push("/profile"), 900);
   };
 
@@ -158,7 +205,12 @@ export default function ProfileEditPage() {
       >
         <ProfileTopAppBar backHref="/profile" />
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-8 px-5 pt-6">
+        <form onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-8 px-5 pt-6">
+          {isMockFallback ? (
+            <p className="-mb-4 text-xs leading-5 text-[#5d5f5f]">로그인 연결 전이라 예시 프로필을 수정 중이야.</p>
+          ) : null}
+          {isLoading ? <p className="-mb-4 text-sm leading-5 text-[#5d5f5f]">프로필을 불러오는 중이야.</p> : null}
+
           {/* 미리보기 카드 */}
           <RoughImageFrame src={frames.editPreviewCard} className="w-full">
             <div className="flex flex-col items-center px-6 pb-9 pt-5">
