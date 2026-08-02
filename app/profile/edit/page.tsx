@@ -203,7 +203,7 @@ export default function ProfileEditPage() {
         className="min-h-screen bg-[#f7f5ef] pb-28"
         style={{ backgroundImage: `url("${images.editBgPattern}")`, backgroundSize: "8px 8px" }}
       >
-        <ProfileTopAppBar backHref="/profile" onGnbClick={() => show("곧 만들어 준다")} />
+        <ProfileTopAppBar backHref="/profile" />
 
         <form onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-8 px-5 pt-6">
           {isMockFallback ? (

@@ -2,19 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 import { BottomTab } from "@/components/bottom-tab";
-import { NotificationInbox } from "@/components/notification/inbox";
 import { TopBar } from "@/components/top-bar";
 import { icons, illust, ui } from "@/lib/assets";
 import { huntLogs, nearbyTreasures } from "@/lib/mock/home";
 
 export default function HomePage() {
-  const [inboxOpen, setInboxOpen] = useState(false);
-
   return (
     <div className="relative min-h-screen bg-paper pb-28">
-      <TopBar onNotificationClick={() => setInboxOpen(true)} />
+      <TopBar />
 
       <div className="px-5 pt-6">
         <section className="mb-8">
@@ -130,7 +126,6 @@ export default function HomePage() {
       </div>
 
       <BottomTab />
-      <NotificationInbox open={inboxOpen} onClose={() => setInboxOpen(false)} />
     </div>
   );
 }

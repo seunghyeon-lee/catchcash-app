@@ -132,6 +132,8 @@ export default function SupportDetailPage() {
     );
   }
 
+  const hasAnswer = Boolean(inquiry.answer);
+
   return (
     <>
       {/*
@@ -182,19 +184,38 @@ export default function SupportDetailPage() {
               <p className="whitespace-pre-wrap text-lg leading-[22.5px] text-black">{inquiry.question}</p>
             </RoughMaskFrame>
 
-            {/* 관리자 답변 카드 */}
+            {/*
+              관리자 답변 카드.
+              답변이 실제로 도착한 카드만 시안대로 8px 하드 섀도로 무겁게 세운다.
+              아직 `읽는 중`이면 같은 무게로 세울 내용이 없어(대기 문구 한 줄) 섀도를 빼고
+              라벨/본문을 흐리게 내려, 위 문의 카드가 화면의 주인공으로 남게 한다.
+            */}
             <RoughMaskFrame
               src={masks.supportAdminReplyCard}
-              dropShadow="8px 8px 0 #000"
-              className="flex flex-col gap-[23.25px] border-[3px] border-black bg-white p-[27px]"
+              dropShadow={hasAnswer ? "8px 8px 0 #000" : undefined}
+              className={`flex flex-col gap-[23.25px] border-[3px] border-black p-[27px] ${
+                hasAnswer ? "bg-white" : "bg-white/70"
+              }`}
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="bg-black px-2 py-0.5 text-sm uppercase leading-[19.6px] tracking-[0.7px] text-white">
+                <span
+                  className={`px-2 py-0.5 text-sm uppercase leading-[19.6px] tracking-[0.7px] ${
+                    hasAnswer ? "bg-black text-white" : "bg-[#e8e8e8] text-[#5d5f5f]"
+                  }`}
+                >
                   관리자의 대답
                 </span>
-                <img src={icons.supportAdminHeadset} alt="" className="h-[18px] w-5 shrink-0" />
+                <img
+                  src={icons.supportAdminHeadset}
+                  alt=""
+                  className={`h-[18px] w-5 shrink-0 ${hasAnswer ? "" : "opacity-50"}`}
+                />
               </div>
-              <p className="whitespace-pre-wrap text-lg leading-[22.5px] text-black">
+              <p
+                className={`whitespace-pre-wrap text-lg leading-[22.5px] ${
+                  hasAnswer ? "text-black" : "text-[#5d5f5f]"
+                }`}
+              >
                 {inquiry.answer ?? SUPPORT_ANSWER_WAITING}
               </p>
             </RoughMaskFrame>

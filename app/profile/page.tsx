@@ -83,6 +83,7 @@ function MenuRow({
 
 export default function ProfilePage() {
   const router = useRouter();
+  // 로그아웃 실패 안내용. GNB 아이콘이 배선된 뒤로는 이 토스트만 남았다.
   const { message, show } = useToast();
   const [showLogout, setShowLogout] = useState(false);
   const [profile, setProfile] = useState<MockProfile>(MOCK_PROFILE);
@@ -116,8 +117,6 @@ export default function ProfilePage() {
   // 사용자가 쓴 한 줄 소개 우선, 비었으면 캐릭터 기본 문구 — 수정 화면 미리보기와 같은 규칙.
   const introText = resolveIntro(intro, character);
 
-  const comingSoon = () => show("곧 만들어 준다");
-
   const handleLogout = async () => {
     // TODO(auth): Auth 연결 후에는 signOut 성공 시에만 /login 으로 보낸다.
     const result = await signOutProfile();
@@ -137,7 +136,7 @@ export default function ProfilePage() {
   return (
     <>
       <section className="min-h-screen bg-[#f7f5ef] pb-28">
-        <ProfileTopAppBar backHref="/home" onGnbClick={comingSoon} />
+        <ProfileTopAppBar backHref="/home" />
 
         <div className="px-5 pt-4">
           {isMockFallback ? (
