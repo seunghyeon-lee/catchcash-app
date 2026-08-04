@@ -12,7 +12,7 @@ import { ProfileTopAppBar } from "@/components/profile/top-app-bar";
 import { useToast } from "@/components/profile/use-toast";
 import { PROFILE_ASSETS } from "@/lib/profile/assets";
 import { SUPPORT_CATEGORIES } from "@/lib/profile/mock-data";
-import { getAuthenticatedSupportSession } from "@/lib/profile/support-service";
+import { createSupportInquiry } from "@/lib/profile/support-service";
 
 const { icons, frames, masks, images } = PROFILE_ASSETS;
 
@@ -65,9 +65,19 @@ export default function SupportNewPage() {
     if (!canSubmit) return;
     setSubmitting(true);
 
-    const session = await getAuthenticatedSupportSession();
+    const result = await createSupportInquiry({
+      category,
+      title: trimmedTitle,
+      content: trimmedContent,
+    });
 
-    if (!session) {
+    if (!result.ok) {
+      setSubmitting(false);
+      show(result.errorMessage ?? "문의 접수에 실패했어. 잠시 후 다시 시도해줘.");
+      return;
+    }
+
+    if (result.source === "mock") {
       // TODO(auth): 인증 전에는 fake user_id를 insert하지 않고 기존 mock 플로우만 유지한다.
       console.log("[CatchCash] mock support submit", { category, title: trimmedTitle, content: trimmedContent });
       show("로그인 연결 전이라 예시 접수로 처리했어.");
@@ -75,25 +85,8 @@ export default function SupportNewPage() {
       return;
     }
 
-    const { data, error } = await session.client
-      .from("support_inquiries")
-      .insert({
-        user_id: session.userId,
-        category,
-        title: trimmedTitle,
-        content: trimmedContent,
-      })
-      .select("id")
-      .single();
-
-    if (error) {
-      setSubmitting(false);
-      show("문의 접수에 실패했어. 잠시 후 다시 시도해줘.");
-      return;
-    }
-
     show("접수됐어. 확인하면 답 줄게.");
-    window.setTimeout(() => router.push(`/support/${data.id}`), 1200);
+    window.setTimeout(() => router.push(`/support/${result.inquiryId}`), 1200);
   };
 
   return (
