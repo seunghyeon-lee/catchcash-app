@@ -1,14 +1,15 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AppHeader } from "@/components/layout/app-header";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { RewardDetailPopup } from "@/components/hunt/reward-detail-popup";
 import { HUNT_ASSETS } from "@/lib/hunt/assets";
-import { MOCK_REWARDS, type MockReward, type MockRewardDetail, type RewardStatus } from "@/lib/hunt/mock-data";
-import { getInventoryRewardDetail } from "@/lib/hunt/selectors";
+import { getInventoryRewardListData } from "@/lib/hunt/inventory-service";
+import { type MockReward, type MockRewardDetail, type RewardStatus } from "@/lib/hunt/mock-data";
+import { getInventoryRewardDetail, getInventoryRewardList } from "@/lib/hunt/selectors";
 
 const { icons, frames, images } = HUNT_ASSETS;
 
@@ -118,8 +119,20 @@ function ExpiredCard({ reward }: { reward: MockReward }) {
 
 export default function InventoryPage() {
   const [filter, setFilter] = useState<FilterKey>("all");
-  const [rewards, setRewards] = useState<MockReward[]>(MOCK_REWARDS);
+  const [rewards, setRewards] = useState<MockReward[]>(() => getInventoryRewardList());
   const [selected, setSelected] = useState<MockRewardDetail | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    getInventoryRewardListData().then((result) => {
+      if (active) setRewards(result.rewards);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const visible = rewards.filter((reward) => {
     if (filter === "all") return true;
