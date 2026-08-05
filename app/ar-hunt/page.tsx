@@ -1,23 +1,28 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { HUNT_ASSETS } from "@/lib/hunt/assets";
+import { createHuntClaim } from "@/lib/hunt/claim-service";
 
 const { icons, frames, images } = HUNT_ASSETS;
 
-export default function ArHuntPage() {
+function ArHuntContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const treasureId = searchParams.get("treasureId");
   const [opening, setOpening] = useState(false);
 
   const handleChestTap = () => {
     if (opening) return;
     setOpening(true);
-    // Mock: 상자 열기 연출 후 결과 화면으로 이동 (실제 RPC 판정은 다음 단계)
-    setTimeout(() => router.push("/hunt-result?result=success"), 450);
+    // 상자 열기 연출 후 claim 생성 결과에 따라 성공/실패 결과 화면으로 이동
+    createHuntClaim(treasureId).then((result) => {
+      setTimeout(() => router.push(result.ok ? "/hunt-result?result=success" : "/hunt-result?result=fail"), 450);
+    });
   };
 
   return (
@@ -91,5 +96,13 @@ export default function ArHuntPage() {
 
       <BottomNav />
     </div>
+  );
+}
+
+export default function ArHuntPage() {
+  return (
+    <Suspense fallback={null}>
+      <ArHuntContent />
+    </Suspense>
   );
 }
