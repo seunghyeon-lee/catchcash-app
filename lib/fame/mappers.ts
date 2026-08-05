@@ -103,14 +103,19 @@ export function getFameMyRecord(): FameMyRecordCard {
   };
 }
 
-/** 하단만 필터 연동: hunter rankings */
-export function getFameRankingRows(filter: FameFilter): FameRankingRow[] {
-  return MOCK_HALL_OF_FAME[filter].map((row) => ({
+/** hall_of_fame view row 한 건 → ranking row UI 매핑. mock/실 데이터 공용. */
+export function mapHallOfFameRowToRankingRow(row: MockHallOfFame, filter: FameFilter): FameRankingRow {
+  return {
     rank: row.rank,
     nickname: row.nickname,
     avatarSrc: resolveAvatarSrc(row),
     findCountLabel: `보물 ${row.find_count}개 발견`,
     locationLabel: resolveLocationLabel(filter, row.rank),
     lastFoundAtLabel: resolveTimeLabel(filter, row.rank),
-  }));
+  };
+}
+
+/** 하단만 필터 연동: hunter rankings */
+export function getFameRankingRows(filter: FameFilter): FameRankingRow[] {
+  return MOCK_HALL_OF_FAME[filter].map((row) => mapHallOfFameRowToRankingRow(row, filter));
 }
