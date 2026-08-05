@@ -1,9 +1,14 @@
+"use client";
+
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 
 import { AppHeader } from "@/components/layout/app-header";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { HUNT_ASSETS } from "@/lib/hunt/assets";
+import { getHuntResultData } from "@/lib/hunt/reward-service";
 import { getHuntResultByQuery } from "@/lib/hunt/selectors";
 
 const { icons, frames, images } = HUNT_ASSETS;
@@ -165,9 +170,25 @@ function FailResult({ data }: { data: FailResultData }) {
   );
 }
 
-export default function HuntResultPage({ searchParams }: { searchParams?: { result?: string } }) {
-  const isFail = searchParams?.result === "fail";
-  const resultData = getHuntResultByQuery(searchParams?.result);
+function HuntResultContent() {
+  const searchParams = useSearchParams();
+  const resultParam = searchParams.get("result") ?? undefined;
+  const isFail = resultParam === "fail";
+
+  const [resultData, setResultData] = useState(() => getHuntResultByQuery(resultParam));
+
+  useEffect(() => {
+    let active = true;
+
+    getHuntResultData(resultParam).then((result) => {
+      if (active) setResultData(result);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [resultParam]);
+
   const successData = resultData.success as SuccessResultData;
   const failData = resultData.fail as FailResultData;
 
@@ -177,5 +198,13 @@ export default function HuntResultPage({ searchParams }: { searchParams?: { resu
       {isFail ? <FailResult data={failData} /> : <SuccessResult data={successData} />}
       <BottomNav />
     </div>
+  );
+}
+
+export default function HuntResultPage() {
+  return (
+    <Suspense fallback={null}>
+      <HuntResultContent />
+    </Suspense>
   );
 }
