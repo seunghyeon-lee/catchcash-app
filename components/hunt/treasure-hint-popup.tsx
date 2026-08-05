@@ -73,7 +73,7 @@ export function TreasureHintPopup({ treasure, onClose }: { treasure: MockTreasur
           {/* CTA - Mock 단계에서는 눌러서 AR 화면으로 이동 */}
           <button
             type="button"
-            onClick={() => router.push("/ar-hunt")}
+            onClick={() => router.push(`/ar-hunt?treasureId=${treasure.id}`)}
             className="relative mt-6 block h-[72px] w-full"
           >
             <img src={frames.hintCtaChip} alt="" className="absolute inset-0 size-full" />
