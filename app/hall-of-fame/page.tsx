@@ -2,11 +2,12 @@
 
 /* eslint-disable @next/next/no-img-element */
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { AppHeader } from "@/components/layout/app-header";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { FAME_ASSETS } from "@/lib/fame/assets";
+import { getFameRankingRowsData } from "@/lib/fame/fame-service";
 import { getFameMyRecord, getFameRankingRows, getFameSummary, getFameTopHunter } from "@/lib/fame/mappers";
 import { FAME_FILTERS, type FameFilter } from "@/lib/fame/mock-data";
 import { HUNT_ASSETS } from "@/lib/hunt/assets";
@@ -40,7 +41,20 @@ export default function HallOfFamePage() {
   const topHunter = useMemo(() => getFameTopHunter(), []);
   const summary = useMemo(() => getFameSummary(), []);
   const myRecord = useMemo(() => getFameMyRecord(), []);
-  const rankingRows = useMemo(() => getFameRankingRows(activeFilter), [activeFilter]);
+
+  const [rankingRows, setRankingRows] = useState(() => getFameRankingRows(activeFilter));
+
+  useEffect(() => {
+    let active = true;
+
+    getFameRankingRowsData(activeFilter).then((result) => {
+      if (active) setRankingRows(result.rows);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [activeFilter]);
 
   return (
     <section className="min-h-screen bg-[#f7f5ef] pb-28 text-[#1a1c1c]">
