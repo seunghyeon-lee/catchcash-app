@@ -7,9 +7,9 @@ import { AppHeader } from "@/components/layout/app-header";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { RewardDetailPopup } from "@/components/hunt/reward-detail-popup";
 import { HUNT_ASSETS } from "@/lib/hunt/assets";
-import { getInventoryRewardListData } from "@/lib/hunt/inventory-service";
+import { getInventoryRewardDetailData, getInventoryRewardListData } from "@/lib/hunt/inventory-service";
 import { type MockReward, type MockRewardDetail, type RewardStatus } from "@/lib/hunt/mock-data";
-import { getInventoryRewardDetail, getInventoryRewardList } from "@/lib/hunt/selectors";
+import { getInventoryRewardList } from "@/lib/hunt/selectors";
 
 const { icons, frames, images } = HUNT_ASSETS;
 
@@ -139,6 +139,11 @@ export default function InventoryPage() {
     return reward.status === filter;
   });
 
+  const handleSelectReward = async (rewardId: string) => {
+    const result = await getInventoryRewardDetailData(rewardId);
+    setSelected(result.detail);
+  };
+
   const handleMarkUsed = (rewardId: string) => {
     setRewards((prev) =>
       prev.map((item) =>
@@ -193,7 +198,7 @@ export default function InventoryPage() {
                 <AvailableCard
                   key={reward.id}
                   reward={reward}
-                  onClick={() => setSelected(getInventoryRewardDetail(reward.id) ?? null)}
+                  onClick={() => handleSelectReward(reward.id)}
                 />
               );
             }
