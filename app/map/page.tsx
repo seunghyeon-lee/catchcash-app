@@ -1,18 +1,36 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AppHeader } from "@/components/layout/app-header";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { TreasureHintPopup } from "@/components/hunt/treasure-hint-popup";
 import { HUNT_ASSETS } from "@/lib/hunt/assets";
-import { MOCK_CLAIMED_TREASURE, MOCK_TREASURES, type MockTreasure } from "@/lib/hunt/mock-data";
+import type { MockTreasure } from "@/lib/hunt/mappers";
+import { getClaimedTreasureMarker, getMapTreasures } from "@/lib/hunt/selectors";
+import { getMapTreasuresData } from "@/lib/hunt/treasure-service";
 
 const { icons, markers, images } = HUNT_ASSETS;
 
 export default function MapPage() {
   const [selected, setSelected] = useState<MockTreasure | null>(null);
+  const [treasures, setTreasures] = useState<MockTreasure[]>(() => getMapTreasures());
+  const [claimedMarker, setClaimedMarker] = useState(() => getClaimedTreasureMarker());
+
+  useEffect(() => {
+    let active = true;
+
+    getMapTreasuresData().then((result) => {
+      if (!active) return;
+      setTreasures(result.treasures);
+      setClaimedMarker(result.claimedMarker);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f7f5ef] pb-20">
@@ -38,7 +56,7 @@ export default function MapPage() {
         </div>
 
         {/* 보물 마커 */}
-        {MOCK_TREASURES.map((treasure) => (
+        {treasures.map((treasure) => (
           <button
             key={treasure.id}
             type="button"
@@ -63,8 +81,8 @@ export default function MapPage() {
           alt="획득 완료 보물상자"
           className="absolute h-[46px] w-10 -translate-x-1/2 opacity-60"
           style={{
-            left: `${MOCK_CLAIMED_TREASURE.position.left}%`,
-            top: `${MOCK_CLAIMED_TREASURE.position.top}%`,
+            left: `${claimedMarker.position.left}%`,
+            top: `${claimedMarker.position.top}%`,
           }}
         />
 
