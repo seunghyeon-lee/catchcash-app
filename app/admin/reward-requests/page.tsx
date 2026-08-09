@@ -11,6 +11,7 @@ import {
   MOCK_ADMIN_REWARD_REQUESTS,
   formatAdminRewardDateTime,
   getAdminRewardDateValue,
+  type AdminRewardRequestListItem,
   type AdminRewardDateField,
   type AdminRewardRetryStatus,
   type AdminRewardStatus,
@@ -18,6 +19,13 @@ import {
 
 type StatusFilter<T extends string> = "all" | T;
 type RewardSortKey = "failed_first" | "claimed_desc" | "claimed_asc" | "failed_desc" | "retry_requested_desc";
+type RewardRetryReason =
+  | "provider_timeout"
+  | "provider_temporary_error"
+  | "manual_operator_request"
+  | "user_reported_issue"
+  | "data_correction"
+  | "other";
 
 const adminRole = "super_admin";
 const defaultFilters = {
@@ -39,6 +47,15 @@ const sortOptions: Array<{ label: string; value: RewardSortKey }> = [
   { label: "최근 재처리 요청순", value: "retry_requested_desc" },
 ];
 
+const retryReasonOptions: Array<{ label: string; value: RewardRetryReason }> = [
+  { label: "외부 발급 시스템 응답 지연", value: "provider_timeout" },
+  { label: "외부 발급 시스템 일시 오류", value: "provider_temporary_error" },
+  { label: "운영자 수동 재처리", value: "manual_operator_request" },
+  { label: "사용자 문의 기반 재처리", value: "user_reported_issue" },
+  { label: "데이터 보정 후 재처리", value: "data_correction" },
+  { label: "기타", value: "other" },
+];
+
 function getRewardTone(status: string) {
   if (status === "issued" || status === "succeeded") return "bg-[#dcfce7] text-[#166534]";
   if (status === "failed") return "bg-[#fee2e2] text-[#991b1b]";
@@ -51,6 +68,7 @@ function StatusBadge({ label, status }: { label: string; status: string }) {
 }
 
 export default function AdminRewardRequestsPage() {
+  const [items, setItems] = useState<AdminRewardRequestListItem[]>(MOCK_ADMIN_REWARD_REQUESTS);
   const [query, setQuery] = useState(defaultFilters.query);
   const [status, setStatus] = useState(defaultFilters.status);
   const [retryStatus, setRetryStatus] = useState(defaultFilters.retryStatus);
@@ -61,6 +79,12 @@ export default function AdminRewardRequestsPage() {
   const [pageSize, setPageSize] = useState(defaultFilters.pageSize);
   const [page, setPage] = useState(1);
   const [isCsvDialogOpen, setIsCsvDialogOpen] = useState(false);
+  const [selectedRetryReward, setSelectedRetryReward] = useState<AdminRewardRequestListItem | null>(null);
+  const [retryReason, setRetryReason] = useState<RewardRetryReason | "">("");
+  const [retryNote, setRetryNote] = useState("");
+  const [retryError, setRetryError] = useState("");
+  const [isCreatingRetry, setIsCreatingRetry] = useState(false);
+  const [toast, setToast] = useState("");
 
   const canExportCsv = adminRole === "super_admin" || adminRole === "operator";
   const dateRangeError = Boolean(startDate && endDate && startDate > endDate);
@@ -72,7 +96,7 @@ export default function AdminRewardRequestsPage() {
 
     if (dateRangeError) return [];
 
-    return [...MOCK_ADMIN_REWARD_REQUESTS]
+    return [...items]
       .filter((item) => {
         const matchesQuery = [
           item.rewardId,
@@ -103,7 +127,7 @@ export default function AdminRewardRequestsPage() {
         }
         return new Date(b.claimedAt).getTime() - new Date(a.claimedAt).getTime();
       });
-  }, [dateField, dateRangeError, endDate, query, retryStatus, sort, startDate, status]);
+  }, [dateField, dateRangeError, endDate, items, query, retryStatus, sort, startDate, status]);
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -121,6 +145,50 @@ export default function AdminRewardRequestsPage() {
     setSort(defaultFilters.sort);
     setPageSize(defaultFilters.pageSize);
     setPage(1);
+  };
+
+  const openRetryDialog = (item: AdminRewardRequestListItem) => {
+    setSelectedRetryReward(item);
+    setRetryReason("");
+    setRetryNote("");
+    setRetryError("");
+  };
+
+  const closeRetryDialog = () => {
+    if (isCreatingRetry) return;
+    setSelectedRetryReward(null);
+    setRetryReason("");
+    setRetryNote("");
+    setRetryError("");
+  };
+
+  const createRetryRequest = async () => {
+    if (!selectedRetryReward) return;
+    if (!retryReason) {
+      setRetryError("재처리 사유를 선택하세요.");
+      return;
+    }
+    if (retryNote.length > 500) {
+      setRetryError("내부 메모는 500자 이하로 입력하세요.");
+      return;
+    }
+
+    setIsCreatingRetry(true);
+    await new Promise((resolve) => window.setTimeout(resolve, 500));
+    const now = new Date().toISOString();
+    setItems((current) =>
+      current.map((item) =>
+        item.rewardId === selectedRetryReward.rewardId
+          ? { ...item, retryRequestStatus: "requested", latestRetryRequestedAt: now, updatedAt: now }
+          : item,
+      ),
+    );
+    setIsCreatingRetry(false);
+    setToast("재처리 요청을 생성했습니다.");
+    setSelectedRetryReward(null);
+    setRetryReason("");
+    setRetryNote("");
+    setRetryError("");
   };
 
   return (
@@ -251,6 +319,8 @@ export default function AdminRewardRequestsPage() {
         {dateRangeError ? <p className="mt-3 text-sm text-[#b91c1c]">시작일은 종료일보다 늦을 수 없습니다.</p> : null}
       </section>
 
+      {toast ? <div role="status" className="mt-4 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-4 py-3 text-sm text-[#1d4ed8]">{toast}</div> : null}
+
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
         <span>{startItemNumber}-{endItemNumber} / {filteredItems.length}건</span>
         <span>쿠폰 번호, 바코드, 사용자 이메일은 목록과 CSV에 포함하지 않습니다.</span>
@@ -289,9 +359,16 @@ export default function AdminRewardRequestsPage() {
                 <td className="px-5 py-4 font-mono text-xs text-[#b91c1c]">{item.lastFailureCode ?? "-"}</td>
                 <td className="px-5 py-4"><StatusBadge label={ADMIN_REWARD_RETRY_STATUS_LABEL[item.retryRequestStatus]} status={item.retryRequestStatus} /></td>
                 <td className="px-5 py-4">
-                  <Link href={`/admin/rewards/${item.rewardId}`} className="font-medium text-[#111827] underline underline-offset-2">
-                    상세
-                  </Link>
+                  <div className="flex flex-col items-start gap-1">
+                    <Link href={`/admin/rewards/${item.rewardId}`} className="font-medium text-[#111827] underline underline-offset-2">
+                      상세
+                    </Link>
+                    {canExportCsv && item.status === "failed" && item.retryRequestStatus !== "requested" && item.retryRequestStatus !== "in_progress" ? (
+                      <button type="button" onClick={() => openRetryDialog(item)} className="text-[#1d4ed8] underline underline-offset-2">
+                        재처리 요청 생성
+                      </button>
+                    ) : null}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -351,6 +428,79 @@ export default function AdminRewardRequestsPage() {
               </button>
               <button type="button" onClick={() => setIsCsvDialogOpen(false)} className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white">
                 내보내기
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {selectedRetryReward ? (
+        <div role="dialog" aria-modal="true" aria-labelledby="reward-retry-title" aria-describedby="reward-retry-description" className="fixed inset-0 z-[60] grid place-items-center bg-black/55 p-6">
+          <div className="w-full max-w-[420px] rounded-2xl bg-white p-6 shadow-xl">
+            <h2 id="reward-retry-title" className="text-lg font-bold">재처리 요청 생성</h2>
+            <p id="reward-retry-description" className="mt-2 text-sm leading-6 text-[#6b7280]">
+              현재 발급 실패 상태의 보상을 다시 처리하도록 요청합니다. 동일 보상에 진행 중인 요청이 있으면 중복 생성이 차단됩니다.
+            </p>
+            <dl className="mt-4 rounded-md bg-[#f9fafb] p-4 text-sm">
+              <div className="flex justify-between gap-4">
+                <dt className="text-[#6b7280]">보상 ID</dt>
+                <dd className="font-mono text-xs font-medium text-[#111827]">{selectedRetryReward.rewardId}</dd>
+              </div>
+              <div className="mt-2 flex justify-between gap-4">
+                <dt className="text-[#6b7280]">보상 상태</dt>
+                <dd><StatusBadge label={selectedRetryReward.status} status={selectedRetryReward.status} /></dd>
+              </div>
+              <div className="mt-2 flex justify-between gap-4">
+                <dt className="text-[#6b7280]">상품</dt>
+                <dd className="text-right font-medium text-[#111827]">{selectedRetryReward.productName ?? "상품 미연결"}</dd>
+              </div>
+              <div className="mt-2 flex justify-between gap-4">
+                <dt className="text-[#6b7280]">최근 실패 코드</dt>
+                <dd className="font-mono text-xs font-medium text-[#b91c1c]">{selectedRetryReward.lastFailureCode ?? "-"}</dd>
+              </div>
+            </dl>
+            <label className="mt-4 block">
+              <span className="text-sm font-medium text-[#374151]">재처리 사유</span>
+              <select
+                value={retryReason}
+                onChange={(event) => {
+                  setRetryReason(event.target.value as RewardRetryReason);
+                  setRetryError("");
+                }}
+                className="mt-1 h-10 w-full rounded-md border border-[#d1d5db] bg-white px-3 text-sm outline-none focus:border-[#111827]"
+                autoFocus
+              >
+                <option value="">재처리 사유를 선택하세요</option>
+                {retryReasonOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+            <label className="mt-4 block">
+              <span className="text-sm font-medium text-[#374151]">내부 메모</span>
+              <span className="ml-2 text-xs text-[#6b7280]">추가 설명 또는 메모</span>
+              <textarea
+                value={retryNote}
+                onChange={(event) => {
+                  setRetryNote(event.target.value);
+                  setRetryError("");
+                }}
+                maxLength={500}
+                className="mt-1 min-h-28 w-full rounded-md border border-[#d1d5db] px-3 py-2 text-sm outline-none focus:border-[#111827]"
+                placeholder="CMS 내부 관리자용 메모입니다. 사용자 앱에는 노출되지 않습니다."
+              />
+              <span className="mt-1 block text-right text-xs text-[#6b7280]">{retryNote.length}/500</span>
+            </label>
+            {retryError ? <p role="alert" className="mt-2 text-xs font-medium text-[#b91c1c]">{retryError}</p> : null}
+            <p className="mt-4 rounded-md bg-[#f9fafb] p-3 text-xs leading-5 text-[#6b7280]">
+              이 팝업은 기프티쇼비즈 API를 직접 호출하지 않으며, 요청 생성 후에도 reward.status는 failed 상태를 유지합니다.
+            </p>
+            <div className="mt-6 flex justify-end gap-2">
+              <button type="button" onClick={closeRetryDialog} disabled={isCreatingRetry} className="rounded-md border border-[#d1d5db] px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:text-[#9ca3af]">
+                취소
+              </button>
+              <button type="button" onClick={() => void createRetryRequest()} disabled={!retryReason || isCreatingRetry} className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-[#9ca3af]">
+                {isCreatingRetry ? "생성 중..." : "재처리 요청 생성"}
               </button>
             </div>
           </div>
