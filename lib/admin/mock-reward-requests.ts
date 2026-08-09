@@ -1,0 +1,242 @@
+export type AdminRewardStatus = "ready" | "issued" | "failed" | "used" | "expired" | "canceled";
+export type AdminRewardRetryStatus = "none" | "requested" | "in_progress" | "succeeded" | "failed";
+export type AdminRewardDateField = "claimed_at" | "issue_requested_at" | "issued_at" | "failed_at" | "expires_at";
+
+export type AdminRewardRequestListItem = {
+  rewardId: string;
+  claimedAt: string;
+  issueRequestedAt: string | null;
+  issuedAt: string | null;
+  failedAt: string | null;
+  expiresAt: string | null;
+  userDisplayId: string;
+  userNickname: string;
+  treasureBoxId: string;
+  treasureTitle: string;
+  productId: string | null;
+  productName: string | null;
+  status: AdminRewardStatus;
+  providerRequestId: string | null;
+  lastFailureCode: string | null;
+  retryRequestStatus: AdminRewardRetryStatus;
+  latestRetryRequestedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export const ADMIN_REWARD_STATUS_LABEL: Record<AdminRewardStatus, string> = {
+  ready: "ready",
+  issued: "issued",
+  failed: "failed",
+  used: "used",
+  expired: "expired",
+  canceled: "canceled",
+};
+
+export const ADMIN_REWARD_RETRY_STATUS_LABEL: Record<AdminRewardRetryStatus, string> = {
+  none: "요청 없음",
+  requested: "요청됨",
+  in_progress: "처리 중",
+  succeeded: "성공",
+  failed: "실패",
+};
+
+export const ADMIN_REWARD_DATE_FIELD_LABEL: Record<AdminRewardDateField, string> = {
+  claimed_at: "획득일",
+  issue_requested_at: "발급 요청일",
+  issued_at: "발급 완료일",
+  failed_at: "실패 발생일",
+  expires_at: "만료일",
+};
+
+export const MOCK_ADMIN_REWARD_REQUESTS: AdminRewardRequestListItem[] = [
+  {
+    rewardId: "reward-20260809-001",
+    claimedAt: "2026-08-09T09:12:00+09:00",
+    issueRequestedAt: "2026-08-09T09:13:00+09:00",
+    issuedAt: null,
+    failedAt: "2026-08-09T09:14:00+09:00",
+    expiresAt: "2026-09-08T23:59:59+09:00",
+    userDisplayId: "USR-2048",
+    userNickname: "보물헌터01",
+    treasureBoxId: "treasure-gangnam-station-01",
+    treasureTitle: "강남역 점심 보물",
+    productId: "prod-starbucks-americano-tall",
+    productName: "스타벅스 아메리카노 Tall",
+    status: "failed",
+    providerRequestId: "REQ-GFT-900124",
+    lastFailureCode: "PROVIDER_TIMEOUT",
+    retryRequestStatus: "requested",
+    latestRetryRequestedAt: "2026-08-09T09:25:00+09:00",
+    createdAt: "2026-08-09T09:12:00+09:00",
+    updatedAt: "2026-08-09T09:25:00+09:00",
+  },
+  {
+    rewardId: "reward-20260809-002",
+    claimedAt: "2026-08-09T10:42:00+09:00",
+    issueRequestedAt: "2026-08-09T10:42:30+09:00",
+    issuedAt: "2026-08-09T10:43:00+09:00",
+    failedAt: null,
+    expiresAt: "2026-09-08T23:59:59+09:00",
+    userDisplayId: "USR-1182",
+    userNickname: "숲길몽",
+    treasureBoxId: "treasure-seongsu-cafe-02",
+    treasureTitle: "성수 카페거리 보물",
+    productId: "prod-starbucks-americano-tall",
+    productName: "스타벅스 아메리카노 Tall",
+    status: "issued",
+    providerRequestId: "REQ-GFT-900125",
+    lastFailureCode: null,
+    retryRequestStatus: "none",
+    latestRetryRequestedAt: null,
+    createdAt: "2026-08-09T10:42:00+09:00",
+    updatedAt: "2026-08-09T10:43:00+09:00",
+  },
+  {
+    rewardId: "reward-20260808-003",
+    claimedAt: "2026-08-08T18:20:00+09:00",
+    issueRequestedAt: "2026-08-08T18:22:00+09:00",
+    issuedAt: null,
+    failedAt: "2026-08-08T18:23:00+09:00",
+    expiresAt: "2026-09-07T23:59:59+09:00",
+    userDisplayId: "USR-3310",
+    userNickname: "달리는냥이",
+    treasureBoxId: "treasure-city-hall-01",
+    treasureTitle: "시청 광장 보물",
+    productId: "prod-cu-mobile-voucher-5000",
+    productName: "CU 모바일금액권 5천원",
+    status: "failed",
+    providerRequestId: "REQ-GFT-899810",
+    lastFailureCode: "INVALID_PRODUCT",
+    retryRequestStatus: "in_progress",
+    latestRetryRequestedAt: "2026-08-08T19:00:00+09:00",
+    createdAt: "2026-08-08T18:20:00+09:00",
+    updatedAt: "2026-08-08T19:00:00+09:00",
+  },
+  {
+    rewardId: "reward-20260808-004",
+    claimedAt: "2026-08-08T14:08:00+09:00",
+    issueRequestedAt: "2026-08-08T14:09:00+09:00",
+    issuedAt: "2026-08-08T14:09:30+09:00",
+    failedAt: null,
+    expiresAt: "2026-09-07T23:59:59+09:00",
+    userDisplayId: "USR-7741",
+    userNickname: "연남탐험가",
+    treasureBoxId: "treasure-jamsil-weekend-01",
+    treasureTitle: "잠실 주말 보물",
+    productId: "prod-baskin-single-regular",
+    productName: "싱글레귤러 아이스크림",
+    status: "used",
+    providerRequestId: "REQ-GFT-899620",
+    lastFailureCode: null,
+    retryRequestStatus: "none",
+    latestRetryRequestedAt: null,
+    createdAt: "2026-08-08T14:08:00+09:00",
+    updatedAt: "2026-08-08T15:12:00+09:00",
+  },
+  {
+    rewardId: "reward-20260807-005",
+    claimedAt: "2026-08-07T11:30:00+09:00",
+    issueRequestedAt: null,
+    issuedAt: null,
+    failedAt: null,
+    expiresAt: "2026-09-06T23:59:59+09:00",
+    userDisplayId: "USR-4920",
+    userNickname: "지도수집가",
+    treasureBoxId: "treasure-new-namsan-01",
+    treasureTitle: "남산타워 신규 보물",
+    productId: null,
+    productName: null,
+    status: "ready",
+    providerRequestId: null,
+    lastFailureCode: null,
+    retryRequestStatus: "none",
+    latestRetryRequestedAt: null,
+    createdAt: "2026-08-07T11:30:00+09:00",
+    updatedAt: "2026-08-07T11:30:00+09:00",
+  },
+  {
+    rewardId: "reward-20260806-006",
+    claimedAt: "2026-08-06T20:10:00+09:00",
+    issueRequestedAt: "2026-08-06T20:11:00+09:00",
+    issuedAt: null,
+    failedAt: "2026-08-06T20:12:00+09:00",
+    expiresAt: "2026-09-05T23:59:59+09:00",
+    userDisplayId: "USR-8190",
+    userNickname: "밤산책러",
+    treasureBoxId: "treasure-itaewon-dinner-01",
+    treasureTitle: "이태원 저녁 보물",
+    productId: "prod-kyochon-honey-combo",
+    productName: "교촌 허니콤보 웨지감자 세트",
+    status: "failed",
+    providerRequestId: "REQ-GFT-898300",
+    lastFailureCode: "PRODUCT_INACTIVE",
+    retryRequestStatus: "failed",
+    latestRetryRequestedAt: "2026-08-07T09:00:00+09:00",
+    createdAt: "2026-08-06T20:10:00+09:00",
+    updatedAt: "2026-08-07T09:20:00+09:00",
+  },
+  {
+    rewardId: "reward-20260805-007",
+    claimedAt: "2026-08-05T13:00:00+09:00",
+    issueRequestedAt: "2026-08-05T13:01:00+09:00",
+    issuedAt: "2026-08-05T13:02:00+09:00",
+    failedAt: null,
+    expiresAt: "2026-08-05T23:59:59+09:00",
+    userDisplayId: "USR-2711",
+    userNickname: "행운상자",
+    treasureBoxId: "treasure-yeouido-lunch-01",
+    treasureTitle: "여의도 점심 보물",
+    productId: "prod-twosome-americano-r",
+    productName: "투썸플레이스 아메리카노 R",
+    status: "expired",
+    providerRequestId: "REQ-GFT-897012",
+    lastFailureCode: null,
+    retryRequestStatus: "succeeded",
+    latestRetryRequestedAt: "2026-08-05T18:30:00+09:00",
+    createdAt: "2026-08-05T13:00:00+09:00",
+    updatedAt: "2026-08-05T23:59:59+09:00",
+  },
+  {
+    rewardId: "reward-20260804-008",
+    claimedAt: "2026-08-04T09:40:00+09:00",
+    issueRequestedAt: null,
+    issuedAt: null,
+    failedAt: null,
+    expiresAt: null,
+    userDisplayId: "USR-6012",
+    userNickname: "취소된사냥",
+    treasureBoxId: "treasure-hongdae-night-03",
+    treasureTitle: "홍대 야간 보물",
+    productId: "prod-starbucks-americano-tall",
+    productName: "스타벅스 아메리카노 Tall",
+    status: "canceled",
+    providerRequestId: null,
+    lastFailureCode: null,
+    retryRequestStatus: "none",
+    latestRetryRequestedAt: null,
+    createdAt: "2026-08-04T09:40:00+09:00",
+    updatedAt: "2026-08-04T09:45:00+09:00",
+  },
+];
+
+export function formatAdminRewardDateTime(value: string | null) {
+  if (!value) return "-";
+
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(value));
+}
+
+export function getAdminRewardDateValue(item: AdminRewardRequestListItem, field: AdminRewardDateField) {
+  if (field === "issue_requested_at") return item.issueRequestedAt;
+  if (field === "issued_at") return item.issuedAt;
+  if (field === "failed_at") return item.failedAt;
+  if (field === "expires_at") return item.expiresAt;
+  return item.claimedAt;
+}
