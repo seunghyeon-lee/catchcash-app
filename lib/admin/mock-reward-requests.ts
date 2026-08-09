@@ -50,6 +50,14 @@ export type AdminRewardRetryRequestHistoryItem = {
   processedAt: string | null;
 };
 
+export type AdminRewardDetail = AdminRewardRequestListItem & {
+  failureReason: string | null;
+  userRetryCount: number;
+  internalMemo: string | null;
+  userStatus: "active" | "inactive" | "blocked";
+  productBrandName: string | null;
+};
+
 export const ADMIN_REWARD_STATUS_LABEL: Record<AdminRewardStatus, string> = {
   ready: "ready",
   issued: "issued",
@@ -372,6 +380,64 @@ export const MOCK_ADMIN_REWARD_RETRY_REQUEST_HISTORY: AdminRewardRetryRequestHis
   },
 ];
 
+const ADMIN_REWARD_FAILURE_REASON: Record<string, string> = {
+  PROVIDER_TIMEOUT: "기프티쇼비즈 응답 시간이 초과되었습니다.",
+  INVALID_PRODUCT: "외부 상품 ID 검증에 실패했습니다.",
+  PRODUCT_INACTIVE: "외부 발급 시스템에서 상품 비활성 상태를 반환했습니다.",
+  PROVIDER_TEMPORARY_ERROR: "외부 발급 시스템 일시 오류가 발생했습니다.",
+};
+
+const ADMIN_REWARD_DETAIL_OVERRIDES: Record<string, Pick<AdminRewardDetail, "internalMemo" | "productBrandName" | "userRetryCount" | "userStatus">> = {
+  "reward-20260809-001": {
+    internalMemo: "provider timeout 발생. pending 재처리 요청이 있으므로 중복 생성 금지.",
+    productBrandName: "스타벅스",
+    userRetryCount: 1,
+    userStatus: "active",
+  },
+  "reward-20260809-002": {
+    internalMemo: "정상 발급 완료 건. 쿠폰 번호와 바코드는 CMS에 표시하지 않음.",
+    productBrandName: "스타벅스",
+    userRetryCount: 0,
+    userStatus: "active",
+  },
+  "reward-20260808-003": {
+    internalMemo: "상품 ID 보정 후 processing 상태의 재처리 요청 진행 중.",
+    productBrandName: "CU",
+    userRetryCount: 2,
+    userStatus: "active",
+  },
+  "reward-20260808-004": {
+    internalMemo: "사용 완료 보상. 재처리 대상 아님.",
+    productBrandName: "배스킨라빈스",
+    userRetryCount: 0,
+    userStatus: "active",
+  },
+  "reward-20260807-005": {
+    internalMemo: "쿠폰 발급 전 ready 상태. 상품 연결 확인 필요.",
+    productBrandName: null,
+    userRetryCount: 0,
+    userStatus: "active",
+  },
+  "reward-20260806-006": {
+    internalMemo: "상품 비활성 응답으로 실패. 외부 상품 상태 확인 후 재요청 가능.",
+    productBrandName: "교촌치킨",
+    userRetryCount: 3,
+    userStatus: "active",
+  },
+  "reward-20260805-007": {
+    internalMemo: "재처리 성공 이력은 있으나 보상 만료 정책은 유지.",
+    productBrandName: "투썸플레이스",
+    userRetryCount: 1,
+    userStatus: "active",
+  },
+  "reward-20260804-008": {
+    internalMemo: "사용자 취소 플로우로 지급 취소 처리된 건.",
+    productBrandName: "스타벅스",
+    userRetryCount: 0,
+    userStatus: "inactive",
+  },
+};
+
 export function formatAdminRewardDateTime(value: string | null) {
   if (!value) return "-";
 
@@ -391,4 +457,36 @@ export function getAdminRewardDateValue(item: AdminRewardRequestListItem, field:
   if (field === "failed_at") return item.failedAt;
   if (field === "expires_at") return item.expiresAt;
   return item.claimedAt;
+}
+
+export function findAdminRewardRequest(rewardId: string) {
+  return MOCK_ADMIN_REWARD_REQUESTS.find((item) => item.rewardId === rewardId) ?? null;
+}
+
+export function getAdminRewardRetryHistoryByRewardId(rewardId: string) {
+  return MOCK_ADMIN_REWARD_RETRY_REQUEST_HISTORY
+    .filter((item) => item.rewardId === rewardId)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export function getLatestAdminRewardRetryRequest(rewardId: string) {
+  return getAdminRewardRetryHistoryByRewardId(rewardId)[0] ?? null;
+}
+
+export function findAdminRewardDetail(rewardId: string): AdminRewardDetail | null {
+  const reward = findAdminRewardRequest(rewardId);
+  if (!reward) return null;
+
+  const overrides = ADMIN_REWARD_DETAIL_OVERRIDES[reward.rewardId] ?? {
+    internalMemo: null,
+    productBrandName: null,
+    userRetryCount: 0,
+    userStatus: "active" as const,
+  };
+
+  return {
+    ...reward,
+    failureReason: reward.lastFailureCode ? ADMIN_REWARD_FAILURE_REASON[reward.lastFailureCode] ?? "관리자 확인이 필요한 실패입니다." : null,
+    ...overrides,
+  };
 }
