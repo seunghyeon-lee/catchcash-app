@@ -2,6 +2,7 @@ export type AdminTreasureStatus = "active" | "inactive" | "deleted";
 export type AdminTreasureCalculatedStatus = "visible" | "scheduled" | "expired" | "sold_out" | "invalid";
 export type AdminMappingStatus = "active" | "inactive";
 export type AdminMappingProductStatus = "active" | "inactive";
+export type AdminMappingTreasureOptionStatus = "active" | "inactive" | "sold_out" | "expired" | "invalid";
 
 export type AdminMappingListItem = {
   mappingId: string;
@@ -17,6 +18,16 @@ export type AdminMappingListItem = {
   createdAt: string;
   updatedAt: string;
   inactiveReason?: string | null;
+};
+
+export type AdminMappingTreasureOption = {
+  treasureId: string;
+  title: string;
+  locationLabel: string;
+  status: AdminMappingTreasureOptionStatus;
+  currentClaimCount: number;
+  maxClaimCount: number;
+  deletedAt: string | null;
 };
 
 export const ADMIN_TREASURE_STATUS_LABEL: Record<AdminTreasureStatus, string> = {
@@ -160,6 +171,67 @@ export const MOCK_ADMIN_MAPPINGS: AdminMappingListItem[] = [
     inactiveReason: "테스트 보물 삭제",
   },
 ];
+
+export const MOCK_ADMIN_MAPPING_TREASURES: AdminMappingTreasureOption[] = [
+  {
+    treasureId: "treasure-gangnam-station-01",
+    title: "강남역 점심 보물",
+    locationLabel: "강남역 11번 출구 근처",
+    status: "active",
+    currentClaimCount: 12,
+    maxClaimCount: 50,
+    deletedAt: null,
+  },
+  {
+    treasureId: "treasure-seongsu-cafe-02",
+    title: "성수 카페거리 보물",
+    locationLabel: "성수동 카페거리",
+    status: "active",
+    currentClaimCount: 8,
+    maxClaimCount: 40,
+    deletedAt: null,
+  },
+  {
+    treasureId: "treasure-jamsil-weekend-01",
+    title: "잠실 주말 보물",
+    locationLabel: "잠실역 롯데월드몰 인근",
+    status: "sold_out",
+    currentClaimCount: 30,
+    maxClaimCount: 30,
+    deletedAt: null,
+  },
+  {
+    treasureId: "treasure-city-hall-01",
+    title: "시청 광장 보물",
+    locationLabel: "서울광장",
+    status: "active",
+    currentClaimCount: 3,
+    maxClaimCount: 35,
+    deletedAt: null,
+  },
+  {
+    treasureId: "treasure-new-namsan-01",
+    title: "남산타워 신규 보물",
+    locationLabel: "남산서울타워 입구",
+    status: "inactive",
+    currentClaimCount: 0,
+    maxClaimCount: 25,
+    deletedAt: null,
+  },
+  {
+    treasureId: "treasure-deleted-test-01",
+    title: "삭제된 테스트 보물",
+    locationLabel: "테스트 위치",
+    status: "invalid",
+    currentClaimCount: 0,
+    maxClaimCount: 1,
+    deletedAt: "2026-07-26T15:30:00+09:00",
+  },
+];
+
+export function findActiveAdminMapping(treasureId: string) {
+  return MOCK_ADMIN_MAPPINGS.find((mapping) => mapping.treasureId === treasureId && mapping.mappingStatus === "active");
+}
 
 export function formatAdminMappingDateTime(value: string) {
   return new Intl.DateTimeFormat("ko-KR", {

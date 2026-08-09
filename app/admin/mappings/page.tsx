@@ -315,7 +315,7 @@ export default function AdminMappingsPage() {
                     </div>
                     {canManageMappings && item.mappingStatus === "active" ? (
                       <div className="flex gap-2">
-                        <Link href={`/admin/mappings/${item.treasureId}`} className="text-[#1d4ed8] underline underline-offset-2">교체</Link>
+                        <Link href={`/admin/mappings/new?treasureId=${item.treasureId}`} className="text-[#1d4ed8] underline underline-offset-2">교체</Link>
                         <button type="button" onClick={() => openDeactivateDialog(item)} className="text-[#b91c1c] underline underline-offset-2">
                           비활성화
                         </button>
