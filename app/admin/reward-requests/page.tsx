@@ -198,15 +198,20 @@ export default function AdminRewardRequestsPage() {
           <h1 className="text-2xl font-bold">보상 목록</h1>
           <p className="mt-2 text-sm text-[#6b7280]">보상 상태와 재처리 요청 현황을 mock data 기준으로 조회합니다.</p>
         </div>
-        {canExportCsv ? (
-          <button
-            type="button"
-            onClick={() => setIsCsvDialogOpen(true)}
-            className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
-          >
-            CSV 내보내기
-          </button>
-        ) : null}
+        <div className="flex gap-2">
+          <Link href="/admin/reward-requests/history" className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white hover:bg-black">
+            재처리 요청 이력
+          </Link>
+          {canExportCsv ? (
+            <button
+              type="button"
+              onClick={() => setIsCsvDialogOpen(true)}
+              className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
+            >
+              CSV 내보내기
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <section className="mt-7 rounded-lg border border-[#e5e7eb] bg-white p-4">

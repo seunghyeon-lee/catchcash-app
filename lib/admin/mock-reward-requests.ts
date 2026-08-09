@@ -1,6 +1,8 @@
 export type AdminRewardStatus = "ready" | "issued" | "failed" | "used" | "expired" | "canceled";
 export type AdminRewardRetryStatus = "none" | "requested" | "in_progress" | "succeeded" | "failed";
 export type AdminRewardDateField = "claimed_at" | "issue_requested_at" | "issued_at" | "failed_at" | "expires_at";
+export type AdminRewardRetryRequestStatus = "pending" | "processing" | "success" | "failed" | "canceled";
+export type AdminRewardRetryWorkerResult = "success" | "failed" | null;
 
 export type AdminRewardRequestListItem = {
   rewardId: string;
@@ -22,6 +24,30 @@ export type AdminRewardRequestListItem = {
   latestRetryRequestedAt: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type AdminRewardRetryRequestHistoryItem = {
+  retryRequestId: string;
+  rewardId: string;
+  rewardStatus: AdminRewardStatus;
+  treasureBoxId: string;
+  treasureTitle: string;
+  productId: string | null;
+  productName: string | null;
+  userPublicId: string;
+  retryStatus: AdminRewardRetryRequestStatus;
+  reason: string;
+  internalMemo: string | null;
+  previousErrorCode: string | null;
+  previousErrorMessage: string | null;
+  workerResult: AdminRewardRetryWorkerResult;
+  workerErrorCode: string | null;
+  workerErrorMessage: string | null;
+  providerRequestId: string | null;
+  requestedByAdminName: string;
+  createdAt: string;
+  processingStartedAt: string | null;
+  processedAt: string | null;
 };
 
 export const ADMIN_REWARD_STATUS_LABEL: Record<AdminRewardStatus, string> = {
@@ -47,6 +73,14 @@ export const ADMIN_REWARD_DATE_FIELD_LABEL: Record<AdminRewardDateField, string>
   issued_at: "발급 완료일",
   failed_at: "실패 발생일",
   expires_at: "만료일",
+};
+
+export const ADMIN_REWARD_RETRY_REQUEST_STATUS_LABEL: Record<AdminRewardRetryRequestStatus, string> = {
+  pending: "pending",
+  processing: "processing",
+  success: "success",
+  failed: "failed",
+  canceled: "canceled",
 };
 
 export const MOCK_ADMIN_REWARD_REQUESTS: AdminRewardRequestListItem[] = [
@@ -217,6 +251,124 @@ export const MOCK_ADMIN_REWARD_REQUESTS: AdminRewardRequestListItem[] = [
     latestRetryRequestedAt: null,
     createdAt: "2026-08-04T09:40:00+09:00",
     updatedAt: "2026-08-04T09:45:00+09:00",
+  },
+];
+
+export const MOCK_ADMIN_REWARD_RETRY_REQUEST_HISTORY: AdminRewardRetryRequestHistoryItem[] = [
+  {
+    retryRequestId: "REQ-0041",
+    rewardId: "reward-20260809-001",
+    rewardStatus: "failed",
+    treasureBoxId: "treasure-gangnam-station-01",
+    treasureTitle: "강남역 점심 보물",
+    productId: "prod-starbucks-americano-tall",
+    productName: "스타벅스 아메리카노 Tall",
+    userPublicId: "USR-2048",
+    retryStatus: "pending",
+    reason: "외부 발급 시스템 응답 지연",
+    internalMemo: "첫 실패 후 10분 이상 provider 응답 없음. 사용자 문의 전 선제 재처리 요청.",
+    previousErrorCode: "PROVIDER_TIMEOUT",
+    previousErrorMessage: "기프티쇼비즈 응답 지연",
+    workerResult: null,
+    workerErrorCode: null,
+    workerErrorMessage: null,
+    providerRequestId: "REQ-GFT-900124",
+    requestedByAdminName: "김운영",
+    createdAt: "2026-08-09T09:25:00+09:00",
+    processingStartedAt: null,
+    processedAt: null,
+  },
+  {
+    retryRequestId: "REQ-0040",
+    rewardId: "reward-20260808-003",
+    rewardStatus: "failed",
+    treasureBoxId: "treasure-city-hall-01",
+    treasureTitle: "시청 광장 보물",
+    productId: "prod-cu-mobile-voucher-5000",
+    productName: "CU 모바일금액권 5천원",
+    userPublicId: "USR-3310",
+    retryStatus: "processing",
+    reason: "데이터 보정 후 재처리",
+    internalMemo: "상품 ID 매핑 보정 후 Worker 대기열에 재등록.",
+    previousErrorCode: "INVALID_PRODUCT",
+    previousErrorMessage: "외부 상품 ID 검증 실패",
+    workerResult: null,
+    workerErrorCode: null,
+    workerErrorMessage: null,
+    providerRequestId: "REQ-GFT-899810",
+    requestedByAdminName: "박운영",
+    createdAt: "2026-08-08T19:00:00+09:00",
+    processingStartedAt: "2026-08-08T19:02:00+09:00",
+    processedAt: null,
+  },
+  {
+    retryRequestId: "REQ-0039",
+    rewardId: "reward-20260806-006",
+    rewardStatus: "failed",
+    treasureBoxId: "treasure-itaewon-dinner-01",
+    treasureTitle: "이태원 저녁 보물",
+    productId: "prod-kyochon-honey-combo",
+    productName: "교촌 허니콤보 웨지감자 세트",
+    userPublicId: "USR-8190",
+    retryStatus: "failed",
+    reason: "운영자 수동 재처리",
+    internalMemo: "상품 상태 확인 후 재시도했지만 외부 시스템에서 inactive 응답 유지.",
+    previousErrorCode: "PRODUCT_INACTIVE",
+    previousErrorMessage: "상품 비활성 상태",
+    workerResult: "failed",
+    workerErrorCode: "PRODUCT_INACTIVE",
+    workerErrorMessage: "기프티쇼비즈 상품이 비활성 상태입니다.",
+    providerRequestId: "REQ-GFT-898300",
+    requestedByAdminName: "김운영",
+    createdAt: "2026-08-07T09:00:00+09:00",
+    processingStartedAt: "2026-08-07T09:05:00+09:00",
+    processedAt: "2026-08-07T09:20:00+09:00",
+  },
+  {
+    retryRequestId: "REQ-0038",
+    rewardId: "reward-20260805-007",
+    rewardStatus: "expired",
+    treasureBoxId: "treasure-yeouido-lunch-01",
+    treasureTitle: "여의도 점심 보물",
+    productId: "prod-twosome-americano-r",
+    productName: "투썸플레이스 아메리카노 R",
+    userPublicId: "USR-2711",
+    retryStatus: "success",
+    reason: "사용자 문의 기반 재처리",
+    internalMemo: "사용자 문의 확인 후 재처리 성공. 보상 자체는 만료 정책에 따라 expired 유지.",
+    previousErrorCode: "PROVIDER_TEMPORARY_ERROR",
+    previousErrorMessage: "외부 발급 시스템 일시 오류",
+    workerResult: "success",
+    workerErrorCode: null,
+    workerErrorMessage: null,
+    providerRequestId: "REQ-GFT-897012",
+    requestedByAdminName: "박운영",
+    createdAt: "2026-08-05T18:30:00+09:00",
+    processingStartedAt: "2026-08-05T18:32:00+09:00",
+    processedAt: "2026-08-05T18:43:00+09:00",
+  },
+  {
+    retryRequestId: "REQ-0037",
+    rewardId: "reward-20260806-006",
+    rewardStatus: "failed",
+    treasureBoxId: "treasure-itaewon-dinner-01",
+    treasureTitle: "이태원 저녁 보물",
+    productId: "prod-kyochon-honey-combo",
+    productName: "교촌 허니콤보 웨지감자 세트",
+    userPublicId: "USR-8190",
+    retryStatus: "canceled",
+    reason: "기타",
+    internalMemo: "중복 요청으로 운영자가 취소 처리.",
+    previousErrorCode: "PRODUCT_INACTIVE",
+    previousErrorMessage: "상품 비활성 상태",
+    workerResult: null,
+    workerErrorCode: null,
+    workerErrorMessage: null,
+    providerRequestId: "REQ-GFT-898300",
+    requestedByAdminName: "김운영",
+    createdAt: "2026-08-06T21:00:00+09:00",
+    processingStartedAt: null,
+    processedAt: "2026-08-06T21:05:00+09:00",
   },
 ];
 
