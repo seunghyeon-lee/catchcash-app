@@ -14,6 +14,7 @@ const navigation = [
   { label: "문의", href: "/admin/inquiries" },
   { label: "운영 로그" },
   { label: "관리자 계정", href: "/admin/admins" },
+  { label: "보안 로그", href: "/admin/security-logs" },
 ];
 
 export function AdminShell({ children }: { children: ReactNode }) {
@@ -42,7 +43,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 (item.href === "/admin/products" && pathname.startsWith("/admin/products")) ||
                 (item.href === "/admin/mappings" && pathname.startsWith("/admin/mappings")) ||
                 (item.href === "/admin/reward-requests" && pathname.startsWith("/admin/reward-requests")) ||
-                (item.href === "/admin/admins" && pathname.startsWith("/admin/admins"));
+                (item.href === "/admin/admins" && pathname.startsWith("/admin/admins")) ||
+                (item.href === "/admin/security-logs" && pathname.startsWith("/admin/security-logs"));
               return <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={`block rounded-md px-3 py-2.5 text-sm font-medium ${active ? "bg-[#111827] text-white" : "text-[#4b5563] hover:bg-[#f3f4f6]"}`}>{item.label}</Link>;
             })}
           </nav>
