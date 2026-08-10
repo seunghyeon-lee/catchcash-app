@@ -13,6 +13,7 @@ const navigation = [
   { label: "유저" },
   { label: "문의", href: "/admin/inquiries" },
   { label: "운영 로그" },
+  { label: "관리자 계정", href: "/admin/admins" },
 ];
 
 export function AdminShell({ children }: { children: ReactNode }) {
@@ -35,7 +36,13 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <nav aria-label="관리자 메뉴" className="space-y-1">
             {navigation.map((item) => {
               if (!item.href) return <span key={item.label} className="block rounded-md px-3 py-2.5 text-sm text-[#9ca3af]">{item.label}<small className="ml-2 text-[10px]">준비 중</small></span>;
-              const active = pathname === item.href || (item.href === "/admin/inquiries" && pathname.startsWith("/admin/inquiries")) || (item.href === "/admin/products" && pathname.startsWith("/admin/products")) || (item.href === "/admin/mappings" && pathname.startsWith("/admin/mappings")) || (item.href === "/admin/reward-requests" && pathname.startsWith("/admin/reward-requests"));
+              const active =
+                pathname === item.href ||
+                (item.href === "/admin/inquiries" && pathname.startsWith("/admin/inquiries")) ||
+                (item.href === "/admin/products" && pathname.startsWith("/admin/products")) ||
+                (item.href === "/admin/mappings" && pathname.startsWith("/admin/mappings")) ||
+                (item.href === "/admin/reward-requests" && pathname.startsWith("/admin/reward-requests")) ||
+                (item.href === "/admin/admins" && pathname.startsWith("/admin/admins"));
               return <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={`block rounded-md px-3 py-2.5 text-sm font-medium ${active ? "bg-[#111827] text-white" : "text-[#4b5563] hover:bg-[#f3f4f6]"}`}>{item.label}</Link>;
             })}
           </nav>
