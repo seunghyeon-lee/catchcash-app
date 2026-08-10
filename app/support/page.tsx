@@ -10,7 +10,7 @@ import { SupportStatusBadge } from "@/components/profile/support-status-badge";
 import { ProfileTopAppBar } from "@/components/profile/top-app-bar";
 import { PROFILE_ASSETS } from "@/lib/profile/assets";
 import { MOCK_SUPPORT_INQUIRIES, type SupportInquiry } from "@/lib/profile/support-mock";
-import { getAuthenticatedSupportSession, toSupportInquiry } from "@/lib/profile/support-service";
+import { listSupportInquiries } from "@/lib/profile/support-service";
 
 const { masks, images } = PROFILE_ASSETS;
 
@@ -40,8 +40,7 @@ const CARD_MASKS = [
  * 카드·배지·CTA는 정의서가 전용 에셋으로 지정했지만 에셋이 없어, 상세 화면이 쓰는
  * rough 마스크를 재사용해 세 화면의 실루엣을 맞춘다. 타이틀 밑줄도 같은 방식이다.
  *
- * 데이터는 Supabase `support_inquiries` 에서 읽는다. 세션이 없으면(로그인 연동 전)
- * mock 목록을 그대로 보여준다 — `lib/profile/support-service.ts` 참고.
+ * 데이터는 `listSupportInquiries()` 가 담당한다. 세션이 없으면 mock, 있으면 본인 문의만 조회.
  */
 export default function SupportListPage() {
   const router = useRouter();
@@ -54,30 +53,13 @@ export default function SupportListPage() {
     let isMounted = true;
 
     const loadInquiries = async () => {
-      const session = await getAuthenticatedSupportSession();
+      const result = await listSupportInquiries();
 
       if (!isMounted) return;
 
-      if (!session) {
-        setIsMockFallback(true);
-        setIsLoading(false);
-        return;
-      }
-
-      const { data, error } = await session.client
-        .from("support_inquiries")
-        .select("id, title, content, status, created_at")
-        .eq("user_id", session.userId)
-        .order("created_at", { ascending: false });
-
-      if (!isMounted) return;
-
-      if (error) {
-        setInquiries([]);
-        setLoadError("문의 내역을 불러오지 못했어. 잠시 후 다시 확인해줘.");
-      } else {
-        setInquiries((data ?? []).map((inquiry) => toSupportInquiry(inquiry)));
-      }
+      setInquiries(result.inquiries);
+      setIsMockFallback(result.source === "mock");
+      setLoadError(result.errorMessage ?? null);
       setIsLoading(false);
     };
 

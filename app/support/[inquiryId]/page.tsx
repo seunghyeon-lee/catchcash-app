@@ -9,8 +9,8 @@ import { RoughMaskFrame } from "@/components/profile/rough-mask-frame";
 import { SupportStatusStamp } from "@/components/profile/support-status-stamp";
 import { ProfileTopAppBar } from "@/components/profile/top-app-bar";
 import { PROFILE_ASSETS } from "@/lib/profile/assets";
-import { findInquiry, SUPPORT_ANSWER_WAITING, type SupportInquiry } from "@/lib/profile/support-mock";
-import { getAuthenticatedSupportSession, toSupportInquiry } from "@/lib/profile/support-service";
+import { SUPPORT_ANSWER_WAITING, type SupportInquiry } from "@/lib/profile/support-mock";
+import { getSupportInquiry } from "@/lib/profile/support-service";
 
 const { icons, masks, images } = PROFILE_ASSETS;
 
@@ -38,48 +38,12 @@ export default function SupportDetailPage() {
     let isMounted = true;
 
     const loadInquiry = async () => {
-      const session = await getAuthenticatedSupportSession();
-
-      if (!session) {
-        if (isMounted) {
-          setInquiry(findInquiry(params.inquiryId));
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      const { data: inquiryRow, error: inquiryError } = await session.client
-        .from("support_inquiries")
-        .select("id, title, content, status, created_at")
-        .eq("id", params.inquiryId)
-        .eq("user_id", session.userId)
-        .maybeSingle();
+      const result = await getSupportInquiry(params.inquiryId);
 
       if (!isMounted) return;
 
-      if (inquiryError) {
-        setLoadError("문의를 불러오지 못했어. 잠시 후 다시 확인해줘.");
-        setIsLoading(false);
-        return;
-      }
-
-      if (!inquiryRow) {
-        setIsLoading(false);
-        return;
-      }
-
-      const { data: replies, error: repliesError } = await session.client
-        .from("support_replies")
-        .select("content, created_at")
-        .eq("inquiry_id", inquiryRow.id)
-        .order("created_at", { ascending: true });
-
-      if (!isMounted) return;
-
-      if (repliesError) {
-        setLoadError("답변을 불러오지 못했어. 잠시 후 다시 확인해줘.");
-      }
-      setInquiry(toSupportInquiry(inquiryRow, replies?.[0]?.content ?? null));
+      setInquiry(result.inquiry);
+      setLoadError(result.errorMessage ?? null);
       setIsLoading(false);
     };
 
