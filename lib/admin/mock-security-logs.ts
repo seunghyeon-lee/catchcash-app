@@ -79,10 +79,12 @@ function buildMockSecurityLogs(): SecurityLogListItem[] {
     const day = String((index % 28) + 1).padStart(2, "0");
     const hour = String((index % 20) + 1).padStart(2, "0");
     const isAdminEvent = eventType === "admin_security_event";
-    const userPublicId = isAdminEvent ? null : `USR-${1000 + index}`;
-    const nickname = isAdminEvent ? null : `탐험가${index}`;
+    const userBucket = (index % 8) + 1;
+    const treasureBucket = (index % 6) + 1;
+    const userPublicId = isAdminEvent ? null : `USR-${1000 + userBucket}`;
+    const nickname = isAdminEvent ? null : `탐험가${userBucket}`;
     const treasureId = ["location_validation_failed", "repeated_claim_attempt", "reward_issue_suspicious"].includes(eventType)
-      ? `TRS-${8000 + index}`
+      ? `TRS-${8000 + treasureBucket}`
       : null;
 
     logs.push({
@@ -120,4 +122,78 @@ export function formatSecurityLogDateTime(value: string | null) {
 
 export function findSecurityLog(logId: string) {
   return MOCK_SECURITY_LOGS.find((log) => log.id === logId) ?? null;
+}
+
+export type SecurityLogDetail = SecurityLogListItem & {
+  resultNote: string;
+  latitudeRounded: number | null;
+  longitudeRounded: number | null;
+  referenceLatitudeRounded: number | null;
+  referenceLongitudeRounded: number | null;
+  distanceMeters: number | null;
+  accuracyMeters: number | null;
+  allowedRadiusMeters: number | null;
+  ipMasked: string;
+  userAgentGeneralized: string;
+  osGeneralized: string;
+  appVersion: string;
+  networkType: string;
+  relatedUserStatus: string | null;
+  relatedTreasureStatus: string | null;
+  relatedRewardId: string | null;
+  relatedRewardStatus: string | null;
+  coordinateNote: string;
+};
+
+function buildSecurityLogDetail(log: SecurityLogListItem): SecurityLogDetail {
+  const hasLocation = Boolean(log.treasureId);
+  const distanceMeters = hasLocation ? 180 + (Number(log.id.replace(/\D/g, "")) % 200) : null;
+  const accuracyMeters = hasLocation ? 20 + (Number(log.id.replace(/\D/g, "")) % 40) : null;
+  const allowedRadiusMeters = hasLocation ? 30 : null;
+
+  return {
+    ...log,
+    resultNote:
+      log.status === "resolved"
+        ? "조치 완료로 표시된 mock 결과입니다."
+        : log.status === "false_positive"
+          ? "오탐으로 분류된 mock 결과입니다."
+          : "추가 확인이 필요한 mock 결과입니다.",
+    latitudeRounded: hasLocation ? 37.51 : null,
+    longitudeRounded: hasLocation ? 127.06 : null,
+    referenceLatitudeRounded: hasLocation ? 37.51 : null,
+    referenceLongitudeRounded: hasLocation ? 127.06 : null,
+    distanceMeters,
+    accuracyMeters,
+    allowedRadiusMeters,
+    ipMasked: "203.0.113.***",
+    userAgentGeneralized: "Mobile App WebView",
+    osGeneralized: Number(log.id.replace(/\D/g, "")) % 2 === 0 ? "iOS 계열" : "Android 계열",
+    appVersion: "1.4.x",
+    networkType: Number(log.id.replace(/\D/g, "")) % 2 === 0 ? "LTE" : "Wi-Fi",
+    relatedUserStatus: log.userPublicId ? "active" : null,
+    relatedTreasureStatus: log.treasureId ? "active" : null,
+    relatedRewardId: log.eventType === "reward_issue_suspicious" ? `RWD-${log.id.replace("SEC-", "")}` : null,
+    relatedRewardStatus: log.eventType === "reward_issue_suspicious" ? "pending_review" : null,
+    coordinateNote: "표시 좌표는 synthetic·반올림 값이며 실측 원본 좌표가 아닙니다.",
+  };
+}
+
+export function getSecurityLogDetail(logId: string) {
+  const log = findSecurityLog(logId);
+  return log ? buildSecurityLogDetail(log) : null;
+}
+
+export function getRelatedSecurityLogsByUser(userPublicId: string | null, excludeLogId: string) {
+  if (!userPublicId) return [];
+  return MOCK_SECURITY_LOGS.filter((log) => log.userPublicId === userPublicId && log.id !== excludeLogId)
+    .sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime())
+    .slice(0, 5);
+}
+
+export function getRelatedSecurityLogsByTreasure(treasureId: string | null, excludeLogId: string) {
+  if (!treasureId) return [];
+  return MOCK_SECURITY_LOGS.filter((log) => log.treasureId === treasureId && log.id !== excludeLogId)
+    .sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime())
+    .slice(0, 5);
 }
