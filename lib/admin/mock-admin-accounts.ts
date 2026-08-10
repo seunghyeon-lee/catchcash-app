@@ -267,3 +267,104 @@ export function formatAdminAccountDate(value: string) {
 export function findAdminAccount(adminId: string) {
   return MOCK_ADMIN_ACCOUNTS.find((account) => account.id === adminId) ?? null;
 }
+
+export type AdminActivityAction =
+  | "login_success"
+  | "login_failure"
+  | "role_changed"
+  | "password_reset"
+  | "status_changed";
+
+export type AdminAccountActivity = {
+  id: string;
+  adminId: string;
+  occurredAt: string;
+  action: AdminActivityAction;
+  ipMasked: string;
+  summary: string;
+};
+
+export const ADMIN_ACTIVITY_ACTION_LABEL: Record<AdminActivityAction, string> = {
+  login_success: "로그인 성공",
+  login_failure: "로그인 실패",
+  role_changed: "역할 변경",
+  password_reset: "비밀번호 재설정",
+  status_changed: "상태 변경",
+};
+
+export const ADMIN_ROLE_ALLOWED_MENUS: Record<AdminRole, string[]> = {
+  super_admin: ["대시보드", "관리자 계정", "상품 관리", "매핑 관리", "보상 재처리", "문의", "보안 로그", "접근 차단"],
+  operator: ["대시보드", "상품 관리", "매핑 관리", "보상 재처리", "문의"],
+  viewer: ["대시보드", "상품 관리", "매핑 관리", "문의"],
+};
+
+export const ADMIN_ROLE_RESTRICTED_MENUS: Record<AdminRole, string[]> = {
+  super_admin: [],
+  operator: ["관리자 계정", "보안 로그"],
+  viewer: ["관리자 계정", "보상 재처리", "보안 로그"],
+};
+
+export const MOCK_ADMIN_ACCOUNT_ACTIVITIES: AdminAccountActivity[] = [
+  {
+    id: "act-kim-1",
+    adminId: "admin-kim-ops",
+    occurredAt: "2026-08-10T09:12:00+09:00",
+    action: "login_success",
+    ipMasked: "203.0.113.***",
+    summary: "CMS 로그인 성공",
+  },
+  {
+    id: "act-kim-2",
+    adminId: "admin-kim-ops",
+    occurredAt: "2026-08-09T17:40:00+09:00",
+    action: "role_changed",
+    ipMasked: "203.0.113.***",
+    summary: "operator → super_admin 역할 변경 (mock)",
+  },
+  {
+    id: "act-lee-1",
+    adminId: "admin-lee-ops",
+    occurredAt: "2026-08-09T18:40:00+09:00",
+    action: "login_success",
+    ipMasked: "198.51.100.***",
+    summary: "CMS 로그인 성공",
+  },
+  {
+    id: "act-lee-2",
+    adminId: "admin-lee-ops",
+    occurredAt: "2026-08-08T11:05:00+09:00",
+    action: "password_reset",
+    ipMasked: "198.51.100.***",
+    summary: "비밀번호 재설정 요청 처리 (mock)",
+  },
+  {
+    id: "act-park-1",
+    adminId: "admin-park-view",
+    occurredAt: "2026-08-08T14:05:00+09:00",
+    action: "login_success",
+    ipMasked: "192.0.2.***",
+    summary: "CMS 로그인 성공",
+  },
+  {
+    id: "act-choi-1",
+    adminId: "admin-choi-ops",
+    occurredAt: "2026-07-20T16:22:00+09:00",
+    action: "status_changed",
+    ipMasked: "203.0.113.***",
+    summary: "active → inactive 상태 변경 (mock)",
+  },
+  {
+    id: "act-jung-1",
+    adminId: "admin-jung-view",
+    occurredAt: "2026-07-01T08:45:00+09:00",
+    action: "login_failure",
+    ipMasked: "198.51.100.***",
+    summary: "연속 로그인 실패 후 locked (mock)",
+  },
+];
+
+export function getAdminAccountActivities(adminId: string) {
+  return MOCK_ADMIN_ACCOUNT_ACTIVITIES.filter((activity) => activity.adminId === adminId).sort(
+    (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
+  );
+}
