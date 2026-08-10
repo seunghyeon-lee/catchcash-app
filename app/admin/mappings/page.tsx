@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
+import { DialogOverlay } from "@/components/admin/dialog-overlay";
 import {
   ADMIN_MAPPING_STATUS_LABEL,
   ADMIN_TREASURE_CALCULATED_STATUS_LABEL,
@@ -290,7 +291,7 @@ export default function AdminMappingsPage() {
               <tr key={item.mappingId} className="border-t border-[#f3f4f6] hover:bg-[#f9fafb]">
                 <td className="px-5 py-4 font-mono text-xs">{item.mappingId}</td>
                 <td className="px-5 py-4">
-                  <Link href={`/admin/treasures/${item.treasureId}`} className="font-medium text-[#111827] underline underline-offset-2">{item.treasureTitle}</Link>
+                  <Link href={`/admin/treasures/${item.treasureId}`} prefetch={false} className="font-medium text-[#111827] underline underline-offset-2">{item.treasureTitle}</Link>
                   <p className="mt-1 font-mono text-xs text-[#6b7280]">{item.treasureId}</p>
                 </td>
                 <td className="px-5 py-4">
@@ -310,7 +311,7 @@ export default function AdminMappingsPage() {
                 <td className="px-5 py-4">
                   <div className="flex flex-col items-start gap-1">
                     <div className="flex gap-2">
-                      <Link href={`/admin/treasures/${item.treasureId}`} className="font-medium underline underline-offset-2">보물</Link>
+                      <Link href={`/admin/treasures/${item.treasureId}`} prefetch={false} className="font-medium underline underline-offset-2">보물</Link>
                       <Link href={`/admin/products/${item.productId}`} className="font-medium underline underline-offset-2">상품</Link>
                     </div>
                     {canManageMappings && item.mappingStatus === "active" ? (
@@ -365,9 +366,7 @@ export default function AdminMappingsPage() {
 
       <p className="mt-4 text-xs text-[#6b7280]">이 화면에는 쿠폰 번호, 바코드, 외부 API Secret, 사용자 개인정보를 표시하지 않습니다.</p>
 
-      {selectedMapping ? (
-        <div role="dialog" aria-modal="true" aria-labelledby="mapping-deactivate-title" className="fixed inset-0 z-[60] grid place-items-center bg-black/40 p-6">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+      <DialogOverlay open={!!selectedMapping} onClose={() => setSelectedMapping(null)} labelledBy="mapping-deactivate-title">
             <h2 id="mapping-deactivate-title" className="text-lg font-bold">매칭 비활성화 확인</h2>
             <p className="mt-2 text-sm leading-6 text-[#6b7280]">
               해당 매칭을 비활성화하면 보물에 연결된 활성 상품이 없어질 수 있습니다. 계속하시겠습니까?
@@ -397,9 +396,7 @@ export default function AdminMappingsPage() {
                 비활성화
               </button>
             </div>
-          </div>
-        </div>
-      ) : null}
+      </DialogOverlay>
     </AdminShell>
   );
 }

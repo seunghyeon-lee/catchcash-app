@@ -66,11 +66,11 @@ function matchesPeriod(requestedAt: string, period: PeriodFilter) {
   if (period === "today") {
     const start = new Date();
     start.setHours(0, 0, 0, 0);
-    return requested >= start.getTime();
+    return requested >= start.getTime() && requested <= now;
   }
 
-  if (period === "last_7_days") return requested >= now - 7 * dayMs;
-  if (period === "last_30_days") return requested >= now - 30 * dayMs;
+  if (period === "last_7_days") return requested >= now - 7 * dayMs && requested <= now;
+  if (period === "last_30_days") return requested >= now - 30 * dayMs && requested <= now;
   return true;
 }
 

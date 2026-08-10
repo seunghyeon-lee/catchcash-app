@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
+import { DialogOverlay } from "@/components/admin/dialog-overlay";
 import {
   ADMIN_PRODUCT_STATUS_LABEL,
   MOCK_ADMIN_PRODUCTS,
@@ -244,24 +245,20 @@ export default function AdminProductsPage() {
         </nav>
       </div>
 
-      {isCsvDialogOpen ? (
-        <div role="dialog" aria-modal="true" aria-labelledby="product-csv-title" className="fixed inset-0 z-[60] grid place-items-center bg-black/40 p-6">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h2 id="product-csv-title" className="text-lg font-bold">CSV 내보내기</h2>
-            <p className="mt-2 text-sm leading-6 text-[#6b7280]">
-              현재 검색·필터 조건의 상품 목록을 CSV로 내보냅니다. 쿠폰번호·바코드·사용자 개인정보는 포함하지 않습니다.
-            </p>
-            <div className="mt-6 flex justify-end gap-2">
-              <button type="button" onClick={() => setIsCsvDialogOpen(false)} className="rounded-md border border-[#d1d5db] px-4 py-2 text-sm font-medium">
-                취소
-              </button>
-              <button type="button" onClick={() => setIsCsvDialogOpen(false)} className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white">
-                내보내기
-              </button>
-            </div>
-          </div>
+      <DialogOverlay open={isCsvDialogOpen} onClose={() => setIsCsvDialogOpen(false)} labelledBy="product-csv-title">
+        <h2 id="product-csv-title" className="text-lg font-bold">CSV 내보내기</h2>
+        <p className="mt-2 text-sm leading-6 text-[#6b7280]">
+          현재 검색·필터 조건의 상품 목록을 CSV로 내보냅니다. 쿠폰번호·바코드·사용자 개인정보는 포함하지 않습니다.
+        </p>
+        <div className="mt-6 flex justify-end gap-2">
+          <button type="button" onClick={() => setIsCsvDialogOpen(false)} className="rounded-md border border-[#d1d5db] px-4 py-2 text-sm font-medium">
+            취소
+          </button>
+          <button type="button" onClick={() => setIsCsvDialogOpen(false)} className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white">
+            내보내기
+          </button>
         </div>
-      ) : null}
+      </DialogOverlay>
     </AdminShell>
   );
 }

@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
+import { DialogOverlay } from "@/components/admin/dialog-overlay";
 import {
   MOCK_ADMIN_MAPPING_TREASURES,
   findActiveAdminMapping,
@@ -255,39 +256,37 @@ export default function AdminMappingCreateReplacePage() {
       </div>
 
       {isConfirmOpen && selectedTreasure && selectedProduct && activeMapping ? (
-        <div role="dialog" aria-modal="true" aria-labelledby="mapping-replace-title" className="fixed inset-0 z-[60] grid place-items-center bg-black/40 p-6">
-          <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
-            <h2 id="mapping-replace-title" className="text-lg font-bold">매칭 교체 확인</h2>
-            <dl className="mt-4 rounded-md bg-[#f9fafb] p-4">
-              <SummaryRow label="대상 보물" value={`${selectedTreasure.title} (${selectedTreasure.treasureId})`} />
-              <SummaryRow label="신규 연결 상품" value={`${selectedProduct.brandName} · ${selectedProduct.name}`} />
-              <SummaryRow label="기존 매칭 처리" value={`${activeMapping.mappingId} → 비활성 전환`} />
-            </dl>
-            <p className="mt-4 text-sm leading-6 text-[#6b7280]">위 내용으로 매칭을 교체하시겠습니까? 이 작업은 되돌릴 수 없습니다.</p>
-            <label className="mt-4 block">
-              <span className="text-sm font-medium text-[#374151]">처리 사유 (필수)</span>
-              <textarea
-                value={replaceReason}
-                onChange={(event) => {
-                  setReplaceReason(event.target.value);
-                  setReplaceError("");
-                }}
-                maxLength={300}
-                className="mt-1 min-h-24 w-full rounded-md border border-[#d1d5db] px-3 py-2 text-sm outline-none focus:border-[#111827]"
-                placeholder="교체 사유를 입력하세요."
-              />
-            </label>
-            {replaceError ? <p role="alert" className="mt-1 text-xs font-medium text-[#b91c1c]">{replaceError}</p> : null}
-            <div className="mt-6 flex justify-end gap-2">
-              <button type="button" onClick={() => setIsConfirmOpen(false)} className="rounded-md border border-[#d1d5db] px-4 py-2 text-sm font-medium">
-                취소
-              </button>
-              <button type="button" disabled={isSaving} onClick={() => void confirmReplace()} className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-[#9ca3af]">
-                {isSaving ? "저장 중" : "저장"}
-              </button>
-            </div>
+        <DialogOverlay open onClose={() => setIsConfirmOpen(false)} labelledBy="mapping-replace-title" className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
+          <h2 id="mapping-replace-title" className="text-lg font-bold">매칭 교체 확인</h2>
+          <dl className="mt-4 rounded-md bg-[#f9fafb] p-4">
+            <SummaryRow label="대상 보물" value={`${selectedTreasure.title} (${selectedTreasure.treasureId})`} />
+            <SummaryRow label="신규 연결 상품" value={`${selectedProduct.brandName} · ${selectedProduct.name}`} />
+            <SummaryRow label="기존 매칭 처리" value={`${activeMapping.mappingId} → 비활성 전환`} />
+          </dl>
+          <p className="mt-4 text-sm leading-6 text-[#6b7280]">위 내용으로 매칭을 교체하시겠습니까? 이 작업은 되돌릴 수 없습니다.</p>
+          <label className="mt-4 block">
+            <span className="text-sm font-medium text-[#374151]">처리 사유 (필수)</span>
+            <textarea
+              value={replaceReason}
+              onChange={(event) => {
+                setReplaceReason(event.target.value);
+                setReplaceError("");
+              }}
+              maxLength={300}
+              className="mt-1 min-h-24 w-full rounded-md border border-[#d1d5db] px-3 py-2 text-sm outline-none focus:border-[#111827]"
+              placeholder="교체 사유를 입력하세요."
+            />
+          </label>
+          {replaceError ? <p role="alert" className="mt-1 text-xs font-medium text-[#b91c1c]">{replaceError}</p> : null}
+          <div className="mt-6 flex justify-end gap-2">
+            <button type="button" onClick={() => setIsConfirmOpen(false)} className="rounded-md border border-[#d1d5db] px-4 py-2 text-sm font-medium">
+              취소
+            </button>
+            <button type="button" disabled={isSaving} onClick={() => void confirmReplace()} className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-[#9ca3af]">
+              {isSaving ? "저장 중" : "저장"}
+            </button>
           </div>
-        </div>
+        </DialogOverlay>
       ) : null}
     </AdminShell>
   );

@@ -12,6 +12,7 @@ const ACCESS_DENIED_REASONS = [
   "sensitive_log_forbidden",
   "direct_url_forbidden",
   "invalid_admin_profile",
+  "unknown",
 ] as const;
 
 type AccessDeniedReason = (typeof ACCESS_DENIED_REASONS)[number];
@@ -37,18 +38,24 @@ const REASON_COPY: Record<AccessDeniedReason, { title: string; description: stri
     title: "관리자 프로필 오류",
     description: "관리자 프로필 데이터가 불완전하여 접근할 수 없습니다.",
   },
+  unknown: {
+    title: "알 수 없는 접근 제한 사유",
+    description: "접근은 제한되었지만 요청된 사유를 확인할 수 없습니다. 관리자에게 문의하세요.",
+  },
 };
 
 function resolveReason(value: string | null): AccessDeniedReason {
-  if (value && (ACCESS_DENIED_REASONS as readonly string[]).includes(value)) {
+  if (!value) return "permission_denied";
+  if ((ACCESS_DENIED_REASONS as readonly string[]).includes(value)) {
     return value as AccessDeniedReason;
   }
-  return "permission_denied";
+  return "unknown";
 }
 
 function AccessDeniedContent() {
   const searchParams = useSearchParams();
-  const reason = resolveReason(searchParams.get("reason"));
+  const requestedReason = searchParams.get("reason");
+  const reason = resolveReason(requestedReason);
   const copy = REASON_COPY[reason];
 
   return (
@@ -59,7 +66,11 @@ function AccessDeniedContent() {
       <section className="mt-7 rounded-lg border border-[#e5e7eb] bg-white p-6">
         <h2 className="text-base font-semibold text-[#111827]">{copy.title}</h2>
         <p className="mt-3 text-sm leading-6 text-[#4b5563]">{copy.description}</p>
-        <p className="mt-3 text-xs text-[#9ca3af]">reason: {reason}</p>
+        {process.env.NODE_ENV === "development" ? (
+          <p className="mt-3 text-xs text-[#9ca3af]">
+            reason: {requestedReason ?? "(none)"} → {reason}
+          </p>
+        ) : null}
       </section>
 
       <section className="mt-4 rounded-lg border border-[#e5e7eb] bg-white p-6">

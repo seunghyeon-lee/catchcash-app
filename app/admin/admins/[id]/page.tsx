@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
+import { DialogOverlay } from "@/components/admin/dialog-overlay";
 import {
   ADMIN_ACTIVITY_ACTION_LABEL,
   ADMIN_ROLE_ALLOWED_MENUS,
@@ -270,9 +271,7 @@ export default function AdminAccountDetailPage() {
         </div>
       </div>
 
-      {dialog ? (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="admin-detail-dialog-title">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+      <DialogOverlay open={!!dialog} onClose={closeDialog} labelledBy="admin-detail-dialog-title">
             <h2 id="admin-detail-dialog-title" className="text-lg font-semibold text-[#111827]">
               {dialog === "role"
                 ? "역할 변경"
@@ -354,9 +353,7 @@ export default function AdminAccountDetailPage() {
                         : "재설정 확인"}
               </button>
             </div>
-          </div>
-        </div>
-      ) : null}
+      </DialogOverlay>
     </AdminShell>
   );
 }

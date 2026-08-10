@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
+import { DialogOverlay } from "@/components/admin/dialog-overlay";
 import {
   ADMIN_REWARD_RETRY_REQUEST_STATUS_LABEL,
   MOCK_ADMIN_REWARD_RETRY_REQUEST_HISTORY,
@@ -310,70 +311,64 @@ export default function AdminRewardRetryRequestHistoryPage() {
         </button>
       </div>
 
-      {isCsvDialogOpen ? (
-        <div role="dialog" aria-modal="true" aria-labelledby="retry-history-csv-title" className="fixed inset-0 z-[60] grid place-items-center bg-black/40 p-6">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h2 id="retry-history-csv-title" className="text-lg font-bold">CSV 내보내기</h2>
-            <p className="mt-2 text-sm leading-6 text-[#6b7280]">
-              현재 필터 조건 기준으로 재처리 요청 이력을 CSV로 내보냅니다. 사용자 이메일, 쿠폰 번호, 바코드, 기프티쇼비즈 Secret은 포함하지 않습니다.
-            </p>
-            <div className="mt-6 flex justify-end gap-2">
-              <button type="button" onClick={() => setIsCsvDialogOpen(false)} className="rounded-md border border-[#d1d5db] px-4 py-2 text-sm font-medium">
-                취소
-              </button>
-              <button type="button" onClick={() => setIsCsvDialogOpen(false)} className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white">
-                내보내기
-              </button>
-            </div>
-          </div>
+      <DialogOverlay open={isCsvDialogOpen} onClose={() => setIsCsvDialogOpen(false)} labelledBy="retry-history-csv-title">
+        <h2 id="retry-history-csv-title" className="text-lg font-bold">CSV 내보내기</h2>
+        <p className="mt-2 text-sm leading-6 text-[#6b7280]">
+          현재 필터 조건 기준으로 재처리 요청 이력을 CSV로 내보냅니다. 사용자 이메일, 쿠폰 번호, 바코드, 기프티쇼비즈 Secret은 포함하지 않습니다.
+        </p>
+        <div className="mt-6 flex justify-end gap-2">
+          <button type="button" onClick={() => setIsCsvDialogOpen(false)} className="rounded-md border border-[#d1d5db] px-4 py-2 text-sm font-medium">
+            취소
+          </button>
+          <button type="button" onClick={() => setIsCsvDialogOpen(false)} className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white">
+            내보내기
+          </button>
         </div>
-      ) : null}
+      </DialogOverlay>
 
       {selectedHistory ? (
-        <div role="dialog" aria-modal="true" aria-labelledby="retry-history-detail-title" className="fixed inset-0 z-[60] grid place-items-center bg-black/40 p-6">
-          <div className="max-h-[86vh] w-full max-w-2xl overflow-auto rounded-lg bg-white p-6 shadow-xl">
-            <h2 id="retry-history-detail-title" className="text-lg font-bold">재처리 요청 상세</h2>
-            <div className="mt-5 grid grid-cols-2 gap-4">
-              <DetailCard title="기본 정보">
-                <DetailRow label="요청 ID" value={selectedHistory.retryRequestId} />
-                <DetailRow label="상태" value={<StatusBadge label={ADMIN_REWARD_RETRY_REQUEST_STATUS_LABEL[selectedHistory.retryStatus]} status={selectedHistory.retryStatus} />} />
-                <DetailRow label="요청 시각" value={formatAdminRewardDateTime(selectedHistory.createdAt)} />
-                <DetailRow label="처리 시각" value={formatAdminRewardDateTime(selectedHistory.processedAt)} />
-                <DetailRow label="요청자" value={selectedHistory.requestedByAdminName} />
-                <DetailRow label="처리 방식" value="worker" />
-              </DetailCard>
-              <DetailCard title="대상 보상 정보">
-                <DetailRow label="보상 ID" value={selectedHistory.rewardId} />
-                <DetailRow label="유저" value={selectedHistory.userPublicId} />
-                <DetailRow label="보물" value={selectedHistory.treasureTitle} />
-                <DetailRow label="상품" value={selectedHistory.productName ?? "상품 미연결"} />
-                <DetailRow label="현재 보상 상태" value={selectedHistory.rewardStatus} />
-                <DetailRow label="외부 발급 요청 ID" value={selectedHistory.providerRequestId ?? "-"} />
-              </DetailCard>
-              <DetailCard title="처리 결과">
-                <DetailRow label="처리 결과" value={selectedHistory.workerResult ?? "-"} />
-                <DetailRow label="실패 코드" value={selectedHistory.workerErrorCode ?? "-"} />
-                <DetailRow label="실패 사유" value={selectedHistory.workerErrorMessage ?? "-"} />
-                <DetailRow label="처리 소요 시간" value={getProcessDuration(selectedHistory)} />
-                <DetailRow label="외부 발급 요청 ID" value={selectedHistory.providerRequestId ?? "-"} />
-              </DetailCard>
-              <DetailCard title="생성 사유 및 메모">
-                <DetailRow label="생성 사유" value={selectedHistory.reason} />
-                <DetailRow label="내부 메모" value={selectedHistory.internalMemo ?? "-"} />
-                <DetailRow label="이전 실패 코드" value={selectedHistory.previousErrorCode ?? "-"} />
-                <DetailRow label="이전 실패 사유" value={selectedHistory.previousErrorMessage ?? "-"} />
-              </DetailCard>
-            </div>
-            <p className="mt-5 rounded-md bg-[#f9fafb] p-3 text-xs leading-5 text-[#6b7280]">
-              이 상세 팝업은 조회 전용이며, 쿠폰 번호와 바코드, 사용자 이메일, 외부 API Secret을 표시하지 않습니다.
-            </p>
-            <div className="mt-6 flex justify-end">
-              <button type="button" onClick={() => setSelectedHistory(null)} className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white">
-                닫기
-              </button>
-            </div>
+        <DialogOverlay open onClose={() => setSelectedHistory(null)} labelledBy="retry-history-detail-title" className="max-h-[86vh] w-full max-w-2xl overflow-auto rounded-lg bg-white p-6 shadow-xl">
+          <h2 id="retry-history-detail-title" className="text-lg font-bold">재처리 요청 상세</h2>
+          <div className="mt-5 grid grid-cols-2 gap-4">
+            <DetailCard title="기본 정보">
+              <DetailRow label="요청 ID" value={selectedHistory.retryRequestId} />
+              <DetailRow label="상태" value={<StatusBadge label={ADMIN_REWARD_RETRY_REQUEST_STATUS_LABEL[selectedHistory.retryStatus]} status={selectedHistory.retryStatus} />} />
+              <DetailRow label="요청 시각" value={formatAdminRewardDateTime(selectedHistory.createdAt)} />
+              <DetailRow label="처리 시각" value={formatAdminRewardDateTime(selectedHistory.processedAt)} />
+              <DetailRow label="요청자" value={selectedHistory.requestedByAdminName} />
+              <DetailRow label="처리 방식" value="worker" />
+            </DetailCard>
+            <DetailCard title="대상 보상 정보">
+              <DetailRow label="보상 ID" value={selectedHistory.rewardId} />
+              <DetailRow label="유저" value={selectedHistory.userPublicId} />
+              <DetailRow label="보물" value={selectedHistory.treasureTitle} />
+              <DetailRow label="상품" value={selectedHistory.productName ?? "상품 미연결"} />
+              <DetailRow label="현재 보상 상태" value={selectedHistory.rewardStatus} />
+              <DetailRow label="외부 발급 요청 ID" value={selectedHistory.providerRequestId ?? "-"} />
+            </DetailCard>
+            <DetailCard title="처리 결과">
+              <DetailRow label="처리 결과" value={selectedHistory.workerResult ?? "-"} />
+              <DetailRow label="실패 코드" value={selectedHistory.workerErrorCode ?? "-"} />
+              <DetailRow label="실패 사유" value={selectedHistory.workerErrorMessage ?? "-"} />
+              <DetailRow label="처리 소요 시간" value={getProcessDuration(selectedHistory)} />
+              <DetailRow label="외부 발급 요청 ID" value={selectedHistory.providerRequestId ?? "-"} />
+            </DetailCard>
+            <DetailCard title="생성 사유 및 메모">
+              <DetailRow label="생성 사유" value={selectedHistory.reason} />
+              <DetailRow label="내부 메모" value={selectedHistory.internalMemo ?? "-"} />
+              <DetailRow label="이전 실패 코드" value={selectedHistory.previousErrorCode ?? "-"} />
+              <DetailRow label="이전 실패 사유" value={selectedHistory.previousErrorMessage ?? "-"} />
+            </DetailCard>
           </div>
-        </div>
+          <p className="mt-5 rounded-md bg-[#f9fafb] p-3 text-xs leading-5 text-[#6b7280]">
+            이 상세 팝업은 조회 전용이며, 쿠폰 번호와 바코드, 사용자 이메일, 외부 API Secret을 표시하지 않습니다.
+          </p>
+          <div className="mt-6 flex justify-end">
+            <button type="button" onClick={() => setSelectedHistory(null)} className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white">
+              닫기
+            </button>
+          </div>
+        </DialogOverlay>
       ) : null}
     </AdminShell>
   );

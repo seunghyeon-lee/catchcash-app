@@ -71,13 +71,13 @@ const statuses: SecurityLogStatus[] = ["open", "reviewing", "resolved", "false_p
 
 function buildMockSecurityLogs(): SecurityLogListItem[] {
   const logs: SecurityLogListItem[] = [];
+  const now = Date.now();
+  const dayMs = 24 * 60 * 60 * 1000;
 
   for (let index = 1; index <= 42; index += 1) {
     const eventType = eventTypes[index % eventTypes.length];
     const severity = severities[index % severities.length];
     const status = statuses[index % statuses.length];
-    const day = String((index % 28) + 1).padStart(2, "0");
-    const hour = String((index % 20) + 1).padStart(2, "0");
     const isAdminEvent = eventType === "admin_security_event";
     const userBucket = (index % 8) + 1;
     const treasureBucket = (index % 6) + 1;
@@ -86,6 +86,17 @@ function buildMockSecurityLogs(): SecurityLogListItem[] {
     const treasureId = ["location_validation_failed", "repeated_claim_attempt", "reward_issue_suspicious"].includes(eventType)
       ? `TRS-${8000 + treasureBucket}`
       : null;
+
+    const offsetDays = index - 1;
+    const hour = (index % 20) + 1;
+    const requestedDate = new Date(now - offsetDays * dayMs);
+    requestedDate.setHours(hour, 5, 0, 0);
+    if (requestedDate.getTime() > now) {
+      requestedDate.setTime(now - 60_000);
+    }
+
+    const deviceDate = new Date(requestedDate.getTime() - 60_000);
+    const receivedDate = new Date(requestedDate.getTime() + 20_000);
 
     logs.push({
       id: `SEC-${1000 + index}`,
@@ -96,9 +107,9 @@ function buildMockSecurityLogs(): SecurityLogListItem[] {
       nickname,
       treasureId,
       summary: `${SECURITY_LOG_EVENT_TYPE_LABEL[eventType]} mock 이벤트 #${index}`,
-      requestedAt: `2026-08-${day}T${hour}:05:00+09:00`,
-      deviceAt: isAdminEvent ? null : `2026-08-${day}T${hour}:04:00+09:00`,
-      receivedAt: `2026-08-${day}T${hour}:05:20+09:00`,
+      requestedAt: requestedDate.toISOString(),
+      deviceAt: isAdminEvent ? null : deviceDate.toISOString(),
+      receivedAt: receivedDate.toISOString(),
     });
   }
 

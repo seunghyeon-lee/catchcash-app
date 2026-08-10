@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
@@ -47,6 +47,15 @@ export default function AdminAccountsPage() {
   const [role, setRole] = useState<RoleFilter>("all");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("created") === "1") {
+      setToast("관리자 계정 등록을 mock으로 완료했습니다. 실제 계정은 생성되지 않습니다.");
+      window.history.replaceState(null, "", "/admin/admins");
+    }
+  }, []);
 
   const filteredAccounts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -76,6 +85,12 @@ export default function AdminAccountsPage() {
 
   return (
     <AdminShell>
+      {toast ? (
+        <div role="status" className="mb-4 flex items-center justify-between rounded-md border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#166534]">
+          <span>{toast}</span>
+          <button type="button" onClick={() => setToast(null)} className="ml-4 text-[#166534] hover:text-[#14532d]" aria-label="알림 닫기">✕</button>
+        </div>
+      ) : null}
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold">관리자 계정</h1>
