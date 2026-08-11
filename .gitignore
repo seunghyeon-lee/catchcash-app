@@ -6,3 +6,7 @@ out
 capacitor-cordova
 www
 *.log
+
+# Web QA automation artifacts (Playwright CLI)
+qa-artifacts/
+.playwright-cli/
