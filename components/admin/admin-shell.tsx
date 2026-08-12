@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 
 const navigation = [
   { label: "대시보드", href: "/admin/dashboard" },
-  { label: "보물상자" },
+  { label: "보물상자", href: "/admin/treasures" },
   { label: "상품 관리", href: "/admin/products" },
   { label: "매핑 관리", href: "/admin/mappings" },
   { label: "보상 재처리", href: "/admin/reward-requests" },
@@ -39,6 +39,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               if (!item.href) return <span key={item.label} className="block rounded-md px-3 py-2.5 text-sm text-[#9ca3af]">{item.label}<small className="ml-2 text-[10px]">준비 중</small></span>;
               const active =
                 pathname === item.href ||
+                (item.href === "/admin/treasures" && pathname.startsWith("/admin/treasures")) ||
                 (item.href === "/admin/inquiries" && pathname.startsWith("/admin/inquiries")) ||
                 (item.href === "/admin/products" && pathname.startsWith("/admin/products")) ||
                 (item.href === "/admin/mappings" && pathname.startsWith("/admin/mappings")) ||
