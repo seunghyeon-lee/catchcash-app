@@ -403,7 +403,11 @@ export default function AdminTreasureEditPage() {
                 {activeChecks.map((item) => (
                   <li key={item.label} className="flex items-center justify-between gap-3 text-sm">
                     <span className="text-[#374151]">{item.label}</span>
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${item.passed ? "bg-[#dcfce7] text-[#166534]" : "bg-[#fee2e2] text-[#991b1b]"}`}>
+                    <span
+                      className={`inline-flex shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${
+                        item.passed ? "bg-[#dcfce7] text-[#166534]" : "bg-[#fee2e2] text-[#991b1b]"
+                      }`}
+                    >
                       {item.passed ? "충족" : "미충족"}
                     </span>
                   </li>
