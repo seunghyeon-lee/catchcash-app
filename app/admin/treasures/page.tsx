@@ -175,23 +175,23 @@ export default function AdminTreasuresPage() {
 
   return (
     <AdminShell>
-      <div className="flex items-end justify-between">
-        <div>
+      <div className="flex items-end justify-between gap-4">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold">보물상자 목록</h1>
           <p className="mt-2 text-sm text-[#6b7280]">
             등록된 보물상자를 mock data 기준으로 조회합니다. 실제 지도/API 연결과 저장은 포함하지 않습니다.
           </p>
         </div>
         {canManageTreasures ? (
-          <div className="flex gap-2">
+          <div className="flex shrink-0 gap-2">
             <button
               type="button"
               onClick={() => setIsCsvDialogOpen(true)}
-              className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
+              className="whitespace-nowrap rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
             >
               CSV 내보내기
             </button>
-            <Link href="/admin/treasures/new" className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white hover:bg-black">
+            <Link href="/admin/treasures/new" className="whitespace-nowrap rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white hover:bg-black">
               보물상자 등록
             </Link>
           </div>
@@ -199,7 +199,8 @@ export default function AdminTreasuresPage() {
       </div>
 
       <section className="mt-7 rounded-lg border border-[#e5e7eb] bg-white p-4">
-        <div className="grid grid-cols-[minmax(220px,1.2fr)_140px_150px_150px_160px_auto] gap-3">
+        <div className="overflow-x-auto">
+          <div className="grid min-w-[900px] grid-cols-[minmax(220px,1.2fr)_140px_150px_150px_160px_auto] gap-3">
           <input
             aria-label="보물상자 검색"
             value={query}
@@ -287,27 +288,28 @@ export default function AdminTreasuresPage() {
           <button
             type="button"
             onClick={resetFilters}
-            className="h-10 rounded-md border border-[#d1d5db] bg-white px-4 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
+            className="h-10 whitespace-nowrap rounded-md border border-[#d1d5db] bg-white px-4 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
           >
             필터 초기화
           </button>
+          </div>
         </div>
       </section>
 
       <section className="mt-4 overflow-hidden rounded-lg border border-[#e5e7eb] bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1040px] text-left text-sm">
+          <table className="w-full min-w-[1100px] table-fixed text-left text-sm">
             <thead className="bg-[#f9fafb] text-xs text-[#6b7280]">
               <tr>
-                <th className="px-5 py-3 font-medium">ID</th>
-                <th className="px-5 py-3 font-medium">보물상자명</th>
-                <th className="px-5 py-3 font-medium">위치 문구</th>
-                <th className="px-5 py-3 font-medium">저장 상태</th>
-                <th className="px-5 py-3 font-medium">계산 상태</th>
-                <th className="px-5 py-3 font-medium">기간</th>
-                <th className="px-5 py-3 font-medium">최대/현재 수량</th>
-                <th className="px-5 py-3 font-medium">등록일</th>
-                <th className="px-5 py-3 font-medium">액션</th>
+                <th className="w-[88px] whitespace-nowrap px-5 py-3 font-medium">ID</th>
+                <th className="w-[180px] whitespace-nowrap px-5 py-3 font-medium">보물상자명</th>
+                <th className="whitespace-nowrap px-5 py-3 font-medium">위치 문구</th>
+                <th className="w-[100px] whitespace-nowrap px-5 py-3 font-medium">저장 상태</th>
+                <th className="w-[110px] whitespace-nowrap px-5 py-3 font-medium">계산 상태</th>
+                <th className="w-[200px] whitespace-nowrap px-5 py-3 font-medium">기간</th>
+                <th className="w-[120px] whitespace-nowrap px-5 py-3 font-medium">최대/현재 수량</th>
+                <th className="w-[110px] whitespace-nowrap px-5 py-3 font-medium">등록일</th>
+                <th className="w-[72px] whitespace-nowrap px-5 py-3 font-medium">액션</th>
               </tr>
             </thead>
             <tbody>
@@ -386,32 +388,32 @@ function TreasureRow({ treasure }: { treasure: AdminTreasureListItem }) {
 
   return (
     <tr className="border-t border-[#f3f4f6] hover:bg-[#f9fafb]">
-      <td className="px-5 py-4">
+      <td className="whitespace-nowrap px-5 py-4">
         <Link href={detailHref} className="font-mono text-xs text-[#4b5563] hover:underline">
           {treasure.treasureCode}
         </Link>
       </td>
       <td className="px-5 py-4">
-        <Link href={detailHref} className="font-medium text-[#111827] hover:underline">
+        <Link href={detailHref} className="block truncate font-medium text-[#111827] hover:underline" title={treasure.title}>
           {treasure.title}
         </Link>
       </td>
-      <td className="max-w-[220px] truncate px-5 py-4 text-[#4b5563]" title={treasure.locationLabel}>
+      <td className="truncate px-5 py-4 text-[#4b5563]" title={treasure.locationLabel}>
         {treasure.locationLabel}
       </td>
-      <td className="px-5 py-4">
+      <td className="whitespace-nowrap px-5 py-4">
         <SaveStatusBadge status={treasure.status} />
       </td>
-      <td className="px-5 py-4">
+      <td className="whitespace-nowrap px-5 py-4">
         <CalculatedStatusBadge status={treasure.calculatedStatus} />
       </td>
       <td className="whitespace-nowrap px-5 py-4 text-[#6b7280]">{formatAdminTreasurePeriod(treasure.startsAt, treasure.endsAt)}</td>
-      <td className="px-5 py-4">
+      <td className="whitespace-nowrap px-5 py-4">
         {treasure.maxClaimCount} / {treasure.currentClaimCount}
       </td>
-      <td className="px-5 py-4 text-[#6b7280]">{formatAdminTreasureDate(treasure.createdAt)}</td>
-      <td className="px-5 py-4">
-        <Link href={detailHref} className="text-sm font-medium text-[#111827] underline underline-offset-2">
+      <td className="whitespace-nowrap px-5 py-4 text-[#6b7280]">{formatAdminTreasureDate(treasure.createdAt)}</td>
+      <td className="whitespace-nowrap px-5 py-4">
+        <Link href={detailHref} className="inline-flex whitespace-nowrap text-sm font-medium text-[#111827] underline underline-offset-2">
           상세
         </Link>
       </td>
