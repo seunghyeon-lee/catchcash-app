@@ -96,7 +96,11 @@ function SaveStatusBadge({ status }: { status: AdminTreasureSaveStatus }) {
         ? "bg-[#fee2e2] text-[#991b1b]"
         : "bg-[#f3f4f6] text-[#4b5563]";
 
-  return <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}>{ADMIN_TREASURE_SAVE_STATUS_LABEL[status]}</span>;
+  return (
+    <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}>
+      {ADMIN_TREASURE_SAVE_STATUS_LABEL[status]}
+    </span>
+  );
 }
 
 function CalculatedStatusBadge({ status }: { status: AdminTreasureCalculatedStatus }) {
@@ -112,7 +116,7 @@ function CalculatedStatusBadge({ status }: { status: AdminTreasureCalculatedStat
             : "bg-[#f3f4f6] text-[#4b5563]";
 
   return (
-    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}>
+    <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}>
       {ADMIN_TREASURE_CALCULATED_STATUS_LABEL[status]}
     </span>
   );

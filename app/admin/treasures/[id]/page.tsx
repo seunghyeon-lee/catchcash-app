@@ -51,7 +51,11 @@ function SaveStatusBadge({ status }: { status: AdminTreasureSaveStatus }) {
         ? "bg-[#fee2e2] text-[#991b1b]"
         : "bg-[#f3f4f6] text-[#4b5563]";
 
-  return <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}>{ADMIN_TREASURE_SAVE_STATUS_LABEL[status]}</span>;
+  return (
+    <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}>
+      {ADMIN_TREASURE_SAVE_STATUS_LABEL[status]}
+    </span>
+  );
 }
 
 function CalculatedStatusBadge({ status }: { status: AdminTreasureCalculatedStatus }) {
@@ -67,7 +71,7 @@ function CalculatedStatusBadge({ status }: { status: AdminTreasureCalculatedStat
             : "bg-[#f3f4f6] text-[#4b5563]";
 
   return (
-    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}>
+    <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}>
       {ADMIN_TREASURE_CALCULATED_STATUS_LABEL[status]}
     </span>
   );
@@ -77,7 +81,11 @@ function CheckRow({ label, passed }: { label: string; passed: boolean }) {
   return (
     <div className="flex items-center justify-between border-t border-[#f3f4f6] py-3 first:border-t-0 first:pt-0">
       <span className="text-sm text-[#374151]">{label}</span>
-      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${passed ? "bg-[#dcfce7] text-[#166534]" : "bg-[#fee2e2] text-[#991b1b]"}`}>
+      <span
+        className={`inline-flex shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${
+          passed ? "bg-[#dcfce7] text-[#166534]" : "bg-[#fee2e2] text-[#991b1b]"
+        }`}
+      >
         {passed ? "충족" : "미충족"}
       </span>
     </div>
