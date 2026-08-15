@@ -247,8 +247,155 @@ export const MOCK_ADMIN_TREASURES: AdminTreasureListItem[] = [
   },
 ];
 
+export type AdminTreasureHistoryAction = "delete" | "restore";
+
+export type AdminTreasureHistoryItem = {
+  id: string;
+  action: AdminTreasureHistoryAction;
+  adminName: string;
+  reason: string;
+  createdAt: string;
+};
+
+export type AdminTreasureDetail = AdminTreasureListItem & {
+  description: string;
+  hintText: string;
+  radiusM: number;
+  mappedProductName: string | null;
+  mappedProductId: string | null;
+  mappingStatus: "active" | "inactive" | "none";
+  createdBy: string;
+  updatedBy: string;
+  history: AdminTreasureHistoryItem[];
+};
+
+export type AdminTreasureVisibleCheckKey =
+  | "notDeleted"
+  | "statusActive"
+  | "hasCoordinates"
+  | "periodValid"
+  | "claimAvailable"
+  | "hasActiveMapping"
+  | "productActive";
+
+export const ADMIN_TREASURE_HISTORY_ACTION_LABEL: Record<AdminTreasureHistoryAction, string> = {
+  delete: "삭제",
+  restore: "복구",
+};
+
+export const ADMIN_TREASURE_VISIBLE_CHECK_LABEL: Record<AdminTreasureVisibleCheckKey, string> = {
+  notDeleted: "삭제되지 않음",
+  statusActive: "저장 상태 active",
+  hasCoordinates: "좌표 존재",
+  periodValid: "운영 기간 유효",
+  claimAvailable: "획득 수량 여유",
+  hasActiveMapping: "활성 매칭 존재",
+  productActive: "연결 상품 active",
+};
+
+const TREASURE_DETAIL_EXTRA: Record<
+  string,
+  Pick<
+    AdminTreasureDetail,
+    "description" | "hintText" | "radiusM" | "mappedProductName" | "mappedProductId" | "mappingStatus" | "createdBy" | "updatedBy" | "history"
+  >
+> = {
+  "treasure-jongno-factory-01": {
+    description: "광화문 광장 인근 시즌 이벤트 보물상자입니다.",
+    hintText: "큰 건물 앞쪽을 바라보세요.",
+    radiusM: 30,
+    mappedProductName: "스타벅스 아메리카노 Tall",
+    mappedProductId: "prod-starbucks-americano-tall",
+    mappingStatus: "active",
+    createdBy: "김운영",
+    updatedBy: "김운영",
+    history: [],
+  },
+  "treasure-mapo-riverside-02": {
+    description: "좌표 및 매칭이 부족한 테스트용 보물입니다.",
+    hintText: "강변 산책로 근처를 확인하세요.",
+    radiusM: 25,
+    mappedProductName: null,
+    mappedProductId: null,
+    mappingStatus: "none",
+    createdBy: "이운영",
+    updatedBy: "이운영",
+    history: [],
+  },
+  "treasure-busan-gwangalli-01": {
+    description: "운영 종료 후 soft delete된 보물상자입니다.",
+    hintText: "해변 산책로 근처의 표지판을 확인하세요.",
+    radiusM: 40,
+    mappedProductName: null,
+    mappedProductId: null,
+    mappingStatus: "none",
+    createdBy: "박관리",
+    updatedBy: "김운영",
+    history: [
+      {
+        id: "hist-busan-delete-01",
+        action: "delete",
+        adminName: "김운영",
+        reason: "운영 종료 후 정리",
+        createdAt: "2026-07-02T10:00:00+09:00",
+      },
+    ],
+  },
+  "treasure-jamsil-park-01": {
+    description: "비활성 상태로 보관 중인 잠실 한강공원 보물입니다.",
+    hintText: "공원 입구 근처를 확인하세요.",
+    radiusM: 35,
+    mappedProductName: "CU 모바일금액권 5천원",
+    mappedProductId: "prod-cu-mobile-voucher-5000",
+    mappingStatus: "active",
+    createdBy: "이운영",
+    updatedBy: "이운영",
+    history: [],
+  },
+};
+
+function buildDefaultDetailExtra(treasure: AdminTreasureListItem) {
+  const hasMapping = treasure.activeMappingCount > 0 && treasure.activeProductCount > 0;
+
+  return {
+    description: `${treasure.title} 운영 상세 정보입니다.`,
+    hintText: `${treasure.locationLabel} 주변을 탐색하세요.`,
+    radiusM: 30,
+    mappedProductName: hasMapping ? "연결 상품 mock" : null,
+    mappedProductId: hasMapping ? "prod-mock-linked" : null,
+    mappingStatus: hasMapping ? ("active" as const) : ("none" as const),
+    createdBy: "김운영",
+    updatedBy: "김운영",
+    history: [] as AdminTreasureHistoryItem[],
+  };
+}
+
 export function findAdminTreasure(id: string) {
   return MOCK_ADMIN_TREASURES.find((treasure) => treasure.id === id);
+}
+
+export function findAdminTreasureDetail(id: string): AdminTreasureDetail | undefined {
+  const treasure = findAdminTreasure(id);
+  if (!treasure) return undefined;
+
+  const extra = TREASURE_DETAIL_EXTRA[id] ?? buildDefaultDetailExtra(treasure);
+  return { ...treasure, ...extra };
+}
+
+export function getAdminTreasureVisibleChecks(detail: AdminTreasureDetail) {
+  const now = Date.now();
+  const starts = new Date(detail.startsAt).getTime();
+  const ends = new Date(detail.endsAt).getTime();
+
+  return {
+    notDeleted: detail.deletedAt === null && detail.status !== "deleted",
+    statusActive: detail.status === "active",
+    hasCoordinates: detail.latitude !== null && detail.longitude !== null,
+    periodValid: now >= starts && now <= ends,
+    claimAvailable: detail.currentClaimCount < detail.maxClaimCount,
+    hasActiveMapping: detail.mappingStatus === "active" && detail.activeMappingCount > 0,
+    productActive: detail.activeProductCount > 0 && detail.mappingStatus === "active",
+  } satisfies Record<AdminTreasureVisibleCheckKey, boolean>;
 }
 
 export function formatAdminTreasureDate(value: string) {
@@ -256,6 +403,17 @@ export function formatAdminTreasureDate(value: string) {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
+  }).format(new Date(value));
+}
+
+export function formatAdminTreasureDateTime(value: string) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
   }).format(new Date(value));
 }
 
