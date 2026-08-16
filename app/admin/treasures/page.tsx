@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
@@ -28,6 +29,30 @@ type TreasureSortKey =
 
 const PAGE_SIZE = 20;
 const adminRole = "super_admin";
+
+const CALCULATED_STATUS_VALUES = new Set<AdminTreasureCalculatedStatus>([
+  "visible",
+  "scheduled",
+  "expired",
+  "sold_out",
+  "invalid",
+  "hidden",
+]);
+
+function parseCalculatedStatusFilter(searchParams: URLSearchParams): CalculatedStatusFilter {
+  const fromCalculated = searchParams.get("calculatedStatus");
+  if (fromCalculated && CALCULATED_STATUS_VALUES.has(fromCalculated as AdminTreasureCalculatedStatus)) {
+    return fromCalculated as AdminTreasureCalculatedStatus;
+  }
+
+  // A02 대시보드 스펙 호환: ?visibility=visible
+  const fromVisibility = searchParams.get("visibility");
+  if (fromVisibility && CALCULATED_STATUS_VALUES.has(fromVisibility as AdminTreasureCalculatedStatus)) {
+    return fromVisibility as AdminTreasureCalculatedStatus;
+  }
+
+  return "all";
+}
 
 const sortOptions: Array<{ label: string; value: TreasureSortKey }> = [
   { label: "최신 등록순", value: "created_desc" },
@@ -122,14 +147,22 @@ function CalculatedStatusBadge({ status }: { status: AdminTreasureCalculatedStat
   );
 }
 
-export default function AdminTreasuresPage() {
+function AdminTreasuresPageContent() {
+  const searchParams = useSearchParams();
+  const initialCalculatedStatus = parseCalculatedStatusFilter(searchParams);
+
   const [query, setQuery] = useState("");
   const [saveStatus, setSaveStatus] = useState<SaveStatusFilter>("all");
-  const [calculatedStatus, setCalculatedStatus] = useState<CalculatedStatusFilter>("all");
+  const [calculatedStatus, setCalculatedStatus] = useState<CalculatedStatusFilter>(initialCalculatedStatus);
   const [period, setPeriod] = useState<PeriodFilter>("all");
   const [sort, setSort] = useState<TreasureSortKey>("created_desc");
   const [page, setPage] = useState(1);
   const [isCsvDialogOpen, setIsCsvDialogOpen] = useState(false);
+
+  useEffect(() => {
+    setCalculatedStatus(parseCalculatedStatusFilter(searchParams));
+    setPage(1);
+  }, [searchParams]);
 
   const canManageTreasures = adminRole === "super_admin" || adminRole === "operator";
 
@@ -174,7 +207,7 @@ export default function AdminTreasuresPage() {
   };
 
   return (
-    <AdminShell>
+    <>
       <div className="flex items-end justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold">보물상자 목록</h1>
@@ -379,6 +412,16 @@ export default function AdminTreasuresPage() {
           </div>
         </div>
       ) : null}
+    </>
+  );
+}
+
+export default function AdminTreasuresPage() {
+  return (
+    <AdminShell>
+      <Suspense fallback={<p className="text-sm text-[#6b7280]">보물상자 목록을 불러오는 중...</p>}>
+        <AdminTreasuresPageContent />
+      </Suspense>
     </AdminShell>
   );
 }
