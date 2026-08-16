@@ -1,36 +1,116 @@
+"use client";
+
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, type ReactNode } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
   MOCK_DASHBOARD_TODAY,
   formatDashboardDateTime,
+  getClaimSectionSummaries,
+  getDashboardClaimRows,
+  getDashboardFailureRows,
+  getDashboardInquiryRows,
   getDashboardMetricCards,
   getDashboardQuickLinks,
-  getDashboardRecentItems,
+  getFailureSectionSummaries,
+  getInquirySectionSummaries,
+  type DashboardSectionSummaryCard,
 } from "@/lib/admin/mock-dashboard";
 
 const adminRole = "super_admin" as const;
 
-function RecentStatusBadge({ kind, label }: { kind: string; label: string }) {
-  const tone =
-    kind === "issue_failed"
+function StatusBadge({ tone, label }: { tone: "success" | "danger" | "warning" | "neutral"; label: string }) {
+  const className =
+    tone === "danger"
       ? "bg-[#fee2e2] text-[#991b1b]"
-      : kind === "inquiry"
+      : tone === "warning"
         ? "bg-[#fef3c7] text-[#92400e]"
-        : "bg-[#dcfce7] text-[#166534]";
+        : tone === "success"
+          ? "bg-[#dcfce7] text-[#166534]"
+          : "bg-[#f3f4f6] text-[#4b5563]";
 
   return (
-    <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}>{label}</span>
+    <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${className}`}>{label}</span>
   );
 }
 
-export default function AdminDashboardPage() {
+function SummaryCards({ cards }: { cards: DashboardSectionSummaryCard[] }) {
+  return (
+    <div className="grid grid-cols-3 gap-3">
+      {cards.map((card) => (
+        <article key={card.title} className="rounded-lg border border-[#e5e7eb] bg-[#f9fafb] px-4 py-3">
+          <p className="text-xs font-medium text-[#6b7280]">{card.title}</p>
+          <p className="mt-2 truncate text-xl font-semibold tracking-tight text-[#111827]" title={card.value}>
+            {card.value}
+          </p>
+          <p className="mt-1 text-[11px] text-[#9ca3af]">{card.description}</p>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function RecentSection({
+  id,
+  title,
+  listHref,
+  listLabel,
+  summaries,
+  emptyText,
+  children,
+}: {
+  id: string;
+  title: string;
+  listHref: string;
+  listLabel: string;
+  summaries: DashboardSectionSummaryCard[];
+  emptyText: string;
+  children: ReactNode;
+}) {
+  return (
+    <section id={id} className="rounded-lg border border-[#e5e7eb] bg-white">
+      <div className="flex items-center justify-between border-b border-[#e5e7eb] px-5 py-4">
+        <h3 className="font-semibold text-[#111827]">{title}</h3>
+        <Link href={listHref} className="text-sm font-medium underline underline-offset-2">
+          {listLabel}
+        </Link>
+      </div>
+      <div className="space-y-4 p-5">
+        <SummaryCards cards={summaries} />
+        {children ? (
+          children
+        ) : (
+          <div className="rounded-md border border-dashed border-[#e5e7eb] px-4 py-10 text-center text-sm text-[#6b7280]">
+            {emptyText}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function RecentStatusScrollHelper() {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("section") !== "recent-status") return;
+    document.getElementById("recent-status")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [searchParams]);
+
+  return null;
+}
+
+function DashboardPageContent() {
   const metrics = getDashboardMetricCards();
-  const recentItems = getDashboardRecentItems();
   const quickLinks = getDashboardQuickLinks(adminRole);
+  const claimRows = getDashboardClaimRows();
+  const failureRows = getDashboardFailureRows();
+  const inquiryRows = getDashboardInquiryRows();
 
   return (
-    <AdminShell>
+    <>
       <div className="flex items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">운영 대시보드</h1>
@@ -53,51 +133,161 @@ export default function AdminDashboardPage() {
         ))}
       </section>
 
-      <section className="mt-7 rounded-lg border border-[#e5e7eb] bg-white">
-        <div className="flex items-center justify-between border-b border-[#e5e7eb] px-5 py-4">
-          <h2 className="font-semibold">최근 현황</h2>
-          <Link href="/admin/inquiries" className="text-sm font-medium underline underline-offset-2">
-            문의 전체 보기
+      <div id="recent-status" className="mt-8 scroll-mt-24">
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold">최근 현황</h2>
+            <p className="mt-1 text-sm text-[#6b7280]">Asia/Seoul 기준 · 보물 획득 / 발급 실패 / 문의</p>
+          </div>
+          <Link href="/admin/dashboard?section=recent-status" className="text-sm font-medium text-[#6b7280] underline underline-offset-2">
+            이 섹션으로
           </Link>
         </div>
 
-        {recentItems.length === 0 ? (
-          <div className="px-5 py-16 text-center">
-            <p className="text-sm font-semibold text-[#111827]">최근 현황이 없습니다.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
-              <thead className="bg-[#f9fafb] text-xs text-[#6b7280]">
-                <tr>
-                  <th className="whitespace-nowrap px-5 py-3 font-medium">구분</th>
-                  <th className="whitespace-nowrap px-5 py-3 font-medium">항목</th>
-                  <th className="whitespace-nowrap px-5 py-3 font-medium">유저</th>
-                  <th className="whitespace-nowrap px-5 py-3 font-medium">상태</th>
-                  <th className="whitespace-nowrap px-5 py-3 font-medium">일시</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentItems.map((item) => (
-                  <tr key={item.id} className="border-t border-[#f3f4f6] hover:bg-[#f9fafb]">
-                    <td className="whitespace-nowrap px-5 py-4 text-[#374151]">{item.kindLabel}</td>
-                    <td className="px-5 py-4">
-                      <Link href={item.href} className="font-medium text-[#111827] underline-offset-2 hover:underline">
-                        {item.title}
-                      </Link>
-                    </td>
-                    <td className="whitespace-nowrap px-5 py-4 text-[#4b5563]">{item.userLabel}</td>
-                    <td className="px-5 py-4">
-                      <RecentStatusBadge kind={item.kind} label={item.statusLabel} />
-                    </td>
-                    <td className="whitespace-nowrap px-5 py-4 text-[#6b7280]">{formatDashboardDateTime(item.occurredAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+        <div className="space-y-6">
+          <RecentSection
+            id="recent-claims"
+            title="최근 보물 획득"
+            listHref="/admin/reward-requests"
+            listLabel="보상 목록"
+            summaries={getClaimSectionSummaries()}
+            emptyText="최근 보물 획득 내역이 없습니다."
+          >
+            {claimRows.length === 0 ? null : (
+              <div className="overflow-x-auto rounded-lg border border-[#e5e7eb]">
+                <table className="w-full min-w-[720px] text-left text-sm">
+                  <thead className="bg-[#f9fafb] text-xs text-[#6b7280]">
+                    <tr>
+                      <th className="whitespace-nowrap px-4 py-3 font-medium">획득 ID</th>
+                      <th className="whitespace-nowrap px-4 py-3 font-medium">보물명</th>
+                      <th className="whitespace-nowrap px-4 py-3 font-medium">유저 닉네임</th>
+                      <th className="whitespace-nowrap px-4 py-3 font-medium">보상 상태</th>
+                      <th className="whitespace-nowrap px-4 py-3 font-medium">획득 시각</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {claimRows.map((row) => (
+                      <tr key={row.id} className="border-t border-[#f3f4f6] hover:bg-[#f9fafb]">
+                        <td className="whitespace-nowrap px-4 py-3">
+                          <Link href={row.href} className="font-mono text-xs font-medium underline underline-offset-2">
+                            {row.claimId}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Link href={row.treasureHref} className="font-medium hover:underline">
+                            {row.treasureTitle}
+                          </Link>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-[#4b5563]">{row.userNickname}</td>
+                        <td className="px-4 py-3">
+                          <StatusBadge tone="success" label={row.rewardStatusLabel} />
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-[#6b7280]">{formatDashboardDateTime(row.claimedAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </RecentSection>
+
+          <RecentSection
+            id="recent-failures"
+            title="최근 발급 실패"
+            listHref="/admin/reward-requests?status=failed"
+            listLabel="실패 목록"
+            summaries={getFailureSectionSummaries()}
+            emptyText="최근 발급 실패 내역이 없습니다."
+          >
+            {failureRows.length === 0 ? null : (
+              <div className="overflow-x-auto rounded-lg border border-[#e5e7eb]">
+                <table className="w-full min-w-[840px] text-left text-sm">
+                  <thead className="bg-[#f9fafb] text-xs text-[#6b7280]">
+                    <tr>
+                      <th className="whitespace-nowrap px-4 py-3 font-medium">보상 ID</th>
+                      <th className="whitespace-nowrap px-4 py-3 font-medium">보물명</th>
+                      <th className="whitespace-nowrap px-4 py-3 font-medium">유저 닉네임</th>
+                      <th className="whitespace-nowrap px-4 py-3 font-medium">실패 코드</th>
+                      <th className="whitespace-nowrap px-4 py-3 font-medium">실패 시각</th>
+                      <th className="whitespace-nowrap px-4 py-3 font-medium">재처리 요청</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {failureRows.map((row) => (
+                      <tr key={row.id} className="border-t border-[#f3f4f6] hover:bg-[#f9fafb]">
+                        <td className="whitespace-nowrap px-4 py-3">
+                          <Link href={row.href} className="font-mono text-xs font-medium underline underline-offset-2">
+                            {row.rewardId}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Link href={row.treasureHref} className="font-medium hover:underline">
+                            {row.treasureTitle}
+                          </Link>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-[#4b5563]">{row.userNickname}</td>
+                        <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-[#991b1b]">{row.failureCode}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-[#6b7280]">{formatDashboardDateTime(row.failedAt)}</td>
+                        <td className="px-4 py-3">
+                          <StatusBadge
+                            tone={row.retryStatus === "none" ? "neutral" : "warning"}
+                            label={row.retryStatusLabel}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </RecentSection>
+
+          <RecentSection
+            id="recent-inquiries"
+            title="최근 문의"
+            listHref="/admin/inquiries"
+            listLabel="문의 목록"
+            summaries={getInquirySectionSummaries()}
+            emptyText="최근 문의가 없습니다."
+          >
+            {inquiryRows.length === 0 ? null : (
+              <div className="overflow-x-auto rounded-lg border border-[#e5e7eb]">
+                <table className="w-full min-w-[720px] text-left text-sm">
+                  <thead className="bg-[#f9fafb] text-xs text-[#6b7280]">
+                    <tr>
+                      <th className="whitespace-nowrap px-4 py-3 font-medium">문의 ID</th>
+                      <th className="whitespace-nowrap px-4 py-3 font-medium">카테고리</th>
+                      <th className="whitespace-nowrap px-4 py-3 font-medium">유저 닉네임</th>
+                      <th className="whitespace-nowrap px-4 py-3 font-medium">상태</th>
+                      <th className="whitespace-nowrap px-4 py-3 font-medium">접수 시각</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {inquiryRows.map((row) => (
+                      <tr key={row.id} className="border-t border-[#f3f4f6] hover:bg-[#f9fafb]">
+                        <td className="whitespace-nowrap px-4 py-3">
+                          <Link href={row.href} className="font-mono text-xs font-medium underline underline-offset-2">
+                            {row.inquiryId}
+                          </Link>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-[#374151]">{row.categoryLabel}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-[#4b5563]">{row.userNickname}</td>
+                        <td className="px-4 py-3">
+                          <StatusBadge
+                            tone={row.statusLabel === "in_progress" ? "warning" : "success"}
+                            label={row.statusLabel}
+                          />
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-[#6b7280]">{formatDashboardDateTime(row.createdAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </RecentSection>
+        </div>
+      </div>
 
       <div className="mt-5 flex flex-wrap items-start justify-between gap-4">
         <p className="max-w-3xl text-xs leading-5 text-[#6b7280]">
@@ -126,6 +316,17 @@ export default function AdminDashboardPage() {
           )}
         </nav>
       </div>
+    </>
+  );
+}
+
+export default function AdminDashboardPage() {
+  return (
+    <AdminShell>
+      <Suspense fallback={<p className="text-sm text-[#6b7280]">대시보드를 불러오는 중...</p>}>
+        <RecentStatusScrollHelper />
+        <DashboardPageContent />
+      </Suspense>
     </AdminShell>
   );
 }

@@ -1,5 +1,11 @@
-import { MOCK_ADMIN_INQUIRIES, formatAdminDate } from "@/lib/admin/mock-inquiries";
-import { MOCK_ADMIN_REWARD_REQUESTS, ADMIN_REWARD_STATUS_LABEL } from "@/lib/admin/mock-reward-requests";
+import { ADMIN_CATEGORY_LABEL, MOCK_ADMIN_INQUIRIES, formatAdminDate } from "@/lib/admin/mock-inquiries";
+import {
+  ADMIN_REWARD_RETRY_STATUS_LABEL,
+  ADMIN_REWARD_STATUS_LABEL,
+  MOCK_ADMIN_REWARD_REQUESTS,
+  type AdminRewardRetryStatus,
+  type AdminRewardStatus,
+} from "@/lib/admin/mock-reward-requests";
 import { MOCK_ADMIN_TREASURES } from "@/lib/admin/mock-treasures";
 
 /** mock 보상 데이터가 몰려 있는 일자. shell에서 '오늘' 집계 기준으로 사용한다. */
@@ -15,30 +21,71 @@ export type DashboardMetricCard = {
   href: string;
 };
 
-export type DashboardRecentKind = "claim_success" | "issue_failed" | "inquiry";
-
-export type DashboardRecentItem = {
-  id: string;
-  kind: DashboardRecentKind;
-  kindLabel: string;
-  title: string;
-  userLabel: string;
-  statusLabel: string;
-  occurredAt: string;
-  href: string;
-};
-
 export type DashboardQuickLink = {
   label: string;
   href: string | null;
   enabled: boolean;
 };
 
-const SUCCESS_REWARD_STATUSES = new Set(["ready", "issued", "used"]);
+export type DashboardSectionSummaryCard = {
+  title: string;
+  value: string;
+  description: string;
+};
+
+export type DashboardClaimRow = {
+  id: string;
+  claimId: string;
+  treasureTitle: string;
+  treasureHref: string;
+  userNickname: string;
+  rewardStatus: AdminRewardStatus;
+  rewardStatusLabel: string;
+  claimedAt: string;
+  href: string;
+};
+
+export type DashboardFailureRow = {
+  id: string;
+  rewardId: string;
+  treasureTitle: string;
+  treasureHref: string;
+  userNickname: string;
+  failureCode: string;
+  failedAt: string;
+  retryStatus: AdminRewardRetryStatus;
+  retryStatusLabel: string;
+  href: string;
+};
+
+export type DashboardInquiryRow = {
+  id: string;
+  inquiryId: string;
+  categoryLabel: string;
+  userNickname: string;
+  statusLabel: string;
+  createdAt: string;
+  href: string;
+};
+
+const SUCCESS_REWARD_STATUSES = new Set<AdminRewardStatus>(["ready", "issued", "used"]);
+
+const REWARD_STATUS_DISPLAY: Record<AdminRewardStatus, string> = {
+  ready: "발급 전",
+  issued: "발급 완료",
+  failed: "발급 실패",
+  used: "사용 완료",
+  expired: "만료",
+  canceled: "취소",
+};
 
 function isSameMockDay(value: string | null, day: string) {
   if (!value) return false;
   return value.slice(0, 10) === day;
+}
+
+function treasureHref(treasureBoxId: string) {
+  return `/admin/treasures/${treasureBoxId}`;
 }
 
 export function getDashboardMetricCards(): DashboardMetricCard[] {
@@ -60,7 +107,7 @@ export function getDashboardMetricCards(): DashboardMetricCard[] {
       title: "Visible 보물",
       value: visibleTreasure,
       description: "현재 앱 지도 노출 중",
-      href: "/admin/treasures?visibility=visible",
+      href: "/admin/treasures?calculatedStatus=visible",
     },
     {
       key: "claim_success",
@@ -86,64 +133,117 @@ export function getDashboardMetricCards(): DashboardMetricCard[] {
   ];
 }
 
-export function getDashboardRecentItems(limit = 8): DashboardRecentItem[] {
-  const claimItems: DashboardRecentItem[] = MOCK_ADMIN_REWARD_REQUESTS.filter((item) =>
-    SUCCESS_REWARD_STATUSES.has(item.status),
-  ).map((item) => ({
-    id: `claim-${item.rewardId}`,
-    kind: "claim_success",
-    kindLabel: "보물 획득",
-    title: item.treasureTitle,
-    userLabel: item.userNickname,
-    statusLabel: ADMIN_REWARD_STATUS_LABEL[item.status],
-    occurredAt: item.claimedAt,
-    href: `/admin/rewards/${item.rewardId}`,
-  }));
+export function getClaimSectionSummaries(): DashboardSectionSummaryCard[] {
+  const todayClaims = MOCK_ADMIN_REWARD_REQUESTS.filter(
+    (item) => SUCCESS_REWARD_STATUSES.has(item.status) && isSameMockDay(item.claimedAt, MOCK_DASHBOARD_TODAY),
+  ).length;
 
-  const failedItems: DashboardRecentItem[] = MOCK_ADMIN_REWARD_REQUESTS.filter((item) => item.status === "failed").map(
-    (item) => ({
-      id: `fail-${item.rewardId}`,
-      kind: "issue_failed",
-      kindLabel: "발급 실패",
-      title: item.productName ?? item.treasureTitle,
-      userLabel: item.userNickname,
-      statusLabel: ADMIN_REWARD_STATUS_LABEL[item.status],
-      occurredAt: item.failedAt ?? item.claimedAt,
+  const todayRewards = MOCK_ADMIN_REWARD_REQUESTS.filter(
+    (item) =>
+      (item.status === "ready" || item.status === "issued") && isSameMockDay(item.claimedAt, MOCK_DASHBOARD_TODAY),
+  ).length;
+
+  const recentWindowClaims = MOCK_ADMIN_REWARD_REQUESTS.filter((item) => SUCCESS_REWARD_STATUSES.has(item.status)).length;
+
+  return [
+    { title: "오늘 획득 성공", value: String(todayClaims), description: "claimed_at 오늘 기준" },
+    { title: "오늘 보상 생성", value: String(todayRewards), description: "ready / issued" },
+    { title: "최근 4시간 획득", value: String(Math.min(recentWindowClaims, 3)), description: "mock 최근 흐름" },
+  ];
+}
+
+export function getFailureSectionSummaries(): DashboardSectionSummaryCard[] {
+  const openFailures = MOCK_ADMIN_REWARD_REQUESTS.filter((item) => item.status === "failed").length;
+  const retryWaiting = MOCK_ADMIN_REWARD_REQUESTS.filter(
+    (item) => item.status === "failed" && (item.retryRequestStatus === "requested" || item.retryRequestStatus === "in_progress"),
+  ).length;
+
+  const codeCounts = new Map<string, number>();
+  for (const item of MOCK_ADMIN_REWARD_REQUESTS) {
+    if (item.status !== "failed" || !item.lastFailureCode) continue;
+    codeCounts.set(item.lastFailureCode, (codeCounts.get(item.lastFailureCode) ?? 0) + 1);
+  }
+  const topCode = [...codeCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "-";
+
+  return [
+    { title: "미처리 실패", value: String(openFailures), description: "failed · 재처리 전" },
+    { title: "재처리 대기", value: String(retryWaiting), description: "requested / in_progress" },
+    { title: "최근 실패 사유", value: topCode, description: "최다 실패 코드" },
+  ];
+}
+
+export function getInquirySectionSummaries(): DashboardSectionSummaryCard[] {
+  const openCount = MOCK_ADMIN_INQUIRIES.filter((item) => item.status === "reading").length;
+  const todayCount = MOCK_ADMIN_INQUIRIES.filter((item) => isSameMockDay(item.created_at, "2026-07-28")).length || MOCK_ADMIN_INQUIRIES.length;
+
+  return [
+    { title: "미처리 문의", value: String(openCount), description: "open + in_progress" },
+    { title: "오늘 접수", value: String(todayCount), description: "당일 문의 유입" },
+    { title: "평균 응답 대기", value: "4.2시간", description: "open 기준 mock" },
+  ];
+}
+
+export function getDashboardClaimRows(limit = 8): DashboardClaimRow[] {
+  return MOCK_ADMIN_REWARD_REQUESTS.filter((item) => SUCCESS_REWARD_STATUSES.has(item.status))
+    .map((item) => ({
+      id: item.rewardId,
+      claimId: `clm-${item.rewardId.replace("reward-", "")}`,
+      treasureTitle: item.treasureTitle,
+      treasureHref: treasureHref(item.treasureBoxId),
+      userNickname: item.userNickname,
+      rewardStatus: item.status,
+      rewardStatusLabel: REWARD_STATUS_DISPLAY[item.status] ?? ADMIN_REWARD_STATUS_LABEL[item.status],
+      claimedAt: item.claimedAt,
       href: `/admin/rewards/${item.rewardId}`,
-    }),
-  );
+    }))
+    .sort((a, b) => new Date(b.claimedAt).getTime() - new Date(a.claimedAt).getTime())
+    .slice(0, limit);
+}
 
-  const inquiryItems: DashboardRecentItem[] = MOCK_ADMIN_INQUIRIES.filter((item) => item.status === "reading").map(
-    (item) => ({
-      id: `inquiry-${item.id}`,
-      kind: "inquiry",
-      kindLabel: "문의",
-      title: item.title,
-      userLabel: item.user_nickname,
-      statusLabel: "in_progress",
-      occurredAt: item.created_at,
+export function getDashboardFailureRows(limit = 8): DashboardFailureRow[] {
+  return MOCK_ADMIN_REWARD_REQUESTS.filter((item) => item.status === "failed")
+    .map((item) => ({
+      id: item.rewardId,
+      rewardId: item.rewardId,
+      treasureTitle: item.treasureTitle,
+      treasureHref: treasureHref(item.treasureBoxId),
+      userNickname: item.userNickname,
+      failureCode: item.lastFailureCode ?? "-",
+      failedAt: item.failedAt ?? item.claimedAt,
+      retryStatus: item.retryRequestStatus,
+      retryStatusLabel: ADMIN_REWARD_RETRY_STATUS_LABEL[item.retryRequestStatus],
+      href: `/admin/rewards/${item.rewardId}`,
+    }))
+    .sort((a, b) => new Date(b.failedAt).getTime() - new Date(a.failedAt).getTime())
+    .slice(0, limit);
+}
+
+export function getDashboardInquiryRows(limit = 8): DashboardInquiryRow[] {
+  return [...MOCK_ADMIN_INQUIRIES]
+    .map((item) => ({
+      id: item.id,
+      inquiryId: `inq-${item.id.slice(0, 8)}`,
+      categoryLabel: ADMIN_CATEGORY_LABEL[item.category],
+      userNickname: item.user_nickname,
+      statusLabel: item.status === "reading" ? "in_progress" : "answered",
+      createdAt: item.created_at,
       href: `/admin/inquiries/${item.id}`,
-    }),
-  );
-
-  return [...claimItems, ...failedItems, ...inquiryItems]
-    .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())
+    }))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, limit);
 }
 
 export function getDashboardQuickLinks(role: "super_admin" | "operator" | "viewer" = "super_admin"): DashboardQuickLink[] {
-  const links: DashboardQuickLink[] = [
-    { label: "상품 목록", href: "/admin/products", enabled: true },
-    { label: "매칭 목록", href: "/admin/mappings", enabled: true },
-    { label: "유저 목록", href: null, enabled: false },
+  return [
+    { label: "보상 목록", href: "/admin/reward-requests", enabled: true },
+    { label: "보물상자 목록", href: "/admin/treasures", enabled: true },
+    { label: "문의 목록", href: "/admin/inquiries", enabled: true },
     {
       label: "운영 로그",
       href: role === "viewer" ? null : "/admin/operation-logs",
       enabled: role !== "viewer",
     },
   ];
-
-  return links;
 }
 
 export { formatAdminDate as formatDashboardDateTime };
