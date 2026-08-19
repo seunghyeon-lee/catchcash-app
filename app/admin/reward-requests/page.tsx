@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
+import { DialogOverlay } from "@/components/admin/dialog-overlay";
 import {
   ADMIN_REWARD_DATE_FIELD_LABEL,
   ADMIN_REWARD_RETRY_STATUS_LABEL,
@@ -420,96 +421,96 @@ export default function AdminRewardRequestsPage() {
         </button>
       </div>
 
-      {isCsvDialogOpen ? (
-        <div role="dialog" aria-modal="true" aria-labelledby="reward-csv-title" className="fixed inset-0 z-[60] grid place-items-center bg-black/40 p-6">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h2 id="reward-csv-title" className="text-lg font-bold">CSV 내보내기</h2>
-            <p className="mt-2 text-sm leading-6 text-[#6b7280]">
-              현재 검색·필터·정렬 조건의 보상 목록을 CSV로 내보냅니다. 쿠폰 번호, 바코드, 사용자 이메일, 외부 API Secret은 포함하지 않습니다.
-            </p>
-            <div className="mt-6 flex justify-end gap-2">
-              <button type="button" onClick={() => setIsCsvDialogOpen(false)} className="rounded-md border border-[#d1d5db] px-4 py-2 text-sm font-medium">
-                취소
-              </button>
-              <button type="button" onClick={() => setIsCsvDialogOpen(false)} className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white">
-                내보내기
-              </button>
-            </div>
-          </div>
+      <DialogOverlay open={isCsvDialogOpen} onClose={() => setIsCsvDialogOpen(false)} labelledBy="reward-csv-title">
+        <h2 id="reward-csv-title" className="text-lg font-bold">CSV 내보내기</h2>
+        <p className="mt-2 text-sm leading-6 text-[#6b7280]">
+          현재 검색·필터·정렬 조건의 보상 목록을 CSV로 내보냅니다. 쿠폰 번호, 바코드, 사용자 이메일, 외부 API Secret은 포함하지 않습니다.
+        </p>
+        <div className="mt-6 flex justify-end gap-2">
+          <button type="button" onClick={() => setIsCsvDialogOpen(false)} className="rounded-md border border-[#d1d5db] px-4 py-2 text-sm font-medium">
+            취소
+          </button>
+          <button type="button" onClick={() => setIsCsvDialogOpen(false)} className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white">
+            내보내기
+          </button>
         </div>
-      ) : null}
+      </DialogOverlay>
 
       {selectedRetryReward ? (
-        <div role="dialog" aria-modal="true" aria-labelledby="reward-retry-title" aria-describedby="reward-retry-description" className="fixed inset-0 z-[60] grid place-items-center bg-black/55 p-6">
-          <div className="w-full max-w-[420px] rounded-2xl bg-white p-6 shadow-xl">
-            <h2 id="reward-retry-title" className="text-lg font-bold">재처리 요청 생성</h2>
-            <p id="reward-retry-description" className="mt-2 text-sm leading-6 text-[#6b7280]">
-              현재 발급 실패 상태의 보상을 다시 처리하도록 요청합니다. 동일 보상에 진행 중인 요청이 있으면 중복 생성이 차단됩니다.
-            </p>
-            <dl className="mt-4 rounded-md bg-[#f9fafb] p-4 text-sm">
-              <div className="flex justify-between gap-4">
-                <dt className="text-[#6b7280]">보상 ID</dt>
-                <dd className="font-mono text-xs font-medium text-[#111827]">{selectedRetryReward.rewardId}</dd>
-              </div>
-              <div className="mt-2 flex justify-between gap-4">
-                <dt className="text-[#6b7280]">보상 상태</dt>
-                <dd><StatusBadge label={selectedRetryReward.status} status={selectedRetryReward.status} /></dd>
-              </div>
-              <div className="mt-2 flex justify-between gap-4">
-                <dt className="text-[#6b7280]">상품</dt>
-                <dd className="text-right font-medium text-[#111827]">{selectedRetryReward.productName ?? "상품 미연결"}</dd>
-              </div>
-              <div className="mt-2 flex justify-between gap-4">
-                <dt className="text-[#6b7280]">최근 실패 코드</dt>
-                <dd className="font-mono text-xs font-medium text-[#b91c1c]">{selectedRetryReward.lastFailureCode ?? "-"}</dd>
-              </div>
-            </dl>
-            <label className="mt-4 block">
-              <span className="text-sm font-medium text-[#374151]">재처리 사유</span>
-              <select
-                value={retryReason}
-                onChange={(event) => {
-                  setRetryReason(event.target.value as RewardRetryReason);
-                  setRetryError("");
-                }}
-                className="mt-1 h-10 w-full rounded-md border border-[#d1d5db] bg-white px-3 text-sm outline-none focus:border-[#111827]"
-                autoFocus
-              >
-                <option value="">재처리 사유를 선택하세요</option>
-                {retryReasonOptions.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </label>
-            <label className="mt-4 block">
-              <span className="text-sm font-medium text-[#374151]">내부 메모</span>
-              <span className="ml-2 text-xs text-[#6b7280]">추가 설명 또는 메모</span>
-              <textarea
-                value={retryNote}
-                onChange={(event) => {
-                  setRetryNote(event.target.value);
-                  setRetryError("");
-                }}
-                maxLength={500}
-                className="mt-1 min-h-28 w-full rounded-md border border-[#d1d5db] px-3 py-2 text-sm outline-none focus:border-[#111827]"
-                placeholder="CMS 내부 관리자용 메모입니다. 사용자 앱에는 노출되지 않습니다."
-              />
-              <span className="mt-1 block text-right text-xs text-[#6b7280]">{retryNote.length}/500</span>
-            </label>
-            {retryError ? <p role="alert" className="mt-2 text-xs font-medium text-[#b91c1c]">{retryError}</p> : null}
-            <p className="mt-4 rounded-md bg-[#f9fafb] p-3 text-xs leading-5 text-[#6b7280]">
-              이 팝업은 기프티쇼비즈 API를 직접 호출하지 않으며, 요청 생성 후에도 reward.status는 failed 상태를 유지합니다.
-            </p>
-            <div className="mt-6 flex justify-end gap-2">
-              <button type="button" onClick={closeRetryDialog} disabled={isCreatingRetry} className="rounded-md border border-[#d1d5db] px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:text-[#9ca3af]">
-                취소
-              </button>
-              <button type="button" onClick={() => void createRetryRequest()} disabled={!retryReason || isCreatingRetry} className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-[#9ca3af]">
-                {isCreatingRetry ? "생성 중..." : "재처리 요청 생성"}
-              </button>
+        <DialogOverlay
+          open
+          onClose={closeRetryDialog}
+          labelledBy="reward-retry-title"
+          describedBy="reward-retry-description"
+          className="w-full max-w-[420px] rounded-2xl bg-white p-6 shadow-xl"
+        >
+          <h2 id="reward-retry-title" className="text-lg font-bold">재처리 요청 생성</h2>
+          <p id="reward-retry-description" className="mt-2 text-sm leading-6 text-[#6b7280]">
+            현재 발급 실패 상태의 보상을 다시 처리하도록 요청합니다. 동일 보상에 진행 중인 요청이 있으면 중복 생성이 차단됩니다.
+          </p>
+          <dl className="mt-4 rounded-md bg-[#f9fafb] p-4 text-sm">
+            <div className="flex justify-between gap-4">
+              <dt className="text-[#6b7280]">보상 ID</dt>
+              <dd className="font-mono text-xs font-medium text-[#111827]">{selectedRetryReward.rewardId}</dd>
             </div>
+            <div className="mt-2 flex justify-between gap-4">
+              <dt className="text-[#6b7280]">보상 상태</dt>
+              <dd><StatusBadge label={selectedRetryReward.status} status={selectedRetryReward.status} /></dd>
+            </div>
+            <div className="mt-2 flex justify-between gap-4">
+              <dt className="text-[#6b7280]">상품</dt>
+              <dd className="text-right font-medium text-[#111827]">{selectedRetryReward.productName ?? "상품 미연결"}</dd>
+            </div>
+            <div className="mt-2 flex justify-between gap-4">
+              <dt className="text-[#6b7280]">최근 실패 코드</dt>
+              <dd className="font-mono text-xs font-medium text-[#b91c1c]">{selectedRetryReward.lastFailureCode ?? "-"}</dd>
+            </div>
+          </dl>
+          <label className="mt-4 block">
+            <span className="text-sm font-medium text-[#374151]">재처리 사유</span>
+            <select
+              value={retryReason}
+              onChange={(event) => {
+                setRetryReason(event.target.value as RewardRetryReason);
+                setRetryError("");
+              }}
+              className="mt-1 h-10 w-full rounded-md border border-[#d1d5db] bg-white px-3 text-sm outline-none focus:border-[#111827]"
+              autoFocus
+            >
+              <option value="">재처리 사유를 선택하세요</option>
+              {retryReasonOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+          <label className="mt-4 block">
+            <span className="text-sm font-medium text-[#374151]">내부 메모</span>
+            <span className="ml-2 text-xs text-[#6b7280]">추가 설명 또는 메모</span>
+            <textarea
+              value={retryNote}
+              onChange={(event) => {
+                setRetryNote(event.target.value);
+                setRetryError("");
+              }}
+              maxLength={500}
+              className="mt-1 min-h-28 w-full rounded-md border border-[#d1d5db] px-3 py-2 text-sm outline-none focus:border-[#111827]"
+              placeholder="CMS 내부 관리자용 메모입니다. 사용자 앱에는 노출되지 않습니다."
+            />
+            <span className="mt-1 block text-right text-xs text-[#6b7280]">{retryNote.length}/500</span>
+          </label>
+          {retryError ? <p role="alert" className="mt-2 text-xs font-medium text-[#b91c1c]">{retryError}</p> : null}
+          <p className="mt-4 rounded-md bg-[#f9fafb] p-3 text-xs leading-5 text-[#6b7280]">
+            이 팝업은 기프티쇼비즈 API를 직접 호출하지 않으며, 요청 생성 후에도 reward.status는 failed 상태를 유지합니다.
+          </p>
+          <div className="mt-6 flex justify-end gap-2">
+            <button type="button" onClick={closeRetryDialog} disabled={isCreatingRetry} className="rounded-md border border-[#d1d5db] px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:text-[#9ca3af]">
+              취소
+            </button>
+            <button type="button" onClick={() => void createRetryRequest()} disabled={!retryReason || isCreatingRetry} className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-[#9ca3af]">
+              {isCreatingRetry ? "생성 중..." : "재처리 요청 생성"}
+            </button>
           </div>
-        </div>
+        </DialogOverlay>
       ) : null}
     </AdminShell>
   );

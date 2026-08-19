@@ -6,6 +6,7 @@ import { FormEvent, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
+import { DialogOverlay } from "@/components/admin/dialog-overlay";
 import {
   ADMIN_ROLE_LABEL,
   ADMIN_STATUS_LABEL,
@@ -59,7 +60,6 @@ export default function AdminAccountCreatePage() {
   const [errors, setErrors] = useState<AdminCreateErrors>({});
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [completedMessage, setCompletedMessage] = useState<string | null>(null);
 
   const isDirty = useMemo(
     () =>
@@ -75,7 +75,6 @@ export default function AdminAccountCreatePage() {
   const updateField = <K extends keyof AdminCreateForm>(field: K, value: AdminCreateForm[K]) => {
     setForm((current) => ({ ...current, [field]: value }));
     setErrors((current) => ({ ...current, [field]: undefined }));
-    setCompletedMessage(null);
   };
 
   const validate = () => {
@@ -115,14 +114,13 @@ export default function AdminAccountCreatePage() {
     setIsSubmitting(true);
     await new Promise((resolve) => window.setTimeout(resolve, 500));
     setIsConfirmOpen(false);
-    setCompletedMessage("관리자 계정 등록을 mock으로 완료했습니다. 실제 계정은 생성되지 않습니다.");
     setIsSubmitting(false);
-    router.push("/admin/admins");
+    router.push("/admin/admins?created=1");
   };
 
   return (
     <AdminShell>
-      <form onSubmit={handleSubmit} className="max-w-[880px]">
+      <form onSubmit={handleSubmit} noValidate className="max-w-[880px]">
         <div className="flex items-end justify-between">
           <div>
             <h1 className="text-2xl font-bold">관리자 계정 등록</h1>
@@ -142,12 +140,6 @@ export default function AdminAccountCreatePage() {
             목록으로
           </Link>
         </div>
-
-        {completedMessage ? (
-          <p role="status" className="mt-4 rounded-md border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm text-[#166534]">
-            {completedMessage}
-          </p>
-        ) : null}
 
         <div className="mt-7 space-y-4">
           <FormSection title="기본 정보" description="관리자 이름과 로그인 이메일을 입력합니다.">
@@ -277,52 +269,48 @@ export default function AdminAccountCreatePage() {
         </div>
       </form>
 
-      {isConfirmOpen ? (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="admin-create-confirm-title">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h2 id="admin-create-confirm-title" className="text-lg font-semibold text-[#111827]">
-              관리자 계정 등록 확인
-            </h2>
-            <p className="mt-2 text-sm text-[#6b7280]">아래 정보로 관리자 계정을 등록할까요? 비밀번호는 표시하지 않습니다.</p>
-            <dl className="mt-4 space-y-2 rounded-md border border-[#e5e7eb] bg-[#f9fafb] p-4 text-sm">
-              <div className="flex justify-between gap-4">
-                <dt className="text-[#6b7280]">이름</dt>
-                <dd className="font-medium text-[#111827]">{form.name.trim()}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-[#6b7280]">이메일</dt>
-                <dd className="font-medium text-[#111827]">{form.email.trim()}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-[#6b7280]">역할</dt>
-                <dd className="font-medium text-[#111827]">{form.role ? ADMIN_ROLE_LABEL[form.role] : "-"}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-[#6b7280]">초기 상태</dt>
-                <dd className="font-medium text-[#111827]">{ADMIN_STATUS_LABEL[form.status]}</dd>
-              </div>
-            </dl>
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={() => setIsConfirmOpen(false)}
-                className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb] disabled:opacity-50"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={handleConfirmRegister}
-                className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isSubmitting ? "등록 중..." : "등록"}
-              </button>
-            </div>
+      <DialogOverlay open={isConfirmOpen} onClose={() => { if (!isSubmitting) setIsConfirmOpen(false); }} labelledBy="admin-create-confirm-title">
+        <h2 id="admin-create-confirm-title" className="text-lg font-semibold text-[#111827]">
+          관리자 계정 등록 확인
+        </h2>
+        <p className="mt-2 text-sm text-[#6b7280]">아래 정보로 관리자 계정을 등록할까요? 비밀번호는 표시하지 않습니다.</p>
+        <dl className="mt-4 space-y-2 rounded-md border border-[#e5e7eb] bg-[#f9fafb] p-4 text-sm">
+          <div className="flex justify-between gap-4">
+            <dt className="text-[#6b7280]">이름</dt>
+            <dd className="font-medium text-[#111827]">{form.name.trim()}</dd>
           </div>
+          <div className="flex justify-between gap-4">
+            <dt className="text-[#6b7280]">이메일</dt>
+            <dd className="font-medium text-[#111827]">{form.email.trim()}</dd>
+          </div>
+          <div className="flex justify-between gap-4">
+            <dt className="text-[#6b7280]">역할</dt>
+            <dd className="font-medium text-[#111827]">{form.role ? ADMIN_ROLE_LABEL[form.role] : "-"}</dd>
+          </div>
+          <div className="flex justify-between gap-4">
+            <dt className="text-[#6b7280]">초기 상태</dt>
+            <dd className="font-medium text-[#111827]">{ADMIN_STATUS_LABEL[form.status]}</dd>
+          </div>
+        </dl>
+        <div className="mt-6 flex justify-end gap-2">
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={() => setIsConfirmOpen(false)}
+            className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb] disabled:opacity-50"
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={handleConfirmRegister}
+            className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isSubmitting ? "등록 중..." : "등록"}
+          </button>
         </div>
-      ) : null}
+      </DialogOverlay>
     </AdminShell>
   );
 }

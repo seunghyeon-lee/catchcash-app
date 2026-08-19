@@ -6,6 +6,7 @@ import { MouseEvent, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
+import { DialogOverlay } from "@/components/admin/dialog-overlay";
 import {
   ADMIN_PRODUCT_STATUS_LABEL,
   findAdminProduct,
@@ -89,6 +90,7 @@ export default function AdminProductDetailPage() {
           {canEditProduct ? (
             <Link
               href={`/admin/products/${product.id}/edit`}
+              prefetch={false}
               onClick={handleEditClick}
               className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white hover:bg-black"
             >
@@ -171,10 +173,10 @@ export default function AdminProductDetailPage() {
             {mappings.map((mapping) => (
               <tr key={`${mapping.treasureId}-${mapping.mappedAt}`} className="border-t border-[#f3f4f6] hover:bg-[#f9fafb]">
                 <td className="px-5 py-4 font-mono text-xs">
-                  <Link href={`/admin/treasures/${mapping.treasureId}`} className="underline underline-offset-2">{mapping.treasureId}</Link>
+                  <Link href={`/admin/treasures/${mapping.treasureId}`} prefetch={false} className="underline underline-offset-2">{mapping.treasureId}</Link>
                 </td>
                 <td className="px-5 py-4">
-                  <Link href={`/admin/treasures/${mapping.treasureId}`} className="font-medium underline underline-offset-2">{mapping.treasureName}</Link>
+                  <Link href={`/admin/treasures/${mapping.treasureId}`} prefetch={false} className="font-medium underline underline-offset-2">{mapping.treasureName}</Link>
                 </td>
                 <td className="px-5 py-4"><ProductStatusBadge status={mapping.mappingStatus} /></td>
                 <td className="px-5 py-4 text-[#6b7280]">{formatAdminProductDateTime(mapping.mappedAt)}</td>
@@ -187,9 +189,7 @@ export default function AdminProductDetailPage() {
 
       <p className="mt-4 text-xs text-[#6b7280]">상품 상세에는 쿠폰 번호, 바코드, 외부 API Secret, 사용자 개인정보를 표시하지 않습니다.</p>
 
-      {isWarningOpen ? (
-        <div role="dialog" aria-modal="true" aria-labelledby="inactive-warning-title" className="fixed inset-0 z-[60] grid place-items-center bg-black/40 p-6">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+      <DialogOverlay open={isWarningOpen} onClose={() => setIsWarningOpen(false)} labelledBy="inactive-warning-title">
             <h2 id="inactive-warning-title" className="text-lg font-bold">inactive 전환 경고</h2>
             <p className="mt-2 text-sm leading-6 text-[#6b7280]">
               현재 이 상품에 연결된 active 보물이 {activeMappingCount}개 있습니다. inactive로 변경하면 해당 보물의 운영에 영향을 줄 수 있습니다.
@@ -202,9 +202,7 @@ export default function AdminProductDetailPage() {
                 수정 화면으로 이동
               </button>
             </div>
-          </div>
-        </div>
-      ) : null}
+      </DialogOverlay>
     </AdminShell>
   );
 }

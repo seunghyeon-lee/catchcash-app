@@ -6,6 +6,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
+import { DialogOverlay } from "@/components/admin/dialog-overlay";
 import type { AdminProductStatus } from "@/lib/admin/mock-products";
 
 type ProductCreateForm = {
@@ -275,19 +276,15 @@ export default function AdminProductCreatePage() {
         {isDirty ? <p className="mt-3 text-right text-xs text-[#6b7280]">입력값은 mock 상태로만 처리되며 실제 DB에 저장되지 않습니다.</p> : null}
       </form>
 
-      {isFailureDialogOpen ? (
-        <div role="dialog" aria-modal="true" aria-labelledby="product-save-failure-title" className="fixed inset-0 z-[60] grid place-items-center bg-black/40 p-6">
-          <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
-            <h2 id="product-save-failure-title" className="text-lg font-bold">저장 실패</h2>
-            <p className="mt-2 text-sm leading-6 text-[#6b7280]">필수 항목을 확인하거나 다시 시도해 주세요.</p>
-            <div className="mt-6 flex justify-end">
-              <button type="button" onClick={() => setIsFailureDialogOpen(false)} className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white">
-                확인
-              </button>
-            </div>
-          </div>
+      <DialogOverlay open={isFailureDialogOpen} onClose={() => setIsFailureDialogOpen(false)} labelledBy="product-save-failure-title" className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
+        <h2 id="product-save-failure-title" className="text-lg font-bold">저장 실패</h2>
+        <p className="mt-2 text-sm leading-6 text-[#6b7280]">필수 항목을 확인하거나 다시 시도해 주세요.</p>
+        <div className="mt-6 flex justify-end">
+          <button type="button" onClick={() => setIsFailureDialogOpen(false)} className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white">
+            확인
+          </button>
         </div>
-      ) : null}
+      </DialogOverlay>
     </AdminShell>
   );
 }
