@@ -18,6 +18,20 @@ export type GetProfileResult = {
   errorMessage?: string;
 };
 
+export type EnsureProfileInput = {
+  nickname: string;
+  termsAgreed: boolean;
+  marketingAgreed: boolean;
+};
+
+export type EnsureProfileResult = {
+  source: ProfileDataSource;
+  ok: boolean;
+  profileCreated?: boolean;
+  profileExists?: boolean;
+  errorMessage?: string;
+};
+
 export type UpdateProfileInput = {
   nickname: string;
   intro: string;
@@ -86,6 +100,58 @@ export async function getProfile(): Promise<GetProfileResult> {
     profile: toAppProfile(data as ProfileRow),
     source: "supabase",
   };
+}
+
+export async function ensureProfileForCurrentSession(input: EnsureProfileInput): Promise<EnsureProfileResult> {
+  try {
+    const session = await getAuthenticatedUserSession();
+
+    if (!session) {
+      return { source: "mock", ok: true };
+    }
+
+    const { data: existingProfile, error: selectError } = await session.client
+      .from("profiles")
+      .select("id")
+      .eq("user_id", session.userId)
+      .maybeSingle();
+
+    if (selectError) {
+      return {
+        source: "mock",
+        ok: true,
+        errorMessage: "프로필 확인에 실패해서 예시 흐름으로 계속 진행합니다.",
+      };
+    }
+
+    if (existingProfile) {
+      return { source: "supabase", ok: true, profileExists: true };
+    }
+
+    const now = new Date().toISOString();
+    const { error: insertError } = await session.client.from("profiles").insert({
+      user_id: session.userId,
+      nickname: input.nickname.trim(),
+      terms_agreed_at: input.termsAgreed ? now : null,
+      marketing_agreed_at: input.marketingAgreed ? now : null,
+    });
+
+    if (insertError) {
+      return {
+        source: "mock",
+        ok: true,
+        errorMessage: "프로필 저장에 실패해서 예시 흐름으로 계속 진행합니다.",
+      };
+    }
+
+    return { source: "supabase", ok: true, profileCreated: true };
+  } catch {
+    return {
+      source: "mock",
+      ok: true,
+      errorMessage: "프로필 연결 중 오류가 발생해서 예시 흐름으로 계속 진행합니다.",
+    };
+  }
 }
 
 /**

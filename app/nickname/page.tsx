@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 
+import { ensureProfileForCurrentSession } from "@/lib/profile/profile-service";
+
 type AgreementKey = "terms" | "privacy" | "marketing";
 
 const agreements: Array<{
@@ -23,16 +25,31 @@ export default function NicknamePage() {
     privacy: false,
     marketing: false,
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
 
   const canComplete = useMemo(
     () => nickname.trim().length >= 2 && checked.terms && checked.privacy,
     [checked.privacy, checked.terms, nickname],
   );
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (canComplete) {
+    if (canComplete && !isSubmitting) {
+      setIsSubmitting(true);
+      setFallbackMessage(null);
+
+      const result = await ensureProfileForCurrentSession({
+        nickname,
+        termsAgreed: checked.terms,
+        marketingAgreed: checked.marketing,
+      });
+
+      if (result.errorMessage) {
+        setFallbackMessage(result.errorMessage);
+      }
+
       router.push("/home");
     }
   };
@@ -47,7 +64,7 @@ export default function NicknamePage() {
         aria-label="로그인 화면으로 돌아가기"
       />
 
-      <form onSubmit={handleSubmit} className="relative mx-auto flex min-h-[100dvh] max-w-[390px] flex-col px-4 pb-8 pt-[104px]">
+      <form onSubmit={(event) => void handleSubmit(event)} className="relative mx-auto flex min-h-[100dvh] max-w-[390px] flex-col px-4 pb-8 pt-[104px]">
         <div className="w-full">
           <h1 className="relative inline-block text-2xl font-medium leading-[38.4px] text-black">
             널 뭐라 부르냐?
@@ -81,6 +98,7 @@ export default function NicknamePage() {
           <p className="mt-4 text-[15px] font-medium leading-[16.8px] tracking-[0.6px] text-[#777777]">
             2~12자. 이상한 건 알아서 걸러낸다.
           </p>
+          {fallbackMessage ? <p className="mt-3 text-sm font-medium leading-5 text-[#b42318]">{fallbackMessage}</p> : null}
         </div>
 
         <fieldset className="mt-[50px] border-0 p-0">
@@ -116,14 +134,14 @@ export default function NicknamePage() {
         <div className="mt-auto pt-8">
           <button
             type="submit"
-            disabled={!canComplete}
+            disabled={!canComplete || isSubmitting}
             className="relative flex h-[69px] w-full items-center justify-center bg-center bg-no-repeat text-[15px] font-medium leading-[31.2px] text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-25"
             style={{
               backgroundImage: "url('/assets/images/nickname/img_nickname_button_frame.svg')",
               backgroundSize: "100% 69px",
             }}
           >
-            <span>사냥 합류하기</span>
+            <span>{isSubmitting ? "합류 처리 중..." : "사냥 합류하기"}</span>
             <span aria-hidden="true" className="absolute right-[76px] text-[34px] leading-none">
               →
             </span>
