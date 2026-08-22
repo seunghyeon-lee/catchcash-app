@@ -5,6 +5,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { getSupabaseBrowserClientOrNull } from "@/lib/supabase";
+
 const loginProviders = [
   {
     id: "kakao",
@@ -55,6 +57,38 @@ export default function LoginPage() {
     }, 450);
   };
 
+  const handleLogin = async (provider: LoginProvider) => {
+    if (provider.id !== "google") {
+      handleMockLogin(provider);
+      return;
+    }
+
+    const client = getSupabaseBrowserClientOrNull();
+    if (!client) {
+      handleMockLogin(provider);
+      return;
+    }
+
+    setSelectedProvider(provider.id);
+
+    try {
+      const { error } = await client.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/nickname`,
+        },
+      });
+
+      if (error) {
+        console.error("[CatchCash] google login failed", error);
+        handleMockLogin(provider);
+      }
+    } catch (error) {
+      console.error("[CatchCash] google login failed", error);
+      handleMockLogin(provider);
+    }
+  };
+
   return (
     <section
       aria-label="캐치캐쉬 로그인"
@@ -92,7 +126,7 @@ export default function LoginPage() {
               <button
                 key={provider.id}
                 type="button"
-                onClick={() => handleMockLogin(provider)}
+                onClick={() => void handleLogin(provider)}
                 disabled={selectedProvider !== null}
                 className={`flex h-12 w-full items-center justify-center gap-3 rounded-[6px] px-4 text-base font-medium leading-none transition-colors disabled:cursor-wait disabled:opacity-70 ${provider.buttonClassName}`}
               >
