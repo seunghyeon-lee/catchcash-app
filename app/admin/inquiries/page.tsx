@@ -10,7 +10,7 @@ import { ADMIN_CATEGORY_LABEL, ADMIN_STATUS_LABEL, formatAdminDate, type AdminIn
 import { loadAdminInquiries, type AdminInquiryDataSource } from "@/lib/admin/support-service";
 
 type CategoryFilter = "all" | AdminInquiryCategory;
-type StatusFilter = "all" | AdminInquiryStatus;
+type StatusFilter = "all" | "received" | "reading" | "in_progress" | "resolved" | "closed";
 type AnswerFilter = "all" | "answered" | "unanswered";
 type RewardFilter = "all" | "has_reward" | "no_reward";
 type InquirySortKey = "created_desc" | "created_asc" | "unresolved_first" | "answered_first";

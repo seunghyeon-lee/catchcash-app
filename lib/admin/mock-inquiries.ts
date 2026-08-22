@@ -1,5 +1,5 @@
-export type AdminInquiryCategory = "general" | "coupon" | "reward" | "account" | "bug" | "improvement" | "etc";
-export type AdminInquiryStatus = "reading" | "resolved";
+export type AdminInquiryCategory = "general" | "usage" | "coupon" | "reward" | "account" | "bug" | "error" | "improvement" | "etc" | "other";
+export type AdminInquiryStatus = "received" | "reading" | "open" | "in_progress" | "resolved" | "answered" | "closed";
 
 export type AdminSupportReply = {
   id: string;
@@ -19,6 +19,7 @@ export type AdminSupportInquiry = {
   title: string;
   content: string;
   status: AdminInquiryStatus;
+  related_reward_id?: string | null;
   created_at: string;
   updated_at: string;
   replies: AdminSupportReply[];
@@ -26,17 +27,25 @@ export type AdminSupportInquiry = {
 
 export const ADMIN_CATEGORY_LABEL: Record<AdminInquiryCategory, string> = {
   general: "이용 문의",
+  usage: "이용 문의",
   coupon: "쿠폰 문의",
   reward: "보상 문의",
   account: "계정 문의",
   bug: "오류 제보",
+  error: "오류 제보",
   improvement: "개선 문의",
   etc: "기타 문의",
+  other: "기타 문의",
 };
 
 export const ADMIN_STATUS_LABEL: Record<AdminInquiryStatus, string> = {
+  received: "접수",
   reading: "읽는 중",
+  open: "접수",
+  in_progress: "처리 중",
   resolved: "해결됨",
+  answered: "답변 완료",
+  closed: "종료",
 };
 
 export const MOCK_ADMIN_INQUIRIES: AdminSupportInquiry[] = [
@@ -48,6 +57,7 @@ export const MOCK_ADMIN_INQUIRIES: AdminSupportInquiry[] = [
     title: "앱에서 보상이 발급되지 않았어요",
     content: "보물상자 사냥에 성공했는데 보관함에 쿠폰이 보이지 않습니다. 확인 부탁드립니다.",
     status: "reading",
+    related_reward_id: "reward-20260809-001",
     created_at: "2026-07-28T10:23:00+09:00",
     updated_at: "2026-07-28T10:23:00+09:00",
     replies: [],
@@ -60,6 +70,7 @@ export const MOCK_ADMIN_INQUIRIES: AdminSupportInquiry[] = [
     title: "쿠폰 유효기간을 확인하고 싶어요",
     content: "받은 쿠폰의 유효기간이 어디에 표시되는지 모르겠습니다.",
     status: "resolved",
+    related_reward_id: "reward-20260805-011",
     created_at: "2026-07-27T16:42:00+09:00",
     updated_at: "2026-07-27T17:04:00+09:00",
     replies: [
@@ -82,6 +93,7 @@ export const MOCK_ADMIN_INQUIRIES: AdminSupportInquiry[] = [
     title: "지도 화면이 계속 로딩 상태예요",
     content: "앱을 다시 실행해도 지도 화면에서 위치를 찾는 중이라는 메시지만 보여요.",
     status: "reading",
+    related_reward_id: null,
     created_at: "2026-07-27T14:10:00+09:00",
     updated_at: "2026-07-27T14:10:00+09:00",
     replies: [],
