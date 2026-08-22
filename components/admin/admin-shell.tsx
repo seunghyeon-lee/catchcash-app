@@ -10,7 +10,7 @@ const navigation = [
   { label: "상품 관리", href: "/admin/products" },
   { label: "매핑 관리", href: "/admin/mappings" },
   { label: "보상 재처리", href: "/admin/reward-requests" },
-  { label: "유저" },
+  { label: "유저 관리", href: "/admin/users" },
   { label: "문의", href: "/admin/inquiries" },
   { label: "운영 로그", href: "/admin/operation-logs" },
   { label: "관리자 계정", href: "/admin/admins" },
@@ -44,6 +44,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 (item.href === "/admin/products" && pathname.startsWith("/admin/products")) ||
                 (item.href === "/admin/mappings" && pathname.startsWith("/admin/mappings")) ||
                 (item.href === "/admin/reward-requests" && pathname.startsWith("/admin/reward-requests")) ||
+                (item.href === "/admin/users" && pathname.startsWith("/admin/users")) ||
                 (item.href === "/admin/admins" && pathname.startsWith("/admin/admins")) ||
                 (item.href === "/admin/security-logs" && pathname.startsWith("/admin/security-logs")) ||
                 (item.href === "/admin/operation-logs" && pathname.startsWith("/admin/operation-logs"));
