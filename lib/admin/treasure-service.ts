@@ -1,4 +1,4 @@
-import { getAdminContext, type AdminDataSource } from "./admin-context";
+import { getAdminContext, type AdminDataSource, type AdminWriteResult } from "./admin-context";
 import {
   findAdminTreasureDetail,
   MOCK_ADMIN_TREASURES,
@@ -199,5 +199,74 @@ export async function loadAdminTreasureDetail(id: string): Promise<AdminTreasure
   } catch (error) {
     console.warn("[admin] loadAdminTreasureDetail은 mock으로 fallback합니다:", error);
     return { treasure: findAdminTreasureDetail(id), source: "mock", message: ERROR_MESSAGE };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 4차: 등록/수정 쓰기 연결 (삭제 없음)
+// ---------------------------------------------------------------------------
+
+type TreasureSaveStatusInput = "draft" | "active" | "paused" | "ended";
+
+export type AdminTreasureWritePayload = {
+  title: string;
+  description: string | null;
+  hintText: string | null;
+  latitude: number;
+  longitude: number;
+  radiusM: number;
+  status: TreasureSaveStatusInput;
+  startsAt: string | null;
+  endsAt: string | null;
+  maxClaimCount: number;
+};
+
+const WRITE_MOCK_MESSAGE = "관리자 세션이 없어 실제 저장 없이 mock 처리했습니다.";
+
+function toTreasureRow(payload: AdminTreasureWritePayload) {
+  return {
+    title: payload.title,
+    description: payload.description,
+    hint_text: payload.hintText,
+    latitude: payload.latitude,
+    longitude: payload.longitude,
+    radius_m: payload.radiusM,
+    status: payload.status,
+    starts_at: payload.startsAt,
+    ends_at: payload.endsAt,
+    max_claim_count: payload.maxClaimCount,
+  };
+}
+
+export async function insertAdminTreasure(payload: AdminTreasureWritePayload): Promise<AdminWriteResult> {
+  const context = await getAdminContext();
+  if (!context) return { source: "mock", ok: true, message: WRITE_MOCK_MESSAGE };
+
+  try {
+    const { data, error } = await context.client
+      .from("treasure_boxes")
+      .insert({ ...toTreasureRow(payload), created_by: context.adminUserId })
+      .select("id")
+      .single();
+
+    if (error) throw new Error(error.message);
+    return { source: "supabase", ok: true, id: data?.id as string };
+  } catch (error) {
+    console.warn("[admin] insertAdminTreasure 실패:", error);
+    return { source: "supabase", ok: false, message: error instanceof Error ? error.message : "보물상자 등록에 실패했습니다." };
+  }
+}
+
+export async function updateAdminTreasure(id: string, payload: AdminTreasureWritePayload): Promise<AdminWriteResult> {
+  const context = await getAdminContext();
+  if (!context) return { source: "mock", ok: true, message: WRITE_MOCK_MESSAGE };
+
+  try {
+    const { error } = await context.client.from("treasure_boxes").update(toTreasureRow(payload)).eq("id", id);
+    if (error) throw new Error(error.message);
+    return { source: "supabase", ok: true, id };
+  } catch (error) {
+    console.warn("[admin] updateAdminTreasure 실패:", error);
+    return { source: "supabase", ok: false, message: error instanceof Error ? error.message : "보물상자 수정에 실패했습니다." };
   }
 }
