@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useParams } from "next/navigation";
 
@@ -11,12 +11,13 @@ import {
   ADMIN_REWARD_RETRY_REQUEST_STATUS_LABEL,
   ADMIN_REWARD_RETRY_STATUS_LABEL,
   ADMIN_REWARD_STATUS_LABEL,
-  findAdminRewardDetail,
   formatAdminRewardDateTime,
   getAdminRewardRetryHistoryByRewardId,
   getLatestAdminRewardRetryRequest,
   type AdminRewardDetail,
 } from "@/lib/admin/mock-reward-requests";
+import { loadAdminRewardDetail } from "@/lib/admin/reward-service";
+import type { AdminDataSource } from "@/lib/admin/admin-context";
 
 const adminRole = "super_admin";
 const retryReasonOptions = [
@@ -89,11 +90,38 @@ function RelationCard({ title, href, primary, secondary, meta }: { title: string
 export default function AdminRewardDetailPage() {
   const params = useParams<{ id: string }>();
   const rewardId = params.id;
-  const reward = useMemo(() => findAdminRewardDetail(rewardId), [rewardId]);
+
+  const [reward, setReward] = useState<AdminRewardDetail | undefined>(undefined);
+  const [source, setSource] = useState<AdminDataSource | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await loadAdminRewardDetail(rewardId);
+      setReward(result.reward);
+      setSource(result.source);
+      setMessage(result.message ?? null);
+    } catch (error) {
+      console.warn("[admin] 보상 상세 로딩 실패:", error);
+      setReward(undefined);
+      setSource(null);
+      setMessage("보상 상세를 불러오지 못했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [rewardId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  // 재처리 이력/최신 요청은 6차(재처리 흐름)에서 실연결한다. 현재는 mock getter 유지.
   const retryHistory = useMemo(() => getAdminRewardRetryHistoryByRewardId(rewardId), [rewardId]);
   const latestRetryRequest = useMemo(() => getLatestAdminRewardRetryRequest(rewardId), [rewardId]);
 
-  const [memo, setMemo] = useState(reward?.internalMemo ?? "");
+  const [memo, setMemo] = useState("");
   const [memoError, setMemoError] = useState("");
   const [toast, setToast] = useState("");
   const [isRetryDialogOpen, setIsRetryDialogOpen] = useState(false);
@@ -101,6 +129,10 @@ export default function AdminRewardDetailPage() {
   const [retryMemo, setRetryMemo] = useState("");
   const [retryError, setRetryError] = useState("");
   const [isCreatingRetry, setIsCreatingRetry] = useState(false);
+
+  useEffect(() => {
+    setMemo(reward?.internalMemo ?? "");
+  }, [reward]);
 
   const canManage = adminRole === "super_admin" || adminRole === "operator";
   const hasActiveRetryRequest = latestRetryRequest?.retryStatus === "pending" || latestRetryRequest?.retryStatus === "processing";
@@ -140,6 +172,16 @@ export default function AdminRewardDetailPage() {
     setToast("재처리 요청을 mock 생성했습니다. 실제 발급 재시도는 Worker 처리 대상입니다.");
   };
 
+  if (isLoading) {
+    return (
+      <AdminShell>
+        <div className="rounded-lg border border-[#e5e7eb] bg-white p-10 text-center">
+          <p className="text-sm text-[#6b7280]">보상 상세를 불러오는 중입니다.</p>
+        </div>
+      </AdminShell>
+    );
+  }
+
   if (!reward) {
     return (
       <AdminShell>
@@ -159,7 +201,7 @@ export default function AdminRewardDetailPage() {
       <div className="flex items-end justify-between gap-6">
         <div>
           <h1 className="text-2xl font-bold">보상 상세</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">보상 상태, 발급 요청, 실패 사유, 재처리 요청 현황을 mock data 기준으로 확인합니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">보상 상태, 발급 요청, 실패 사유, 재처리 요청 현황을 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준으로 확인합니다.</p>
         </div>
         <div className="flex gap-2">
           <Link href="/admin/reward-requests" className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">
@@ -182,6 +224,20 @@ export default function AdminRewardDetailPage() {
       </div>
 
       {toast ? <div role="status" className="mt-5 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-4 py-3 text-sm text-[#1d4ed8]">{toast}</div> : null}
+
+      {source && source !== "supabase" ? (
+        <div
+          role="status"
+          className={`mt-5 flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${
+            source === "mock" ? "border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8]" : "border-[#fecaca] bg-[#fef2f2] text-[#b91c1c]"
+          }`}
+        >
+          <span>{message ?? "예시 데이터를 표시하고 있습니다."}</span>
+          <button type="button" onClick={() => void load()} className="shrink-0 font-medium underline">
+            다시 시도
+          </button>
+        </div>
+      ) : null}
 
       <div className="mt-7 grid grid-cols-[1.1fr_0.9fr] gap-5">
         <DetailCard title="기본 정보">

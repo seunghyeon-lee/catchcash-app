@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
 import { DialogOverlay } from "@/components/admin/dialog-overlay";
@@ -9,7 +9,6 @@ import {
   ADMIN_REWARD_DATE_FIELD_LABEL,
   ADMIN_REWARD_RETRY_STATUS_LABEL,
   ADMIN_REWARD_STATUS_LABEL,
-  MOCK_ADMIN_REWARD_REQUESTS,
   formatAdminRewardDateTime,
   getAdminRewardDateValue,
   type AdminRewardRequestListItem,
@@ -17,6 +16,8 @@ import {
   type AdminRewardRetryStatus,
   type AdminRewardStatus,
 } from "@/lib/admin/mock-reward-requests";
+import { loadAdminRewardRequests } from "@/lib/admin/reward-service";
+import type { AdminDataSource } from "@/lib/admin/admin-context";
 
 type StatusFilter<T extends string> = "all" | T;
 type RewardSortKey = "failed_first" | "claimed_desc" | "claimed_asc" | "failed_desc" | "retry_requested_desc";
@@ -69,7 +70,10 @@ function StatusBadge({ label, status }: { label: string; status: string }) {
 }
 
 export default function AdminRewardRequestsPage() {
-  const [items, setItems] = useState<AdminRewardRequestListItem[]>(MOCK_ADMIN_REWARD_REQUESTS);
+  const [items, setItems] = useState<AdminRewardRequestListItem[]>([]);
+  const [source, setSource] = useState<AdminDataSource | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState(defaultFilters.query);
   const [status, setStatus] = useState(defaultFilters.status);
   const [retryStatus, setRetryStatus] = useState(defaultFilters.retryStatus);
@@ -86,6 +90,27 @@ export default function AdminRewardRequestsPage() {
   const [retryError, setRetryError] = useState("");
   const [isCreatingRetry, setIsCreatingRetry] = useState(false);
   const [toast, setToast] = useState("");
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await loadAdminRewardRequests();
+      setItems(result.rewards);
+      setSource(result.source);
+      setMessage(result.message ?? null);
+    } catch (error) {
+      console.warn("[admin] 보상 목록 로딩 실패:", error);
+      setItems([]);
+      setSource(null);
+      setMessage("보상 목록을 불러오지 못했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const canExportCsv = adminRole === "super_admin" || adminRole === "operator";
   const dateRangeError = Boolean(startDate && endDate && startDate > endDate);
@@ -197,7 +222,7 @@ export default function AdminRewardRequestsPage() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold">보상 목록</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">보상 상태와 재처리 요청 현황을 mock data 기준으로 조회합니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">보상 상태와 재처리 요청 현황을 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준으로 조회합니다.</p>
         </div>
         <div className="flex gap-2">
           <Link href="/admin/reward-requests/history" className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white hover:bg-black">
@@ -327,8 +352,22 @@ export default function AdminRewardRequestsPage() {
 
       {toast ? <div role="status" className="mt-4 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-4 py-3 text-sm text-[#1d4ed8]">{toast}</div> : null}
 
+      {source && source !== "supabase" ? (
+        <div
+          role="status"
+          className={`mt-4 flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${
+            source === "mock" ? "border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8]" : "border-[#fecaca] bg-[#fef2f2] text-[#b91c1c]"
+          }`}
+        >
+          <span>{message ?? "예시 데이터를 표시하고 있습니다."}</span>
+          <button type="button" onClick={() => void load()} className="shrink-0 font-medium underline">
+            다시 시도
+          </button>
+        </div>
+      ) : null}
+
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
-        <span>{startItemNumber}-{endItemNumber} / {filteredItems.length}건</span>
+        <span>{startItemNumber}-{endItemNumber} / {filteredItems.length}건{source === "mock" ? " · mock data" : ""}</span>
         <span>쿠폰 번호, 바코드, 사용자 이메일은 목록과 CSV에 포함하지 않습니다.</span>
       </div>
 
@@ -380,7 +419,11 @@ export default function AdminRewardRequestsPage() {
             ))}
           </tbody>
         </table>
-        {pageItems.length === 0 ? (
+        {isLoading ? (
+          <div className="px-6 py-16 text-center">
+            <p className="text-sm text-[#6b7280]">보상 목록을 불러오는 중입니다.</p>
+          </div>
+        ) : pageItems.length === 0 ? (
           <div className="px-6 py-16 text-center">
             <p className="text-sm font-semibold text-[#111827]">검색 결과 없음</p>
             <p className="mt-2 text-sm text-[#6b7280]">입력한 조건과 일치하는 보상이 없습니다. 필터를 조정해 주세요.</p>
