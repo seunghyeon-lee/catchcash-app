@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
 import { DialogOverlay } from "@/components/admin/dialog-overlay";
@@ -9,7 +9,6 @@ import {
   ADMIN_MAPPING_STATUS_LABEL,
   ADMIN_TREASURE_CALCULATED_STATUS_LABEL,
   ADMIN_TREASURE_STATUS_LABEL,
-  MOCK_ADMIN_MAPPINGS,
   formatAdminMappingDateTime,
   type AdminMappingListItem,
   type AdminMappingProductStatus,
@@ -17,6 +16,8 @@ import {
   type AdminTreasureCalculatedStatus,
   type AdminTreasureStatus,
 } from "@/lib/admin/mock-mappings";
+import { loadAdminMappings } from "@/lib/admin/mapping-service";
+import type { AdminDataSource } from "@/lib/admin/admin-context";
 
 type StatusFilter<T extends string> = "all" | T;
 type MappingSortKey = "created_at_desc" | "updated_at_desc" | "treasure_title_asc" | "product_name_asc" | "active_first";
@@ -54,7 +55,10 @@ function StatusBadge({ label, status }: { label: string; status: string }) {
 }
 
 export default function AdminMappingsPage() {
-  const [items, setItems] = useState<AdminMappingListItem[]>(MOCK_ADMIN_MAPPINGS);
+  const [items, setItems] = useState<AdminMappingListItem[]>([]);
+  const [source, setSource] = useState<AdminDataSource | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [keyword, setKeyword] = useState(defaultFilters.keyword);
   const [mappingStatus, setMappingStatus] = useState(defaultFilters.mappingStatus);
   const [treasureStatus, setTreasureStatus] = useState(defaultFilters.treasureStatus);
@@ -68,6 +72,27 @@ export default function AdminMappingsPage() {
   const [inactiveReason, setInactiveReason] = useState("");
   const [inactiveError, setInactiveError] = useState("");
   const [toast, setToast] = useState("");
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await loadAdminMappings();
+      setItems(result.mappings);
+      setSource(result.source);
+      setMessage(result.message ?? null);
+    } catch (error) {
+      console.warn("[admin] 매칭 목록 로딩 실패:", error);
+      setItems([]);
+      setSource(null);
+      setMessage("매칭 목록을 불러오지 못했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const canManageMappings = adminRole === "super_admin" || adminRole === "operator";
 
@@ -147,7 +172,7 @@ export default function AdminMappingsPage() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold">매칭 목록</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">보물상자와 상품의 연결 상태를 mock data 기준으로 확인합니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">보물상자와 상품의 연결 상태를 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준으로 확인합니다.</p>
         </div>
         {canManageMappings ? (
           <Link href="/admin/mappings/new" className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white hover:bg-black">
@@ -266,8 +291,22 @@ export default function AdminMappingsPage() {
 
       {toast ? <div role="status" className="mt-4 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-4 py-3 text-sm text-[#1d4ed8]">{toast}</div> : null}
 
+      {source && source !== "supabase" ? (
+        <div
+          role="status"
+          className={`mt-4 flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${
+            source === "mock" ? "border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8]" : "border-[#fecaca] bg-[#fef2f2] text-[#b91c1c]"
+          }`}
+        >
+          <span>{message ?? "예시 데이터를 표시하고 있습니다."}</span>
+          <button type="button" onClick={() => void load()} className="shrink-0 font-medium underline">
+            다시 시도
+          </button>
+        </div>
+      ) : null}
+
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
-        <span>총 {filteredItems.length}건 · mock data</span>
+        <span>총 {filteredItems.length}건{source === "mock" ? " · mock data" : ""}</span>
         <span>보물당 active 매칭은 최대 1개만 허용됩니다.</span>
       </div>
 
@@ -328,13 +367,18 @@ export default function AdminMappingsPage() {
             ))}
           </tbody>
         </table>
-        {items.length === 0 ? (
+        {isLoading ? (
+          <div className="px-6 py-16 text-center">
+            <p className="text-sm text-[#6b7280]">매칭 목록을 불러오는 중입니다.</p>
+          </div>
+        ) : null}
+        {!isLoading && items.length === 0 ? (
           <div className="px-6 py-16 text-center">
             <p className="text-sm font-semibold text-[#111827]">아직 등록된 매칭이 없습니다.</p>
             <p className="mt-2 text-sm text-[#6b7280]">보물과 상품을 연결해 운영을 시작하세요.</p>
           </div>
         ) : null}
-        {items.length > 0 && pageItems.length === 0 ? (
+        {!isLoading && items.length > 0 && pageItems.length === 0 ? (
           <div className="px-6 py-16 text-center">
             <p className="text-sm font-semibold text-[#111827]">검색 결과 없음</p>
             <p className="mt-2 text-sm text-[#6b7280]">입력한 조건과 일치하는 매칭이 없습니다. 검색어 또는 필터를 변경한 뒤 다시 시도해 주세요.</p>

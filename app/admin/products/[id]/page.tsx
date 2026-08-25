@@ -2,19 +2,21 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { MouseEvent, useMemo, useState } from "react";
+import { MouseEvent, useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
 import { DialogOverlay } from "@/components/admin/dialog-overlay";
 import {
   ADMIN_PRODUCT_STATUS_LABEL,
-  findAdminProduct,
   formatAdminProductDateTime,
   formatAdminProductPrice,
-  getAdminProductMappings,
+  type AdminProductListItem,
+  type AdminProductMappingSummary,
   type AdminProductStatus,
 } from "@/lib/admin/mock-products";
+import { loadAdminProductDetail } from "@/lib/admin/product-service";
+import type { AdminDataSource } from "@/lib/admin/admin-context";
 
 const adminRole = "super_admin";
 
@@ -46,11 +48,38 @@ export default function AdminProductDetailPage() {
   const router = useRouter();
   const params = useParams<{ id?: string }>();
   const productId = String(params.id ?? "");
-  const product = findAdminProduct(productId);
   const [isWarningOpen, setIsWarningOpen] = useState(false);
 
+  const [product, setProduct] = useState<AdminProductListItem | undefined>(undefined);
+  const [mappings, setMappings] = useState<AdminProductMappingSummary[]>([]);
+  const [source, setSource] = useState<AdminDataSource | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await loadAdminProductDetail(productId);
+      setProduct(result.product);
+      setMappings(result.mappings);
+      setSource(result.source);
+      setMessage(result.message ?? null);
+    } catch (error) {
+      console.warn("[admin] 상품 상세 로딩 실패:", error);
+      setProduct(undefined);
+      setMappings([]);
+      setSource(null);
+      setMessage("상품 상세를 불러오지 못했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [productId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
   const canEditProduct = adminRole === "super_admin" || adminRole === "operator";
-  const mappings = useMemo(() => getAdminProductMappings(productId), [productId]);
   const activeMappingCount = product?.activeMappingCount ?? 0;
   const totalMappingCount = Math.max(mappings.length, activeMappingCount);
   const storagePath = product?.imageUrl ? `storage/products/${product.externalProductId.toLowerCase()}.jpg` : null;
@@ -61,6 +90,16 @@ export default function AdminProductDetailPage() {
       setIsWarningOpen(true);
     }
   };
+
+  if (isLoading) {
+    return (
+      <AdminShell>
+        <div className="rounded-lg border border-[#e5e7eb] bg-white p-10 text-center">
+          <p className="text-sm text-[#6b7280]">상품 상세를 불러오는 중입니다.</p>
+        </div>
+      </AdminShell>
+    );
+  }
 
   if (!product) {
     return (
@@ -81,7 +120,7 @@ export default function AdminProductDetailPage() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold">상품 상세</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">상품 정보와 보물 연결 영향을 mock data 기준으로 확인합니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">상품 정보와 보물 연결 영향을 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준으로 확인합니다.</p>
         </div>
         <div className="flex gap-2">
           <Link href="/admin/products" className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">
@@ -99,6 +138,20 @@ export default function AdminProductDetailPage() {
           ) : null}
         </div>
       </div>
+
+      {source && source !== "supabase" ? (
+        <div
+          role="status"
+          className={`mt-5 flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${
+            source === "mock" ? "border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8]" : "border-[#fecaca] bg-[#fef2f2] text-[#b91c1c]"
+          }`}
+        >
+          <span>{message ?? "예시 데이터를 표시하고 있습니다."}</span>
+          <button type="button" onClick={() => void load()} className="shrink-0 font-medium underline">
+            다시 시도
+          </button>
+        </div>
+      ) : null}
 
       <div className="mt-7 grid grid-cols-[minmax(0,1fr)_360px] gap-4">
         <div className="space-y-4">

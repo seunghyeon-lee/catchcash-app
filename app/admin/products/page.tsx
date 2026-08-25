@@ -1,18 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
 import { DialogOverlay } from "@/components/admin/dialog-overlay";
 import {
   ADMIN_PRODUCT_STATUS_LABEL,
-  MOCK_ADMIN_PRODUCTS,
   formatAdminProductDate,
   formatAdminProductPrice,
   type AdminProductListItem,
   type AdminProductStatus,
 } from "@/lib/admin/mock-products";
+import { loadAdminProducts } from "@/lib/admin/product-service";
+import type { AdminDataSource } from "@/lib/admin/admin-context";
 
 type ProductStatusFilter = "all" | AdminProductStatus;
 type ProductSortKey = "created_desc" | "created_asc" | "price_desc" | "price_asc" | "mapping_count_desc";
@@ -60,17 +61,43 @@ export default function AdminProductsPage() {
   const [page, setPage] = useState(1);
   const [isCsvDialogOpen, setIsCsvDialogOpen] = useState(false);
 
+  const [products, setProducts] = useState<AdminProductListItem[]>([]);
+  const [source, setSource] = useState<AdminDataSource | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await loadAdminProducts();
+      setProducts(result.products);
+      setSource(result.source);
+      setMessage(result.message ?? null);
+    } catch (error) {
+      console.warn("[admin] 상품 목록 로딩 실패:", error);
+      setProducts([]);
+      setSource(null);
+      setMessage("상품 목록을 불러오지 못했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
   const canManageProducts = adminRole === "super_admin" || adminRole === "operator";
 
   const brands = useMemo(
-    () => Array.from(new Set(MOCK_ADMIN_PRODUCTS.map((product) => product.brandName))).sort((a, b) => a.localeCompare(b, "ko")),
-    [],
+    () => Array.from(new Set(products.map((product) => product.brandName))).sort((a, b) => a.localeCompare(b, "ko")),
+    [products],
   );
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return [...MOCK_ADMIN_PRODUCTS]
+    return [...products]
       .filter((product) => {
         const matchesQuery = [product.name, product.brandName, product.externalProductId]
           .join(" ")
@@ -88,7 +115,7 @@ export default function AdminProductsPage() {
         if (sort === "mapping_count_desc") return b.activeMappingCount - a.activeMappingCount;
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
-  }, [brand, query, sort, status]);
+  }, [brand, products, query, sort, status]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
   const pageItems = filteredProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -100,7 +127,7 @@ export default function AdminProductsPage() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold">상품 목록</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">보물상자에 연결 가능한 상품을 mock data 기준으로 조회합니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">보물상자에 연결 가능한 상품을 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준으로 조회합니다.</p>
         </div>
         {canManageProducts ? (
           <Link href="/admin/products/new" className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white hover:bg-black">
@@ -108,6 +135,20 @@ export default function AdminProductsPage() {
           </Link>
         ) : null}
       </div>
+
+      {source && source !== "supabase" ? (
+        <div
+          role="status"
+          className={`mt-5 flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${
+            source === "mock" ? "border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8]" : "border-[#fecaca] bg-[#fef2f2] text-[#b91c1c]"
+          }`}
+        >
+          <span>{message ?? "예시 데이터를 표시하고 있습니다."}</span>
+          <button type="button" onClick={() => void load()} className="shrink-0 font-medium underline">
+            다시 시도
+          </button>
+        </div>
+      ) : null}
 
       <section className="mt-7 rounded-lg border border-[#e5e7eb] bg-white p-4">
         <div className="grid grid-cols-[minmax(240px,1fr)_150px_180px_180px_auto] gap-3">
@@ -212,7 +253,11 @@ export default function AdminProductsPage() {
             ))}
           </tbody>
         </table>
-        {pageItems.length === 0 ? (
+        {isLoading ? (
+          <div className="px-6 py-16 text-center">
+            <p className="text-sm text-[#6b7280]">상품 목록을 불러오는 중입니다.</p>
+          </div>
+        ) : pageItems.length === 0 ? (
           <div className="px-6 py-16 text-center">
             <p className="text-sm font-semibold text-[#111827]">검색 결과 없음</p>
             <p className="mt-2 text-sm text-[#6b7280]">입력한 조건과 일치하는 상품이 없습니다. 검색어 또는 필터를 변경해 다시 시도해주세요.</p>
@@ -221,7 +266,7 @@ export default function AdminProductsPage() {
       </section>
 
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
-        <span>총 {filteredProducts.length}건 · mock data</span>
+        <span>총 {filteredProducts.length}건{source === "mock" ? " · mock data" : ""}</span>
         <nav aria-label="상품 목록 페이지네이션" className="flex items-center gap-2">
           {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
             <button
