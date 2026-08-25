@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useParams } from "next/navigation";
 
@@ -13,17 +13,18 @@ import {
   ADMIN_USER_PROVIDER_LABEL,
   ADMIN_USER_REWARD_STATUS_LABEL,
   ADMIN_USER_STATUS_LABEL,
-  findAdminUserDetail,
   formatAdminUserDate,
   formatAdminUserDateTime,
   getAdminUserActivityItems,
   getAdminUserInquirySummaries,
   getAdminUserRewardSummaries,
   getAdminUserSecurityLogSummaries,
+  type AdminUserDetail,
   type AdminUserInquirySummaryStatus,
   type AdminUserRewardSummaryStatus,
-  type AdminUserStatus,
 } from "@/lib/admin/mock-users";
+import { loadAdminUserDetail } from "@/lib/admin/user-service";
+import type { AdminDataSource } from "@/lib/admin/admin-context";
 
 const adminRole = "super_admin";
 
@@ -73,14 +74,46 @@ function MetricCard({ label, value, href }: { label: string; value: string; href
 export default function AdminUserDetailPage() {
   const params = useParams<{ id: string }>();
   const userId = params.id;
-  const user = useMemo(() => findAdminUserDetail(userId), [userId]);
+
+  const [user, setUser] = useState<AdminUserDetail | undefined>(undefined);
+  const [source, setSource] = useState<AdminDataSource | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // 보상/문의/활동/보안 요약 리스트는 상세 정합성(7차)에서 실연결한다. 현재는 mock 유지.
   const rewards = useMemo(() => getAdminUserRewardSummaries(userId), [userId]);
   const inquiries = useMemo(() => getAdminUserInquirySummaries(userId), [userId]);
   const activities = useMemo(() => getAdminUserActivityItems(userId), [userId]);
   const securityLogs = useMemo(() => getAdminUserSecurityLogSummaries(userId), [userId]);
 
-  const [memo, setMemo] = useState(user?.internalMemo ?? "");
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await loadAdminUserDetail(userId);
+      setUser(result.user);
+      setSource(result.source);
+      setMessage(result.message ?? null);
+    } catch (error) {
+      console.warn("[admin] 유저 상세 로딩 실패:", error);
+      setUser(undefined);
+      setSource(null);
+      setMessage("유저 상세를 불러오지 못했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const [memo, setMemo] = useState("");
   const [memoError, setMemoError] = useState("");
+
+  // 상세 로딩 후 내부 메모 초기값을 동기화한다.
+  useEffect(() => {
+    setMemo(user?.internalMemo ?? "");
+  }, [user]);
   const [toast, setToast] = useState("");
   const [statusDialog, setStatusDialog] = useState<"suspend" | "unsuspend" | null>(null);
   const [statusReason, setStatusReason] = useState("");
@@ -124,6 +157,16 @@ export default function AdminUserDetailPage() {
     closeStatusDialog();
   };
 
+  if (isLoading) {
+    return (
+      <AdminShell>
+        <div className="rounded-lg border border-[#e5e7eb] bg-white p-10 text-center">
+          <p className="text-sm text-[#6b7280]">유저 상세를 불러오는 중입니다.</p>
+        </div>
+      </AdminShell>
+    );
+  }
+
   if (!user) {
     return (
       <AdminShell>
@@ -143,7 +186,9 @@ export default function AdminUserDetailPage() {
       <div className="flex items-end justify-between gap-6">
         <div>
           <h1 className="text-2xl font-bold">유저 상세</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">특정 유저의 운영 정보, 보상·문의 요약, 최근 활동을 mock data 기준으로 확인합니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">
+            특정 유저의 운영 정보와 활동 요약을 확인합니다. 기본 정보와 카운트는 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준이며, 보상·활동·보안 요약은 예시(mock)로 표시됩니다.
+          </p>
         </div>
         <div className="flex gap-2">
           <Link href="/admin/users" className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">
@@ -168,6 +213,20 @@ export default function AdminUserDetailPage() {
       </div>
 
       {toast ? <div role="status" className="mt-5 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-4 py-3 text-sm text-[#1d4ed8]">{toast}</div> : null}
+
+      {source && source !== "supabase" ? (
+        <div
+          role="status"
+          className={`mt-5 flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${
+            source === "mock" ? "border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8]" : "border-[#fecaca] bg-[#fef2f2] text-[#b91c1c]"
+          }`}
+        >
+          <span>{message ?? "예시 데이터를 표시하고 있습니다."}</span>
+          <button type="button" onClick={() => void load()} className="shrink-0 font-medium underline">
+            다시 시도
+          </button>
+        </div>
+      ) : null}
 
       <div className="mt-7 grid grid-cols-[minmax(0,1fr)_380px] gap-5">
         <div className="space-y-5">
