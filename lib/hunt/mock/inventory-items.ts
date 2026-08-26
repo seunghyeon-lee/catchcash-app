@@ -1,4 +1,4 @@
-export type MockInventoryItemStatus = "ready" | "issued" | "failed" | "used" | "expired";
+export type MockInventoryItemStatus = "ready" | "issued" | "failed" | "used" | "expired" | "canceled";
 
 /** inventory_items 테이블 raw. coupon_code / barcode_value 는 상세 조회용. */
 export type MockInventoryItem = {
@@ -91,5 +91,22 @@ export const mockInventoryItems: MockInventoryItem[] = [
     issue_failed_reason: null,
     created_at: "2026-06-01T09:00:00+09:00",
     updated_at: "2026-06-30T23:59:59+09:00",
+  },
+  {
+    id: "90000000-0000-0000-0000-000000000005",
+    user_id: "20000000-0000-0000-0000-000000000001",
+    treasure_claim_id: "80000000-0000-0000-0000-000000000007",
+    treasure_box_id: "50000000-0000-0000-0000-000000000002",
+    treasure_reward_id: "70000000-0000-0000-0000-000000000002",
+    gift_product_id: "60000000-0000-0000-0000-000000000002",
+    status: "canceled",
+    issued_at: null,
+    used_at: null,
+    expired_at: null,
+    coupon_code: null,
+    barcode_value: null,
+    issue_failed_reason: null,
+    created_at: "2026-07-26T09:00:00+09:00",
+    updated_at: "2026-07-26T10:00:00+09:00",
   },
 ];

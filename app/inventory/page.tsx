@@ -117,6 +117,29 @@ function ExpiredCard({ reward }: { reward: MockReward }) {
   );
 }
 
+function CanceledCard({ reward }: { reward: MockReward }) {
+  return (
+    <div className="w-full rounded-xl border-2 border-dashed border-black/40 bg-[#f0eee8] opacity-80">
+      <div className="flex items-center gap-4 px-4 py-3.5">
+        {reward.image && (
+          <img
+            src={REWARD_IMAGES[reward.image]}
+            alt={reward.name}
+            className="size-[76px] shrink-0 object-contain opacity-50 grayscale"
+          />
+        )}
+        <div className="min-w-0 flex-1">
+          <span className="inline-block rounded-full border-2 border-black/50 bg-white px-2.5 py-0.5 text-xs font-medium text-[#5d5f5f]">
+            취소됨
+          </span>
+          <p className="mt-1 truncate text-lg text-[#5d5f5f]">{reward.name}</p>
+          <p className="truncate text-base text-[#5d5f5f]">발급이 취소된 보상이다.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function InventoryPage() {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [rewards, setRewards] = useState<MockReward[]>(() => getInventoryRewardList());
@@ -208,11 +231,21 @@ export default function InventoryPage() {
             if (reward.status === "expired") {
               return <ExpiredCard key={reward.id} reward={reward} />;
             }
+            if (reward.status === "canceled") {
+              return <CanceledCard key={reward.id} reward={reward} />;
+            }
             return <UsedCard key={reward.id} reward={reward} />;
           })}
-          {visible.length === 0 && (
-            <p className="py-16 text-center text-base text-[#5d5f5f]">해당하는 전리품이 없다.</p>
-          )}
+          {visible.length === 0 &&
+            (rewards.length === 0 ? (
+              <div className="flex flex-col items-center py-16 text-center">
+                <img src={icons.inventoryTitleBox} alt="" className="size-10 opacity-40" />
+                <p className="mt-4 text-base text-[#5d5f5f]">아직 모은 전리품이 없다.</p>
+                <p className="mt-1 text-sm text-[#5d5f5f]">사냥부터 나가자.</p>
+              </div>
+            ) : (
+              <p className="py-16 text-center text-base text-[#5d5f5f]">이 조건에 맞는 전리품이 없다.</p>
+            ))}
         </div>
       </main>
 
