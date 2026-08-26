@@ -9,6 +9,20 @@ export type NotificationType = "treasure" | "coupon" | "notice" | "setting" | "s
 /** 필터칩 값 — 유형 필터 + 상태 필터(`unread`) + 기본값(`all`) */
 export type NotificationFilter = "all" | "unread" | NotificationType;
 
+const NOTIFICATION_TYPES: NotificationType[] = ["treasure", "coupon", "notice", "setting", "support"];
+
+/**
+ * 조회 결과의 `type` 을 화면이 아는 값으로 좁힌다.
+ *
+ * 알림 카드는 `type` 으로 아이콘·프레임 에셋을 찾는데, DB `notification_type` enum 에
+ * 값이 하나 늘고 프론트가 아직 모르면 `typeIcon[type]` 이 undefined 가 되어
+ * `next/image` 가 src 없이 렌더되면서 알림함 전체가 터진다.
+ * 모르는 유형은 성격이 가장 무난한 공지로 모아 카드만이라도 뜨게 한다.
+ */
+export function toNotificationType(value: string | null | undefined): NotificationType {
+  return NOTIFICATION_TYPES.includes(value as NotificationType) ? (value as NotificationType) : "notice";
+}
+
 /** DB `public.notifications` 행 구조 */
 export type AppNotification = {
   id: string;
