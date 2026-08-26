@@ -29,7 +29,10 @@ export async function getHuntResultData(
   const mock = getHuntResultByQuery(resultQuery);
   const session = await getAuthenticatedUserSession();
 
-  if (!session || resultQuery === "fail") {
+  // 성공(또는 파라미터 없음)만 실제 보상을 조회한다.
+  // 실패/too_far/empty/expired/already_claimed는 보상 조회 없이 상태별 mock 실패 콘텐츠를 유지한다.
+  const isSuccessState = !resultQuery || resultQuery === "success";
+  if (!session || !isSuccessState) {
     return { ...mock, source: "mock", treasureBoxId: treasureBoxId ?? null };
   }
 
@@ -56,7 +59,7 @@ export async function getHuntResultData(
 
   const { data: reward, error: rewardError } = await session.client
     .from("treasure_rewards")
-    .select("id, reward_type, gift_products(brand_name, product_name)")
+    .select("id, reward_type, remaining_quantity, gift_products(brand_name, product_name)")
     .eq("treasure_box_id", boxId)
     .eq("status", "active")
     .maybeSingle();
@@ -71,11 +74,19 @@ export async function getHuntResultData(
   }
 
   const rewardId = (reward?.id as string | undefined) ?? null;
+  const remainingQuantity = (reward?.remaining_quantity as number | null | undefined) ?? null;
   const giftProduct: GiftProductRow | null = Array.isArray(reward?.gift_products)
     ? (reward.gift_products[0] ?? null)
     : (reward?.gift_products ?? null);
 
-  if (!reward || reward.reward_type === "empty" || !giftProduct) {
+  // 보상이 없거나 empty거나 remaining 수량이 소진되면 보상 override 없이 mock으로 fallback한다.
+  // 실제 수량 차감은 원자적 처리가 필요해 서버 RPC 영역이다(클라이언트에서 갱신하지 않음, TODO).
+  if (
+    !reward ||
+    reward.reward_type === "empty" ||
+    (remainingQuantity !== null && remainingQuantity <= 0) ||
+    !giftProduct
+  ) {
     return { ...mock, source: "mock", treasureBoxId: boxId, treasureRewardId: rewardId };
   }
 
