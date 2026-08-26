@@ -1,8 +1,6 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useState } from "react";
-
 import { HUNT_ASSETS } from "@/lib/hunt/assets";
 import type { MockRewardDetail } from "@/lib/hunt/mock-data";
 
@@ -17,22 +15,6 @@ export function RewardDetailPopup({
   onClose: () => void;
   onMarkUsed?: (rewardId: string) => void;
 }) {
-  const [copied, setCopied] = useState(false);
-  const couponNumber = reward.couponNumber ?? "-";
-  const barcodeValue = reward.barcodeValue ?? "-";
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(couponNumber);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // Mock 단계: 클립보드 실패 시에도 UI만 유지
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
-    }
-  };
-
   const handleMarkUsed = () => {
     // MD: 즉시 변경하지 않고 확인 절차 필수
     const confirmed = window.confirm("이 쿠폰을 사용 완료로 표시할까요?");
@@ -61,24 +43,24 @@ export function RewardDetailPopup({
             </button>
           </div>
 
-          {/* 바코드 + 쿠폰 번호 + 복사 (MD 12) */}
+          {/* 바코드 + 쿠폰 번호 (4차: Giftishow 발급 연결 전까지 실제값 미노출, 준비중 처리) */}
           <div className="relative mt-6">
             <img src={frames.rewardDetailBarcode} alt="" className="absolute inset-0 size-full" />
             <div className="relative flex flex-col items-center px-8 py-10">
               <div className="flex h-[68px] w-full max-w-[204px] items-center justify-center bg-[#d9d9d9]">
                 <div className="text-center text-black">
                   <p className="text-base uppercase">바코드 영역</p>
-                  <p className="mt-1 text-[10px] tracking-[0.8px]">{barcodeValue}</p>
+                  <p className="mt-1 text-[10px] tracking-[0.8px]">발급 준비중</p>
                 </div>
               </div>
               <div className="mt-6 flex w-full max-w-[240px] items-center justify-between gap-3">
-                <p className="text-sm font-medium tracking-[0.6px] text-[#1b1b1b]">{couponNumber}</p>
+                <p className="text-sm font-medium tracking-[0.6px] text-[#5d5f5f]">쿠폰 발급 준비중</p>
                 <button
                   type="button"
-                  onClick={handleCopy}
-                  className="shrink-0 border-[3px] border-[#1b1b1b] bg-white px-3 py-2 text-xs font-medium tracking-[0.6px] text-[#1b1b1b] shadow-[2px_2px_0px_#1b1b1b]"
+                  disabled
+                  className="shrink-0 cursor-not-allowed border-[3px] border-[#1b1b1b]/40 bg-white px-3 py-2 text-xs font-medium tracking-[0.6px] text-[#1b1b1b]/40"
                 >
-                  {copied ? "복사됨" : "복사"}
+                  복사
                 </button>
               </div>
             </div>
