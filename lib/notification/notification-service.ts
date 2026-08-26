@@ -49,6 +49,22 @@ export async function listNotifications(): Promise<ListNotificationsResult> {
   };
 }
 
+/** `/support/<id>` 형태의 문의 상세만 고른다 — 목록(`/support`)이나 작성(`/support/new`)은 제외 */
+const SUPPORT_DETAIL_ROUTE = /^\/support\/(?!new$)[^/?#]+$/;
+
+/**
+ * 알림에서 이동할 실제 href.
+ *
+ * 문의 답변 알림은 DB 트리거(`resolve_inquiry_after_reply`)가 `target_route` 를
+ * `/support/<id>` 로 박아 넣는다. 마이그레이션은 건드릴 수 없으니, 알림에서 들어왔다는
+ * 사실은 화면 쪽에서 표식으로 붙인다 — 상세가 이걸 보고 답변부터 보여준다.
+ *
+ * 다른 팀 담당 화면(`/map`, `/inventory` 등)의 경로에는 아무것도 붙이지 않는다.
+ */
+export function toNotificationTargetHref(targetRoute: string) {
+  return SUPPORT_DETAIL_ROUTE.test(targetRoute) ? `${targetRoute}?from=notification` : targetRoute;
+}
+
 export type MarkNotificationReadResult = {
   source: NotificationDataSource;
   ok: boolean;

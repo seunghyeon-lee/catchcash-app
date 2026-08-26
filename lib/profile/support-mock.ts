@@ -20,6 +20,20 @@ export function toSupportStatus(value: string | null | undefined): SupportStatus
   return value === "resolved" ? "resolved" : "reading";
 }
 
+/**
+ * 관리자 답변 1건.
+ *
+ * 작성자는 이름 대신 고정 라벨(`관리자`)로만 보여준다. `support_replies.admin_user_id`
+ * 로 이름을 끌어오려면 `admin_users` 를 읽어야 하는데, `admin_users_select_admin` 정책이
+ * 관리자에게만 select 를 허용한다 — 일반 사용자는 애초에 못 읽는다.
+ * 읽을 수 있더라도 담당자 실명은 사용자 화면에 필요 없는 정보라 그대로 둔다.
+ */
+export type SupportAnswer = {
+  content: string;
+  /** 답변 등록일 (MM.DD) */
+  date: string;
+};
+
 export type SupportInquiry = {
   id: string;
   title: string;
@@ -28,8 +42,11 @@ export type SupportInquiry = {
   status: SupportStatus;
   /** 사용자가 쓴 문의 본문 */
   question: string;
-  /** 관리자 답변 — 없으면 null (읽는 중) */
-  answer: string | null;
+  /**
+   * 관리자 답변 — 아직 없으면 빈 배열.
+   * `support_replies` 는 한 문의에 여러 건이 붙을 수 있어 배열로 받는다.
+   */
+  answers: SupportAnswer[];
 };
 
 export const MOCK_SUPPORT_INQUIRIES: SupportInquiry[] = [
@@ -39,7 +56,7 @@ export const MOCK_SUPPORT_INQUIRIES: SupportInquiry[] = [
     date: "10.24",
     status: "resolved",
     question: "스타벅스 아메리카노 사냥 성공했는데 보관함에 안 뜬다. 이거 사기 아님? 빨리 내놔라.",
-    answer: "데이터 좀 꼬였더라. 다시 던져놨으니까 보관함이나 가봐라. 이제 됐지?",
+    answers: [{ content: "데이터 좀 꼬였더라. 다시 던져놨으니까 보관함이나 가봐라. 이제 됐지?", date: "10.25" }],
   },
   {
     id: "inquiry_002",
@@ -47,7 +64,7 @@ export const MOCK_SUPPORT_INQUIRIES: SupportInquiry[] = [
     date: "10.22",
     status: "reading",
     question: "이거 왜 포인트 적립 안 됨? 사기 아님?",
-    answer: null,
+    answers: [],
   },
   {
     id: "inquiry_003",
@@ -55,7 +72,10 @@ export const MOCK_SUPPORT_INQUIRIES: SupportInquiry[] = [
     date: "10.15",
     status: "resolved",
     question: "계정 탈퇴하고 싶어요... 근데 포인트가 아까워요. 어떻게 하면 되나요?",
-    answer: "포인트부터 다 쓰고 와라. 그 다음에 설정에서 탈퇴하면 된다.",
+    answers: [
+      { content: "포인트부터 다 쓰고 와라. 그 다음에 설정에서 탈퇴하면 된다.", date: "10.16" },
+      { content: "아직 안 썼더라. 보관함 확인하고 다시 연락해라.", date: "10.18" },
+    ],
   },
 ];
 
@@ -75,8 +95,12 @@ export const SUPPORT_ANSWER_WAITING = "아직 읽는 중이야. 답변 오면 �
  */
 export const SUPPORT_ANSWER_RESOLVED_WITHOUT_REPLY = "답변은 달렸다는데 본문이 안 보여. 잠시 후 다시 확인해줘.";
 
-/** 답변 카드 본문 — 답변이 있으면 그대로, 없으면 상태에 맞는 안내 문구 */
-export function resolveAnswerText(inquiry: Pick<SupportInquiry, "status" | "answer">) {
-  if (inquiry.answer) return inquiry.answer;
-  return inquiry.status === "resolved" ? SUPPORT_ANSWER_RESOLVED_WITHOUT_REPLY : SUPPORT_ANSWER_WAITING;
+/** 답변이 아직 없을 때 답변 카드에 채울 문구 — 상태에 따라 갈린다 */
+export function resolveAnswerWaitingText(status: SupportStatus) {
+  return status === "resolved" ? SUPPORT_ANSWER_RESOLVED_WITHOUT_REPLY : SUPPORT_ANSWER_WAITING;
+}
+
+/** 답변 라벨 — 여러 건이면 몇 번째 답변인지 붙여 준다 */
+export function formatAnswerLabel(index: number, total: number) {
+  return total > 1 ? `관리자의 대답 ${index + 1}/${total}` : "관리자의 대답";
 }
