@@ -1,11 +1,12 @@
-import { MOCK_SUPPORT_INQUIRIES, findInquiry, type SupportInquiry, type SupportStatus } from "./support-mock";
+import { MOCK_SUPPORT_INQUIRIES, findInquiry, toSupportStatus, type SupportInquiry } from "./support-mock";
 import { getAuthenticatedUserSession, type AuthenticatedUserSession } from "./auth-session";
 
 type SupportInquiryRow = {
   id: string;
   title: string;
   content: string;
-  status: SupportStatus;
+  /** DB enum 이지만 조회 결과는 문자열이라, 라벨을 찍기 전에 `toSupportStatus` 로 좁힌다. */
+  status: string;
   created_at: string;
 };
 
@@ -53,7 +54,7 @@ export function toSupportInquiry(row: SupportInquiryRow, answer: string | null =
     id: row.id,
     title: row.title,
     date: formatSupportDate(row.created_at),
-    status: row.status,
+    status: toSupportStatus(row.status),
     question: row.content,
     answer,
   };
@@ -87,11 +88,13 @@ export async function listSupportInquiries(): Promise<ListSupportInquiriesResult
     .eq("user_id", session.userId)
     .order("created_at", { ascending: false });
 
+  // 조회 실패는 "문의가 하나도 없음"과 다르다. 빈 배열을 돌려주면 남긴 문의가 있는데도
+  // 빈 상태 화면이 떠서 사용자가 문의가 사라진 걸로 읽는다 → MD 8절대로 mock 으로 되돌린다.
   if (error) {
     return {
-      inquiries: [],
-      source: "supabase",
-      errorMessage: "문의 내역을 불러오지 못했어. 잠시 후 다시 확인해줘.",
+      inquiries: MOCK_SUPPORT_INQUIRIES,
+      source: "mock",
+      errorMessage: "문의 내역을 불러오지 못했어. 아래는 예시 목록이야.",
     };
   }
 
@@ -119,14 +122,17 @@ export async function getSupportInquiry(inquiryId: string): Promise<GetSupportIn
     .eq("user_id", session.userId)
     .maybeSingle();
 
+  // 조회 자체가 실패한 것과 "그런 문의가 없다"는 구분해야 한다.
+  // 에러일 때 undefined 를 돌려주면 멀쩡한 문의를 없는 문의처럼 안내하게 된다.
   if (inquiryError) {
     return {
-      inquiry: undefined,
-      source: "supabase",
+      inquiry: findInquiry(inquiryId),
+      source: "mock",
       errorMessage: "문의를 불러오지 못했어. 잠시 후 다시 확인해줘.",
     };
   }
 
+  // 여기까지 왔는데 행이 없으면 정말로 없거나 남의 문의다(RLS 가 에러 대신 0건을 준다).
   if (!inquiryRow) {
     return { inquiry: undefined, source: "supabase" };
   }

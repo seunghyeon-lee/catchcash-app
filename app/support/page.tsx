@@ -87,7 +87,11 @@ export default function SupportListPage() {
 
           {/* 안내 문구 + 문의 리스트 (바깥 gap-8 과 분리하려고 한 겹 묶는다) */}
           <div className="flex flex-col gap-4">
-            {isMockFallback ? (
+            {/*
+              둘 다 mock 을 보여주는 상태지만 이유가 다르다. 조회가 실패해서 mock 으로 내려온
+              경우에는 빨간 줄이 이유를 말해 주므로, "로그인 연결 전" 안내를 겹쳐 띄우지 않는다.
+            */}
+            {isMockFallback && !loadError ? (
               <p className="text-xs leading-5 text-[#5d5f5f]">로그인 연결 전이라 예시 문의를 보여주고 있어.</p>
             ) : null}
             {loadError ? <p className="text-sm leading-5 text-[#b42318]">{loadError}</p> : null}
@@ -95,7 +99,11 @@ export default function SupportListPage() {
             {isLoading ? (
               <p className="py-10 text-center text-base text-[#5d5f5f]">문의 내역을 불러오는 중이야.</p>
             ) : inquiries.length === 0 ? (
-              <p className="py-10 text-center text-base text-[#5d5f5f]">아직 남긴 문의가 없다.</p>
+              /* 빈 상태 — 알림함·작성 화면 안내 박스와 같은 점선 톤으로 맞춘다 */
+              <div className="border-2 border-dashed border-black/50 bg-white/60 px-5 py-12 text-center">
+                <p className="text-2xl leading-[30px] text-[#1b1b1b]">아직 남긴 문의가 없다.</p>
+                <p className="mt-2 text-sm leading-5 text-[#5d5f5f]">할 말 있으면 아래로 던져라.</p>
+              </div>
             ) : (
               <ul className="flex flex-col gap-6">
                 {inquiries.map((inquiry, index) => (
