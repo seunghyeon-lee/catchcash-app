@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState, type ReactNode } from "react";
+import { Suspense, useCallback, useEffect, useState, type ReactNode } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
@@ -114,18 +114,29 @@ function DashboardPageContent() {
 
   const [stats, setStats] = useState<AdminDashboardStats | null>(null);
   const [source, setSource] = useState<AdminDataSource | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    let active = true;
-    void loadAdminDashboardStats().then((result) => {
-      if (!active) return;
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await loadAdminDashboardStats();
       setStats(result.stats);
       setSource(result.source);
-    });
-    return () => {
-      active = false;
-    };
+      setMessage(result.message ?? null);
+    } catch (error) {
+      console.warn("[admin] 대시보드 지표 로딩 실패:", error);
+      setStats(null);
+      setSource(null);
+      setMessage("대시보드 지표를 불러오지 못했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   // 상단 지표 카드 값만 admin_dashboard_stats 뷰 실데이터로 덮는다.
   // (하단 최근 현황 rows/summary는 보상·보물 조인이 필요해 이후 차수에서 연결)
@@ -148,11 +159,25 @@ function DashboardPageContent() {
           <p className="mt-2 text-sm text-[#6b7280]">Asia/Seoul 기준 · 오늘 00:00~현재</p>
         </div>
         <span className="text-xs text-[#6b7280]">
-          {source === "supabase" ? "Supabase 실시간 지표 · 하단 최근 현황은 mock" : `Mock data · 집계일 ${MOCK_DASHBOARD_TODAY}`}
+          {isLoading ? "지표 불러오는 중…" : source === "supabase" ? "Supabase 실시간 지표 · 하단 최근 현황은 mock" : `Mock data · 집계일 ${MOCK_DASHBOARD_TODAY}`}
         </span>
       </div>
 
-      <section aria-label="핵심 운영 지표" className="mt-7 grid grid-cols-4 gap-4">
+      {!isLoading && source && source !== "supabase" ? (
+        <div
+          role="status"
+          className={`mt-5 flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${
+            source === "mock" ? "border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8]" : "border-[#fecaca] bg-[#fef2f2] text-[#b91c1c]"
+          }`}
+        >
+          <span>{message ?? "예시 데이터를 표시하고 있습니다."}</span>
+          <button type="button" onClick={() => void load()} className="shrink-0 font-medium underline">
+            다시 시도
+          </button>
+        </div>
+      ) : null}
+
+      <section aria-busy={isLoading} aria-label="핵심 운영 지표" className="mt-7 grid grid-cols-4 gap-4">
         {metrics.map((metric) => (
           <Link
             key={metric.key}
