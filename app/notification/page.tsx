@@ -6,7 +6,8 @@ import { NotificationFeed } from "@/components/notification/notification-feed";
 
 /**
  * 알림함 화면 — `04_1_Notification_Inbox_Screen` (`/notification`)
- * mock only. Supabase notifications 연결은 후속 작업.
+ * 목록 조회는 `NotificationFeed` 안의 `listNotifications()` 가 담당한다.
+ * 세션이 없거나 조회가 실패하면 기존 mock 목록으로 fallback 한다.
  */
 export default function NotificationPage() {
   return (
