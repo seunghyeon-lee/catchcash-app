@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { icons, ui } from "@/lib/assets";
 import {
   formatNotificationTime,
@@ -13,6 +13,7 @@ import {
   type NotificationFilter,
   type NotificationType,
 } from "@/lib/mock/notifications";
+import { listNotifications } from "@/lib/notification/notification-service";
 
 const typeIcon: Record<NotificationType, string> = {
   treasure: icons.notifTreasure,
@@ -37,12 +38,38 @@ type NotificationFeedProps = {
 
 /**
  * 알림 목록 본문 — 팝업(`/` 모달)과 `/notification` 페이지가 공유한다.
- * mock only. Supabase notifications 연결은 후속 작업.
+ *
+ * 데이터는 `listNotifications()` 가 담당한다. 세션이 있으면 본인 `user_id` 알림만 조회하고,
+ * 세션이 없거나 조회가 실패하면 기존 mock 목록을 그대로 보여준다.
  */
 export function NotificationFeed({ onAfterSelect }: NotificationFeedProps) {
   const router = useRouter();
   const [filter, setFilter] = useState<NotificationFilter>("all");
   const [notifications, setNotifications] = useState<AppNotification[]>(mockNotifications);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isMockFallback, setIsMockFallback] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadNotifications = async () => {
+      const result = await listNotifications();
+
+      if (!isMounted) return;
+
+      setNotifications(result.notifications);
+      setIsMockFallback(result.source === "mock");
+      setLoadError(result.errorMessage ?? null);
+      setIsLoading(false);
+    };
+
+    void loadNotifications();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const items = useMemo(() => {
     const filtered = notifications.filter((item) => {
@@ -82,7 +109,8 @@ export function NotificationFeed({ onAfterSelect }: NotificationFeedProps) {
           <p className="text-[28px] font-medium leading-tight text-ink">뭐가 또 왔다.</p>
           <p className="mt-3 text-base text-soft">읽을 건 읽고, 넘길 건 넘겨.</p>
         </div>
-        {unreadCount > 0 ? (
+        {/* 조회 중에는 아직 mock 기준 카운트라, 목록이 확정된 뒤에만 노출한다 */}
+        {!isLoading && unreadCount > 0 ? (
           <button
             type="button"
             onClick={markAllRead}
@@ -111,7 +139,15 @@ export function NotificationFeed({ onAfterSelect }: NotificationFeedProps) {
         })}
       </div>
 
-      {items.length === 0 ? (
+      {/* 문의/프로필 화면과 같은 톤으로 fallback·에러만 한 줄씩 알린다 */}
+      {isMockFallback && !isLoading ? (
+        <p className="mb-3 text-xs leading-5 text-muted">로그인 연결 전이라 예시 알림을 보여주고 있어.</p>
+      ) : null}
+      {loadError ? <p className="mb-3 text-sm leading-5 text-[#b42318]">{loadError}</p> : null}
+
+      {isLoading ? (
+        <p className="py-10 text-center text-base text-muted">알림을 불러오는 중이야.</p>
+      ) : items.length === 0 ? (
         <div className="border-2 border-dashed border-ink/50 bg-white/60 px-5 py-12 text-center">
           <p className="text-lg font-medium text-ink">아직 조용하네.</p>
           <p className="mt-2 text-sm text-muted">보물도 소식도 아직 없다.</p>
