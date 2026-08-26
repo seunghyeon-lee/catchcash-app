@@ -16,14 +16,18 @@ import {
   formatAdminUserDate,
   formatAdminUserDateTime,
   getAdminUserActivityItems,
-  getAdminUserInquirySummaries,
-  getAdminUserRewardSummaries,
   getAdminUserSecurityLogSummaries,
   type AdminUserDetail,
+  type AdminUserInquirySummaryItem,
   type AdminUserInquirySummaryStatus,
+  type AdminUserRewardSummaryItem,
   type AdminUserRewardSummaryStatus,
 } from "@/lib/admin/mock-users";
-import { loadAdminUserDetail } from "@/lib/admin/user-service";
+import {
+  loadAdminUserDetail,
+  loadAdminUserInquirySummaries,
+  loadAdminUserRewardSummaries,
+} from "@/lib/admin/user-service";
 import type { AdminDataSource } from "@/lib/admin/admin-context";
 
 const adminRole = "super_admin";
@@ -80,22 +84,30 @@ export default function AdminUserDetailPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 보상/문의/활동/보안 요약 리스트는 상세 정합성(7차)에서 실연결한다. 현재는 mock 유지.
-  const rewards = useMemo(() => getAdminUserRewardSummaries(userId), [userId]);
-  const inquiries = useMemo(() => getAdminUserInquirySummaries(userId), [userId]);
+  // 보상/문의 요약은 7차에서 실데이터로 연결한다. 활동·보안 요약은 소스가 없어 mock 유지.
+  const [rewards, setRewards] = useState<AdminUserRewardSummaryItem[]>([]);
+  const [inquiries, setInquiries] = useState<AdminUserInquirySummaryItem[]>([]);
   const activities = useMemo(() => getAdminUserActivityItems(userId), [userId]);
   const securityLogs = useMemo(() => getAdminUserSecurityLogSummaries(userId), [userId]);
 
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      const result = await loadAdminUserDetail(userId);
-      setUser(result.user);
-      setSource(result.source);
-      setMessage(result.message ?? null);
+      const [detailResult, rewardsResult, inquiriesResult] = await Promise.all([
+        loadAdminUserDetail(userId),
+        loadAdminUserRewardSummaries(userId),
+        loadAdminUserInquirySummaries(userId),
+      ]);
+      setUser(detailResult.user);
+      setRewards(rewardsResult.rewards);
+      setInquiries(inquiriesResult.inquiries);
+      setSource(detailResult.source);
+      setMessage(detailResult.message ?? null);
     } catch (error) {
       console.warn("[admin] 유저 상세 로딩 실패:", error);
       setUser(undefined);
+      setRewards([]);
+      setInquiries([]);
       setSource(null);
       setMessage("유저 상세를 불러오지 못했습니다.");
     } finally {
@@ -187,7 +199,7 @@ export default function AdminUserDetailPage() {
         <div>
           <h1 className="text-2xl font-bold">유저 상세</h1>
           <p className="mt-2 text-sm text-[#6b7280]">
-            특정 유저의 운영 정보와 활동 요약을 확인합니다. 기본 정보와 카운트는 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준이며, 보상·활동·보안 요약은 예시(mock)로 표시됩니다.
+            특정 유저의 운영 정보와 활동 요약을 확인합니다. 기본 정보·카운트·보상/문의 요약은 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준이며, 활동·보안 요약은 예시(mock)로 표시됩니다.
           </p>
         </div>
         <div className="flex gap-2">
