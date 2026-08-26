@@ -13,7 +13,11 @@ import {
   type NotificationFilter,
   type NotificationType,
 } from "@/lib/mock/notifications";
-import { listNotifications } from "@/lib/notification/notification-service";
+import {
+  listNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from "@/lib/notification/notification-service";
 
 const typeIcon: Record<NotificationType, string> = {
   treasure: icons.notifTreasure,
@@ -48,7 +52,7 @@ export function NotificationFeed({ onAfterSelect }: NotificationFeedProps) {
   const [notifications, setNotifications] = useState<AppNotification[]>(mockNotifications);
   const [isLoading, setIsLoading] = useState(true);
   const [isMockFallback, setIsMockFallback] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -60,7 +64,7 @@ export function NotificationFeed({ onAfterSelect }: NotificationFeedProps) {
 
       setNotifications(result.notifications);
       setIsMockFallback(result.source === "mock");
-      setLoadError(result.errorMessage ?? null);
+      setErrorMessage(result.errorMessage ?? null);
       setIsLoading(false);
     };
 
@@ -82,24 +86,52 @@ export function NotificationFeed({ onAfterSelect }: NotificationFeedProps) {
 
   const unreadCount = notifications.filter((item) => !item.is_read).length;
 
-  const markRead = (id: string) => {
+  /**
+   * 읽음 처리는 낙관적으로 먼저 반영한다 — 알림을 누르면 곧바로 다른 화면으로 넘어가기 때문에
+   * update 응답을 기다렸다가 칠하면 사용자는 바뀌는 걸 볼 수 없다.
+   * update 가 실패하면 되돌려서 화면 상태와 DB 를 다시 맞춘다.
+   */
+  const applyRead = (ids: string[], readAt: string) => {
+    const target = new Set(ids);
     setNotifications((prev) =>
-      prev.map((item) =>
-        item.id === id && !item.is_read ? { ...item, is_read: true, read_at: new Date().toISOString() } : item,
-      ),
+      prev.map((item) => (target.has(item.id) ? { ...item, is_read: true, read_at: readAt } : item)),
     );
   };
 
-  const markAllRead = () => {
-    const readAt = new Date().toISOString();
-    setNotifications((prev) => prev.map((item) => (item.is_read ? item : { ...item, is_read: true, read_at: readAt })));
+  const revertRead = (ids: string[]) => {
+    const target = new Set(ids);
+    setNotifications((prev) =>
+      prev.map((item) => (target.has(item.id) ? { ...item, is_read: false, read_at: null } : item)),
+    );
   };
 
-  const handleSelect = (item: AppNotification) => {
-    markRead(item.id);
+  const markAllRead = async () => {
+    const unreadIds = notifications.filter((item) => !item.is_read).map((item) => item.id);
+    if (unreadIds.length === 0) return;
+
+    applyRead(unreadIds, new Date().toISOString());
+
+    const result = await markAllNotificationsRead();
+    if (!result.ok) {
+      revertRead(unreadIds);
+      setErrorMessage("읽음 처리에 실패했어. 잠시 후 다시 시도해줘.");
+    }
+  };
+
+  /** 04_1 6절 — 알림 유형별 이동 경로는 행의 `target_route` 하나로 처리한다. */
+  const handleSelect = async (item: AppNotification) => {
+    const wasUnread = !item.is_read;
+
+    if (wasUnread) applyRead([item.id], new Date().toISOString());
+
+    // 이동은 update 결과와 무관하게 먼저 끝낸다 (MD 3차: update 실패해도 기존 이동 흐름 유지).
     onAfterSelect?.();
-    if (!item.target_route) return;
-    router.push(item.target_route);
+    if (item.target_route) router.push(item.target_route);
+
+    if (!wasUnread) return;
+
+    const result = await markNotificationRead(item.id);
+    if (!result.ok) revertRead([item.id]);
   };
 
   return (
@@ -113,7 +145,7 @@ export function NotificationFeed({ onAfterSelect }: NotificationFeedProps) {
         {!isLoading && unreadCount > 0 ? (
           <button
             type="button"
-            onClick={markAllRead}
+            onClick={() => void markAllRead()}
             className="shrink-0 border-b-2 border-ink pb-0.5 text-sm font-medium text-ink"
           >
             모두 읽음
@@ -143,7 +175,7 @@ export function NotificationFeed({ onAfterSelect }: NotificationFeedProps) {
       {isMockFallback && !isLoading ? (
         <p className="mb-3 text-xs leading-5 text-muted">로그인 연결 전이라 예시 알림을 보여주고 있어.</p>
       ) : null}
-      {loadError ? <p className="mb-3 text-sm leading-5 text-[#b42318]">{loadError}</p> : null}
+      {errorMessage ? <p className="mb-3 text-sm leading-5 text-[#b42318]">{errorMessage}</p> : null}
 
       {isLoading ? (
         <p className="py-10 text-center text-base text-muted">알림을 불러오는 중이야.</p>
@@ -158,7 +190,7 @@ export function NotificationFeed({ onAfterSelect }: NotificationFeedProps) {
             <li key={item.id}>
               <button
                 type="button"
-                onClick={() => handleSelect(item)}
+                onClick={() => void handleSelect(item)}
                 className={`relative block min-h-[72px] w-full px-4 py-3 text-left transition-transform active:translate-x-0.5 active:translate-y-0.5 ${
                   item.is_read ? "opacity-60" : ""
                 }`}
