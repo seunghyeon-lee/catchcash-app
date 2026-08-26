@@ -48,3 +48,56 @@ export async function listNotifications(): Promise<ListNotificationsResult> {
     source: "supabase",
   };
 }
+
+export type MarkNotificationReadResult = {
+  source: NotificationDataSource;
+  ok: boolean;
+};
+
+/**
+ * 알림 1건 읽음 처리 (04_1 7-3).
+ *
+ * `is_read = false` 조건을 함께 걸어, 이미 읽은 알림을 다시 눌러도 `read_at` 이
+ * 최초 읽은 시각에서 지금으로 덮이지 않게 한다.
+ *
+ * `read_at` 은 클라이언트 시계 기준이다. DB 쪽 default 가 없고 이 화면에서만 쓰는
+ * 표시용 값이라 오차는 감수한다 — 정렬 기준은 `created_at` 이지 `read_at` 이 아니다.
+ *
+ * 세션이 없으면 DB에 쓰지 않고 mock 성공만 돌려준다 (fake user_id 금지).
+ */
+export async function markNotificationRead(notificationId: string): Promise<MarkNotificationReadResult> {
+  const session = await getAuthenticatedUserSession();
+
+  if (!session) {
+    return { source: "mock", ok: true };
+  }
+
+  const { error } = await session.client
+    .from("notifications")
+    .update({ is_read: true, read_at: new Date().toISOString() })
+    .eq("id", notificationId)
+    .eq("user_id", session.userId)
+    .eq("is_read", false);
+
+  return { source: "supabase", ok: !error };
+}
+
+/**
+ * "모두 읽음" — 안읽은 알림만 한 번에 갱신한다.
+ * `notifications_update_own` 정책이 `user_id = auth.uid()` 라 본인 행만 대상이 된다.
+ */
+export async function markAllNotificationsRead(): Promise<MarkNotificationReadResult> {
+  const session = await getAuthenticatedUserSession();
+
+  if (!session) {
+    return { source: "mock", ok: true };
+  }
+
+  const { error } = await session.client
+    .from("notifications")
+    .update({ is_read: true, read_at: new Date().toISOString() })
+    .eq("user_id", session.userId)
+    .eq("is_read", false);
+
+  return { source: "supabase", ok: !error };
+}
