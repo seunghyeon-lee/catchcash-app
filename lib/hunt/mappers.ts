@@ -133,26 +133,76 @@ export function mapInventoryItemToRewardDetailUi(
   return mapListFields(inventoryItem, giftProduct);
 }
 
+/** 사냥 결과 상태. DB `claim_result` enum 기준. 성공 외 상태는 결과 화면에서 실패형 UI로 매핑한다. */
+export type HuntResultState = "success" | "fail" | "too_far" | "empty" | "expired" | "already_claimed";
+
+type HuntFailContent = {
+  badge: string;
+  titleLines: readonly string[];
+  subtitle: string;
+  emptyLines: readonly string[];
+  supportLinkLabel: string;
+  huntLog: readonly string[];
+};
+
+/** 성공을 제외한 결과 상태별 실패형 화면 콘텐츠. (6차: 상태 UI 매핑을 한 곳에서 관리) */
+const HUNT_FAIL_CONTENT: Record<Exclude<HuntResultState, "success">, HuntFailContent> = {
+  too_far: {
+    badge: "꽝",
+    titleLines: ["아쉽네. 아직 멀다."],
+    subtitle: "조금 더 가까이 가봐.",
+    emptyLines: ["아직 너무 멀다.", "조금 더 가까이 가라."],
+    supportLinkLabel: "문의하기",
+    huntLog: ["보물 상자 접근", "상자 열기 시도", "거리 부족"],
+  },
+  empty: {
+    badge: "꽝",
+    titleLines: ["아쉽네. 빈 상자다."],
+    subtitle: "다른 상자나 뒤져봐.",
+    emptyLines: ["상자 안이 텅 비었다.", "아쉽네 ㅋ"],
+    supportLinkLabel: "문의하기",
+    huntLog: ["보물 상자 접근", "상자 열기 시도", "보상 없음"],
+  },
+  expired: {
+    badge: "만료",
+    titleLines: ["끝난 보물이다."],
+    subtitle: "이 상자는 기간이 지났어.",
+    emptyLines: ["보물 기간이 끝났다.", "다음 기회를 노려라."],
+    supportLinkLabel: "문의하기",
+    huntLog: ["보물 상자 접근", "상자 열기 시도", "기간 만료"],
+  },
+  already_claimed: {
+    badge: "이미 받음",
+    titleLines: ["벌써 챙긴 보물이다."],
+    subtitle: "이 상자 보상은 이미 받았어.",
+    emptyLines: ["이미 받은 보물이다.", "보관함에서 확인해."],
+    supportLinkLabel: "문의하기",
+    huntLog: ["보물 상자 접근", "상자 열기 시도", "이미 획득함"],
+  },
+  fail: {
+    badge: "꽝",
+    titleLines: ["아쉽네. 실패다."],
+    subtitle: "다시 도전해봐.",
+    emptyLines: ["이번엔 안 됐다.", "다음 상자를 노려라."],
+    supportLinkLabel: "문의하기",
+    huntLog: ["보물 상자 접근", "상자 열기 시도", "획득 실패"],
+  },
+};
+
+/** 결과 상태 문자열 → 실패형 결과 화면 콘텐츠. 알 수 없는/성공 값은 일반 실패로 처리한다. */
+export function buildHuntFailContent(state?: string): HuntFailContent {
+  if (state && state !== "success" && state in HUNT_FAIL_CONTENT) {
+    return HUNT_FAIL_CONTENT[state as Exclude<HuntResultState, "success">];
+  }
+  return HUNT_FAIL_CONTENT.fail;
+}
+
 export function mapTreasureClaimToResultUi(
   claim: MockTreasureClaim | undefined,
   reward: Pick<MockReward, "name" | "brand"> | undefined,
 ) {
   if (!claim || claim.result !== "success") {
-    return {
-      badge: "꽝",
-      titleLines: ["아쉽네. 빈 상자다."],
-      subtitle: "다른 상자나 뒤져봐.",
-      emptyLines:
-        claim?.result === "too_far"
-          ? ["아직 너무 멀다.", "조금 더 가까이 가라."]
-          : ["상자 안이 텅 비었다.", "아쉽네 ㅋ"],
-      supportLinkLabel: "문의하기",
-      huntLog: [
-        "보물 상자 접근",
-        "상자 열기 시도",
-        claim?.result === "too_far" ? "거리 부족" : "보상 없음",
-      ],
-    } as const;
+    return buildHuntFailContent(claim?.result);
   }
 
   return {

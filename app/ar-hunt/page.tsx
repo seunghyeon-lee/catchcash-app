@@ -22,10 +22,12 @@ function ArHuntContent() {
     // 상자 열기 연출 후 claim 생성 결과에 따라 성공/실패 결과 화면으로 이동.
     // 성공 시 사냥한 보물상자 id를 결과 화면으로 전달한다(map → ar-hunt → hunt-result 흐름 정렬).
     createHuntClaim(treasureId).then((result) => {
-      const successUrl = treasureId
-        ? `/hunt-result?result=success&treasureId=${encodeURIComponent(treasureId)}`
-        : "/hunt-result?result=success";
-      setTimeout(() => router.push(result.ok ? successUrl : "/hunt-result?result=fail"), 450);
+      // 이미 받은 보상이면 already_claimed 상태로 보낸다(6차 중복 방어). 그 외 성공/실패.
+      const resultState = result.alreadyClaimed ? "already_claimed" : result.ok ? "success" : "fail";
+      const url = treasureId
+        ? `/hunt-result?result=${resultState}&treasureId=${encodeURIComponent(treasureId)}`
+        : `/hunt-result?result=${resultState}`;
+      setTimeout(() => router.push(url), 450);
     });
   };
 

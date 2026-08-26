@@ -174,7 +174,8 @@ function HuntResultContent() {
   const searchParams = useSearchParams();
   const resultParam = searchParams.get("result") ?? undefined;
   const treasureId = searchParams.get("treasureId");
-  const isFail = resultParam === "fail";
+  // 성공(또는 파라미터 없음)만 성공 화면. 그 외(fail/too_far/empty/expired/already_claimed)는 실패형 화면.
+  const isSuccess = !resultParam || resultParam === "success";
 
   const [resultData, setResultData] = useState(() => getHuntResultByQuery(resultParam));
 
@@ -197,7 +198,7 @@ function HuntResultContent() {
   return (
     <div className="flex min-h-screen flex-col bg-[#f7f5ef] pb-20">
       <AppHeader variant="back-actions" backHref="/ar-hunt" />
-      {isFail ? <FailResult data={failData} /> : <SuccessResult data={successData} />}
+      {isSuccess ? <SuccessResult data={successData} /> : <FailResult data={failData} />}
       <BottomNav />
     </div>
   );
