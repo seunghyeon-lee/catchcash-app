@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { ensureProfileForCurrentSession } from "@/lib/profile/profile-service";
+import { getBrowserAuthSession } from "@/lib/supabase";
 
 type AgreementKey = "terms" | "privacy" | "marketing";
 
@@ -27,6 +28,10 @@ export default function NicknamePage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    void getBrowserAuthSession();
+  }, []);
 
   const canComplete = useMemo(
     () => nickname.trim().length >= 2 && checked.terms && checked.privacy,

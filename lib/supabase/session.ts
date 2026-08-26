@@ -15,6 +15,9 @@ export async function getBrowserAuthSession(): Promise<BrowserAuthSession | null
     const client = getSupabaseBrowserClientOrNull();
     if (!client) return null;
 
+    const { data: sessionData, error: sessionError } = await client.auth.getSession();
+    if (sessionError || !sessionData.session) return null;
+
     const { data, error } = await client.auth.getUser();
     if (error || !data.user) return null;
 
