@@ -17,6 +17,7 @@ import {
   listNotifications,
   markAllNotificationsRead,
   markNotificationRead,
+  toNotificationTargetHref,
 } from "@/lib/notification/notification-service";
 
 const typeIcon: Record<NotificationType, string> = {
@@ -126,7 +127,7 @@ export function NotificationFeed({ onAfterSelect }: NotificationFeedProps) {
 
     // 이동은 update 결과와 무관하게 먼저 끝낸다 (MD 3차: update 실패해도 기존 이동 흐름 유지).
     onAfterSelect?.();
-    if (item.target_route) router.push(item.target_route);
+    if (item.target_route) router.push(toNotificationTargetHref(item.target_route));
 
     if (!wasUnread) return;
 

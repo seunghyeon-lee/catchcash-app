@@ -1,15 +1,15 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { RoughMaskFrame } from "@/components/profile/rough-mask-frame";
 import { SupportStatusStamp } from "@/components/profile/support-status-stamp";
 import { ProfileTopAppBar } from "@/components/profile/top-app-bar";
 import { PROFILE_ASSETS } from "@/lib/profile/assets";
-import { resolveAnswerText, type SupportInquiry } from "@/lib/profile/support-mock";
+import { formatAnswerLabel, resolveAnswerWaitingText, type SupportInquiry } from "@/lib/profile/support-mock";
 import { getSupportInquiry } from "@/lib/profile/support-service";
 
 const { icons, masks, images } = PROFILE_ASSETS;
@@ -30,6 +30,10 @@ const SCREEN_BG_STYLE = { backgroundImage: `url("${images.supportPaperGrain}")` 
 export default function SupportDetailPage() {
   const router = useRouter();
   const params = useParams<{ inquiryId: string }>();
+  const searchParams = useSearchParams();
+  /** 알림함에서 넘어왔는지 — `NotificationFeed` 가 문의 상세 링크에만 붙여 준다 */
+  const fromNotification = searchParams.get("from") === "notification";
+  const answerSectionRef = useRef<HTMLDivElement>(null);
   const [inquiry, setInquiry] = useState<SupportInquiry | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -55,6 +59,19 @@ export default function SupportDetailPage() {
       isMounted = false;
     };
   }, [params.inquiryId]);
+
+  /**
+   * 알림(문의 답변 도착)을 눌러 들어온 경우엔 답변부터 눈에 걸리게 한다.
+   * 상세는 도장 → 내가 쓴 문의 → 답변 순서라, 답변이 첫 화면 아래로 밀려서
+   * "답변 도착" 알림을 누르고도 스크롤을 내려야 답을 볼 수 있다.
+   * 목록에서 직접 들어온 경우에는 시안대로 위에서부터 읽게 그냥 둔다.
+   */
+  useEffect(() => {
+    if (!fromNotification || isLoading) return;
+    if (!inquiry || inquiry.answers.length === 0) return;
+
+    answerSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [fromNotification, isLoading, inquiry]);
 
   const goList = () => router.push("/support");
 
@@ -98,7 +115,7 @@ export default function SupportDetailPage() {
     );
   }
 
-  const hasAnswer = Boolean(inquiry.answer);
+  const hasAnswer = inquiry.answers.length > 0;
 
   return (
     <>
@@ -162,36 +179,52 @@ export default function SupportDetailPage() {
               답변이 실제로 도착한 카드만 시안대로 8px 하드 섀도로 무겁게 세운다.
               아직 `읽는 중`이면 같은 무게로 세울 내용이 없어(대기 문구 한 줄) 섀도를 빼고
               라벨/본문을 흐리게 내려, 위 문의 카드가 화면의 주인공으로 남게 한다.
+
+              답변이 여러 건이면 카드를 그만큼 세운다 — 한 문의에 `support_replies` 가
+              여러 행 붙을 수 있어서 첫 건만 보여주면 뒤에 온 답변이 통째로 묻힌다.
+              바깥 컨테이너와 같은 `gap-24` 를 써서 카드 사이 간격 규칙을 그대로 잇는다.
             */}
-            <RoughMaskFrame
-              src={masks.supportAdminReplyCard}
-              dropShadow={hasAnswer ? "8px 8px 0 #000" : undefined}
-              className={`flex flex-col gap-[23.25px] border-[3px] border-black p-[27px] ${
-                hasAnswer ? "bg-white" : "bg-white/70"
-              }`}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <span
-                  className={`px-2 py-0.5 text-sm uppercase leading-[19.6px] tracking-[0.7px] ${
-                    hasAnswer ? "bg-black text-white" : "bg-[#e8e8e8] text-[#5d5f5f]"
-                  }`}
+            <div ref={answerSectionRef} className="flex scroll-mt-24 flex-col gap-24">
+              {hasAnswer ? (
+                inquiry.answers.map((answer, index) => (
+                  <RoughMaskFrame
+                    key={`${answer.date}-${index}`}
+                    src={masks.supportAdminReplyCard}
+                    dropShadow="8px 8px 0 #000"
+                    className="flex flex-col gap-[23.25px] border-[3px] border-black bg-white p-[27px]"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="bg-black px-2 py-0.5 text-sm uppercase leading-[19.6px] tracking-[0.7px] text-white">
+                        {formatAnswerLabel(index, inquiry.answers.length)}
+                      </span>
+                      <div className="flex shrink-0 items-center gap-2">
+                        {/* 작성자는 담당자 실명 대신 고정 라벨. 작성일만 덧붙인다. */}
+                        <span className="text-sm leading-[19.6px] tracking-[0.7px] text-[#5d5f5f]">
+                          {answer.date}
+                        </span>
+                        <img src={icons.supportAdminHeadset} alt="" className="h-[18px] w-5 shrink-0" />
+                      </div>
+                    </div>
+                    <p className="whitespace-pre-wrap text-lg leading-[22.5px] text-black">{answer.content}</p>
+                  </RoughMaskFrame>
+                ))
+              ) : (
+                <RoughMaskFrame
+                  src={masks.supportAdminReplyCard}
+                  className="flex flex-col gap-[23.25px] border-[3px] border-black bg-white/70 p-[27px]"
                 >
-                  관리자의 대답
-                </span>
-                <img
-                  src={icons.supportAdminHeadset}
-                  alt=""
-                  className={`h-[18px] w-5 shrink-0 ${hasAnswer ? "" : "opacity-50"}`}
-                />
-              </div>
-              <p
-                className={`whitespace-pre-wrap text-lg leading-[22.5px] ${
-                  hasAnswer ? "text-black" : "text-[#5d5f5f]"
-                }`}
-              >
-                {resolveAnswerText(inquiry)}
-              </p>
-            </RoughMaskFrame>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="bg-[#e8e8e8] px-2 py-0.5 text-sm uppercase leading-[19.6px] tracking-[0.7px] text-[#5d5f5f]">
+                      관리자의 대답
+                    </span>
+                    <img src={icons.supportAdminHeadset} alt="" className="h-[18px] w-5 shrink-0 opacity-50" />
+                  </div>
+                  <p className="whitespace-pre-wrap text-lg leading-[22.5px] text-[#5d5f5f]">
+                    {resolveAnswerWaitingText(inquiry.status)}
+                  </p>
+                </RoughMaskFrame>
+              )}
+            </div>
 
             {/* 하단 CTA — 위 카드와의 간격은 컨테이너 `gap-24` 가 그대로 잡아 준다 */}
             <button

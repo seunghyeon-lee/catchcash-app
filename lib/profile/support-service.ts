@@ -1,4 +1,10 @@
-import { MOCK_SUPPORT_INQUIRIES, findInquiry, toSupportStatus, type SupportInquiry } from "./support-mock";
+import {
+  MOCK_SUPPORT_INQUIRIES,
+  findInquiry,
+  toSupportStatus,
+  type SupportAnswer,
+  type SupportInquiry,
+} from "./support-mock";
 import { getAuthenticatedUserSession, type AuthenticatedUserSession } from "./auth-session";
 
 type SupportInquiryRow = {
@@ -49,14 +55,28 @@ export function formatSupportDate(value: string) {
     .replace(/\.$/, "");
 }
 
-export function toSupportInquiry(row: SupportInquiryRow, answer: string | null = null): SupportInquiry {
+type SupportReplyRow = {
+  content: string;
+  created_at: string;
+};
+
+/**
+ * `support_replies` 행 → 화면용 답변.
+ * `admin_user_id` 는 select 하지 않는다 — 담당자 실명은 사용자 화면에 필요 없고,
+ * `admin_users` 는 `admin_users_select_admin` 정책상 일반 사용자가 읽지도 못한다.
+ */
+export function toSupportAnswers(rows: SupportReplyRow[]): SupportAnswer[] {
+  return rows.map((row) => ({ content: row.content, date: formatSupportDate(row.created_at) }));
+}
+
+export function toSupportInquiry(row: SupportInquiryRow, answers: SupportAnswer[] = []): SupportInquiry {
   return {
     id: row.id,
     title: row.title,
     date: formatSupportDate(row.created_at),
     status: toSupportStatus(row.status),
     question: row.content,
-    answer,
+    answers,
   };
 }
 
@@ -143,16 +163,17 @@ export async function getSupportInquiry(inquiryId: string): Promise<GetSupportIn
     .eq("inquiry_id", inquiryRow.id)
     .order("created_at", { ascending: true });
 
+  // 문의는 읽혔으니 상세는 그대로 띄우고, 답변만 비운 채 이유를 위에 한 줄로 알린다.
   if (repliesError) {
     return {
-      inquiry: toSupportInquiry(inquiryRow as SupportInquiryRow, null),
+      inquiry: toSupportInquiry(inquiryRow as SupportInquiryRow),
       source: "supabase",
       errorMessage: "답변을 불러오지 못했어. 잠시 후 다시 확인해줘.",
     };
   }
 
   return {
-    inquiry: toSupportInquiry(inquiryRow as SupportInquiryRow, replies?.[0]?.content ?? null),
+    inquiry: toSupportInquiry(inquiryRow as SupportInquiryRow, toSupportAnswers((replies ?? []) as SupportReplyRow[])),
     source: "supabase",
   };
 }
