@@ -9,7 +9,7 @@ import { RoughMaskFrame } from "@/components/profile/rough-mask-frame";
 import { SupportStatusStamp } from "@/components/profile/support-status-stamp";
 import { ProfileTopAppBar } from "@/components/profile/top-app-bar";
 import { PROFILE_ASSETS } from "@/lib/profile/assets";
-import { SUPPORT_ANSWER_WAITING, type SupportInquiry } from "@/lib/profile/support-mock";
+import { resolveAnswerText, type SupportInquiry } from "@/lib/profile/support-mock";
 import { getSupportInquiry } from "@/lib/profile/support-service";
 
 const { icons, masks, images } = PROFILE_ASSETS;
@@ -33,6 +33,7 @@ export default function SupportDetailPage() {
   const [inquiry, setInquiry] = useState<SupportInquiry | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [isMockFallback, setIsMockFallback] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -43,6 +44,7 @@ export default function SupportDetailPage() {
       if (!isMounted) return;
 
       setInquiry(result.inquiry);
+      setIsMockFallback(result.source === "mock");
       setLoadError(result.errorMessage ?? null);
       setIsLoading(false);
     };
@@ -109,7 +111,14 @@ export default function SupportDetailPage() {
       <section className={`${SCREEN_BG} flex flex-col pb-20`} style={SCREEN_BG_STYLE}>
         <ProfileTopAppBar backHref="/support" title="뭐라카노 답변" />
 
-        {/* 문의는 읽혔는데 답변 조회만 실패한 경우 — 본문 레이아웃은 건드리지 않고 위에 한 줄만 */}
+        {/*
+          fallback/에러 안내는 본문 레이아웃을 건드리지 않고 위에 한 줄만 얹는다.
+          목록 화면과 같은 규칙 — 에러로 mock 이 내려온 경우엔 빨간 줄이 이유를 말하므로
+          "로그인 연결 전" 안내를 겹치지 않는다.
+        */}
+        {isMockFallback && !loadError ? (
+          <p className="px-5 pt-4 text-xs leading-5 text-[#5d5f5f]">로그인 연결 전이라 예시 문의를 보여주고 있어.</p>
+        ) : null}
         {loadError ? <p className="px-5 pt-4 text-sm leading-5 text-[#b42318]">{loadError}</p> : null}
 
         <div className="flex flex-1 flex-col px-5 pt-4">
@@ -180,7 +189,7 @@ export default function SupportDetailPage() {
                   hasAnswer ? "text-black" : "text-[#5d5f5f]"
                 }`}
               >
-                {inquiry.answer ?? SUPPORT_ANSWER_WAITING}
+                {resolveAnswerText(inquiry)}
               </p>
             </RoughMaskFrame>
 
