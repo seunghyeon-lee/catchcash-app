@@ -149,15 +149,25 @@ export async function loadAdminUserDetail(id: string): Promise<AdminUserDetailRe
     const stat = (statResult.data ?? undefined) as UserStatRow | undefined;
     const inquiries = (inquiriesResult.data ?? []) as InquiryRow[];
     const openInquiryCount = inquiries.filter((row) => row.status === "reading").length;
-    const inventoryRewardCount = (inventoryResult.data ?? []).length;
+    const inventoryIds = ((inventoryResult.data ?? []) as { id: string }[]).map((row) => row.id);
+    const inventoryRewardCount = inventoryIds.length;
+
+    // 유저의 재처리 요청 수 = 유저 보관함 항목들에 걸린 reward_retry_requests 수.
+    let retryRequestCount = 0;
+    if (inventoryIds.length > 0) {
+      const { count } = await context.client
+        .from("reward_retry_requests")
+        .select("id", { count: "exact", head: true })
+        .in("inventory_item_id", inventoryIds);
+      retryRequestCount = count ?? 0;
+    }
 
     const base = toListItem(profileRow, stat, inquiries.length);
 
     const user: AdminUserDetail = {
       ...base,
       openInquiryCount,
-      // reward_retry_requests 연결은 3차 범위. 상세 정합성은 7차에서 보강한다.
-      retryRequestCount: 0,
+      retryRequestCount,
       inventoryRewardCount,
       internalMemo: null,
       suspendedAt: null,
