@@ -173,6 +173,7 @@ function FailResult({ data }: { data: FailResultData }) {
 function HuntResultContent() {
   const searchParams = useSearchParams();
   const resultParam = searchParams.get("result") ?? undefined;
+  const treasureId = searchParams.get("treasureId");
   const isFail = resultParam === "fail";
 
   const [resultData, setResultData] = useState(() => getHuntResultByQuery(resultParam));
@@ -180,14 +181,15 @@ function HuntResultContent() {
   useEffect(() => {
     let active = true;
 
-    getHuntResultData(resultParam).then((result) => {
+    // ar-hunt에서 넘어온 treasure_box_id 기준으로 해당 상자의 보상을 조회한다.
+    getHuntResultData(resultParam, treasureId).then((result) => {
       if (active) setResultData(result);
     });
 
     return () => {
       active = false;
     };
-  }, [resultParam]);
+  }, [resultParam, treasureId]);
 
   const successData = resultData.success as SuccessResultData;
   const failData = resultData.fail as FailResultData;
