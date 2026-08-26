@@ -75,7 +75,7 @@ export default function LoginPage() {
       const { error } = await client.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/nickname`,
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
