@@ -1,5 +1,10 @@
 import { getAuthenticatedUserSession } from "@/lib/profile/auth-session";
-import { mockNotifications, sortNotifications, type AppNotification } from "@/lib/mock/notifications";
+import {
+  mockNotifications,
+  sortNotifications,
+  toNotificationType,
+  type AppNotification,
+} from "@/lib/mock/notifications";
 
 export type NotificationDataSource = "supabase" | "mock";
 
@@ -43,8 +48,12 @@ export async function listNotifications(): Promise<ListNotificationsResult> {
     };
   }
 
+  // `type` 만 좁혀서 넘긴다 — 카드가 이 값으로 아이콘·프레임 에셋을 찾기 때문에
+  // 모르는 유형이 그대로 들어오면 src 없는 이미지가 되어 알림함이 통째로 깨진다.
+  const rows = (data ?? []) as AppNotification[];
+
   return {
-    notifications: (data ?? []) as AppNotification[],
+    notifications: rows.map((row) => ({ ...row, type: toNotificationType(row.type) })),
     source: "supabase",
   };
 }
