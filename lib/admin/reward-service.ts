@@ -289,3 +289,65 @@ export async function loadAdminRewardRetryHistory(): Promise<AdminRewardRetryHis
 }
 
 export { getAdminRewardRetryHistoryByRewardId };
+
+// ---------------------------------------------------------------------------
+// 6차: 특정 보상(rewardId=inventory id)의 재처리 이력/최신 요청 조회 (실행 없음)
+// ---------------------------------------------------------------------------
+
+const RETRY_HISTORY_SELECT =
+  "id, inventory_item_id, status, reason, before_status, after_status, created_at, processed_at, " +
+  "inventory_items(user_id, status, treasure_box_id, gift_product_id, gift_products(product_name), treasure_boxes(title))";
+
+function toRetryHistoryItem(row: RetryHistoryRow): AdminRewardRetryRequestHistoryItem {
+  const inventory = row.inventory_items ?? null;
+  const product = single(inventory?.gift_products);
+  const box = single(inventory?.treasure_boxes);
+  const workerResult = row.status === "succeeded" ? "success" : row.status === "failed" ? "failed" : null;
+
+  return {
+    retryRequestId: row.id,
+    rewardId: row.inventory_item_id,
+    rewardStatus: (inventory?.status ?? "failed") as AdminRewardStatus,
+    treasureBoxId: inventory?.treasure_box_id ?? "",
+    treasureTitle: box?.title ?? "-",
+    productId: inventory?.gift_product_id ?? null,
+    productName: product?.product_name ?? null,
+    userPublicId: inventory?.user_id ? deriveUserDisplayId(inventory.user_id) : "-",
+    retryStatus: mapRetryRequestStatus(row.status),
+    reason: row.reason,
+    internalMemo: null,
+    previousErrorCode: null,
+    previousErrorMessage: null,
+    workerResult,
+    workerErrorCode: null,
+    workerErrorMessage: null,
+    providerRequestId: null,
+    requestedByAdminName: "-",
+    createdAt: row.created_at,
+    processingStartedAt: null,
+    processedAt: row.processed_at,
+  };
+}
+
+export async function loadAdminRewardRetryHistoryByReward(rewardId: string): Promise<AdminRewardRetryHistoryResult> {
+  const context = await getAdminContext();
+  if (!context) {
+    return { history: getAdminRewardRetryHistoryByRewardId(rewardId), source: "mock", message: MOCK_MESSAGE };
+  }
+
+  try {
+    const { data, error } = await context.client
+      .from("reward_retry_requests")
+      .select(RETRY_HISTORY_SELECT)
+      .eq("inventory_item_id", rewardId)
+      .order("created_at", { ascending: false });
+
+    if (error) throw new Error(error.message);
+
+    const history = ((data ?? []) as unknown as RetryHistoryRow[]).map(toRetryHistoryItem);
+    return { history, source: "supabase" };
+  } catch (error) {
+    console.warn("[admin] loadAdminRewardRetryHistoryByReward는 mock으로 fallback합니다:", error);
+    return { history: getAdminRewardRetryHistoryByRewardId(rewardId), source: "mock", message: ERROR_MESSAGE };
+  }
+}
