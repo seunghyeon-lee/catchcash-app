@@ -1,9 +1,16 @@
-import { getAdminContext, type AdminDataSource } from "./admin-context";
+import { getAdminContext, type AdminContext, type AdminDataSource } from "./admin-context";
 import {
   findAdminUserDetail,
+  getAdminUserInquirySummaries,
+  getAdminUserRewardSummaries,
   MOCK_ADMIN_USERS,
   type AdminUserDetail,
+  type AdminUserInquirySummaryCategory,
+  type AdminUserInquirySummaryItem,
+  type AdminUserInquirySummaryStatus,
   type AdminUserListItem,
+  type AdminUserRewardSummaryItem,
+  type AdminUserRewardSummaryStatus,
   type AdminUserStatus,
 } from "./mock-users";
 
@@ -161,5 +168,129 @@ export async function loadAdminUserDetail(id: string): Promise<AdminUserDetailRe
   } catch (error) {
     console.warn("[admin] loadAdminUserDetail은 mock으로 fallback합니다:", error);
     return { user: findAdminUserDetail(id) ?? undefined, source: "mock", message: MOCK_ERROR_MESSAGE };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 7차: 유저 상세 관련 데이터 요약 실연결 (보상/문의). 활동·보안 요약은 소스 없어 mock 유지.
+// ---------------------------------------------------------------------------
+
+export type AdminUserRewardSummaryResult = {
+  rewards: AdminUserRewardSummaryItem[];
+  source: AdminDataSource;
+};
+
+export type AdminUserInquirySummaryResult = {
+  inquiries: AdminUserInquirySummaryItem[];
+  source: AdminDataSource;
+};
+
+type InventorySummaryRow = {
+  id: string;
+  status: AdminUserRewardSummaryStatus;
+  provider_order_id: string | null;
+  created_at: string;
+  gift_products?: { product_name?: string } | { product_name?: string }[] | null;
+  treasure_boxes?: { title?: string } | { title?: string }[] | null;
+  treasure_claims?: { created_at?: string } | { created_at?: string }[] | null;
+};
+
+type InquirySummaryRow = {
+  id: string;
+  category: "general" | "coupon" | "reward" | "account" | "bug" | "improvement" | "etc";
+  title: string;
+  status: "reading" | "resolved";
+  created_at: string;
+};
+
+const INQUIRY_CATEGORY_MAP: Record<InquirySummaryRow["category"], AdminUserInquirySummaryCategory> = {
+  general: "usage",
+  coupon: "coupon",
+  reward: "reward",
+  account: "account",
+  bug: "error",
+  improvement: "improvement",
+  etc: "other",
+};
+
+function summarySingle<T>(relation: T | T[] | null | undefined): T | null {
+  if (!relation) return null;
+  return Array.isArray(relation) ? relation[0] ?? null : relation;
+}
+
+async function fetchRetryInventoryIdSet(context: AdminContext): Promise<Set<string>> {
+  const { data } = await context.client.from("reward_retry_requests").select("inventory_item_id");
+  return new Set(((data ?? []) as { inventory_item_id: string }[]).map((row) => row.inventory_item_id));
+}
+
+export async function loadAdminUserRewardSummaries(userId: string): Promise<AdminUserRewardSummaryResult> {
+  const context = await getAdminContext();
+  if (!context) return { rewards: getAdminUserRewardSummaries(userId), source: "mock" };
+
+  try {
+    const [inventoryResult, retrySet] = await Promise.all([
+      // coupon_code/barcode는 select하지 않는다.
+      context.client
+        .from("inventory_items")
+        .select("id, status, provider_order_id, created_at, gift_products(product_name), treasure_boxes(title), treasure_claims(created_at)")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false }),
+      fetchRetryInventoryIdSet(context),
+    ]);
+
+    if (inventoryResult.error) throw new Error(inventoryResult.error.message);
+
+    const rewards = ((inventoryResult.data ?? []) as unknown as InventorySummaryRow[]).map((row) => {
+      const product = summarySingle(row.gift_products);
+      const box = summarySingle(row.treasure_boxes);
+      const claim = summarySingle(row.treasure_claims);
+      return {
+        rewardId: row.id,
+        claimedAt: claim?.created_at ?? row.created_at,
+        treasureTitle: box?.title ?? "-",
+        productName: product?.product_name ?? "-",
+        status: row.status,
+        providerRequestId: row.provider_order_id,
+        hasRetryRequest: retrySet.has(row.id),
+      } satisfies AdminUserRewardSummaryItem;
+    });
+
+    return { rewards, source: "supabase" };
+  } catch (error) {
+    console.warn("[admin] loadAdminUserRewardSummaries는 mock으로 fallback합니다:", error);
+    return { rewards: getAdminUserRewardSummaries(userId), source: "mock" };
+  }
+}
+
+export async function loadAdminUserInquirySummaries(userId: string): Promise<AdminUserInquirySummaryResult> {
+  const context = await getAdminContext();
+  if (!context) return { inquiries: getAdminUserInquirySummaries(userId), source: "mock" };
+
+  try {
+    const { data, error } = await context.client
+      .from("support_inquiries")
+      .select("id, category, title, status, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (error) throw new Error(error.message);
+
+    const inquiries = ((data ?? []) as InquirySummaryRow[]).map((row) => {
+      const answered = row.status === "resolved";
+      const status: AdminUserInquirySummaryStatus = answered ? "answered" : "open";
+      return {
+        inquiryId: row.id,
+        createdAt: row.created_at,
+        category: INQUIRY_CATEGORY_MAP[row.category] ?? "other",
+        title: row.title,
+        status,
+        hasAnswer: answered,
+      } satisfies AdminUserInquirySummaryItem;
+    });
+
+    return { inquiries, source: "supabase" };
+  } catch (error) {
+    console.warn("[admin] loadAdminUserInquirySummaries는 mock으로 fallback합니다:", error);
+    return { inquiries: getAdminUserInquirySummaries(userId), source: "mock" };
   }
 }
