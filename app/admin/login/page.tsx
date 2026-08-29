@@ -3,6 +3,9 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { getAdminContext } from "@/lib/admin/admin-context";
+import { getSupabaseBrowserClientOrNull } from "@/lib/supabase";
+
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function AdminLoginPage() {
@@ -12,7 +15,7 @@ export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (submitting) return;
 
@@ -33,9 +36,37 @@ export default function AdminLoginPage() {
     }
 
     setSubmitting(true);
-    window.setTimeout(() => {
-      router.push("/admin/dashboard");
-    }, 350);
+
+    try {
+      const client = getSupabaseBrowserClientOrNull();
+      if (!client) {
+        setError("관리자 권한을 확인할 수 없습니다.");
+        return;
+      }
+
+      const { error: signInError } = await client.auth.signInWithPassword({
+        email: trimmedEmail,
+        password,
+      });
+
+      if (signInError) {
+        setError("이메일 또는 비밀번호를 확인해주세요.");
+        return;
+      }
+
+      const adminContext = await getAdminContext();
+      if (!adminContext) {
+        await client.auth.signOut();
+        router.replace("/admin/access-denied?reason=role_missing");
+        return;
+      }
+
+      router.replace("/admin/dashboard");
+    } catch {
+      setError("관리자 권한을 확인할 수 없습니다.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -44,7 +75,7 @@ export default function AdminLoginPage() {
         <div className="mb-8">
           <p className="text-xl font-bold tracking-tight">캐치캐쉬</p>
           <h1 className="mt-1 text-2xl font-bold">관리자 CMS</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">신뢰 가능한 운영 콘솔</p>
+          <p className="mt-2 text-sm text-[#6b7280]">운영 관리자 전용 콘솔</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5" noValidate>
@@ -108,7 +139,7 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        <p className="mt-5 text-xs leading-5 text-[#6b7280]">현재는 mock 관리자 상태로 대시보드로 이동합니다. 실제 인증은 연결하지 않습니다.</p>
+        <p className="mt-5 text-xs leading-5 text-[#6b7280]">관리자 계정으로 로그인하세요.</p>
       </section>
     </main>
   );
