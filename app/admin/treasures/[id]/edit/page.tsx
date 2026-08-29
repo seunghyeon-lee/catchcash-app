@@ -2,14 +2,12 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
-import {
-  findAdminTreasureDetail,
-  type AdminTreasureDetail,
-} from "@/lib/admin/mock-treasures";
+import { type AdminTreasureDetail } from "@/lib/admin/mock-treasures";
+import { loadAdminTreasureDetail, updateAdminTreasure, type AdminTreasureWritePayload } from "@/lib/admin/treasure-service";
 
 type TreasureEditStatus = "inactive" | "active";
 
@@ -80,15 +78,37 @@ export default function AdminTreasureEditPage() {
   const router = useRouter();
   const params = useParams<{ id?: string }>();
   const treasureId = String(params.id ?? "");
-  const detail = findAdminTreasureDetail(treasureId);
 
-  const [form, setForm] = useState<TreasureEditForm | null>(() => (detail ? detailToForm(detail) : null));
+  const [detail, setDetail] = useState<AdminTreasureDetail | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
+  const [form, setForm] = useState<TreasureEditForm | null>(null);
   const [errors, setErrors] = useState<TreasureEditErrors>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isFailureDialogOpen, setIsFailureDialogOpen] = useState(false);
   const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
   const [isActiveBlockedOpen, setIsActiveBlockedOpen] = useState(false);
   const [activeBlockedReasons, setActiveBlockedReasons] = useState<string[]>([]);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // 수정 폼은 실제 저장 대상과 동일한 원본으로 prefill해야 안전하다(mock값으로 실DB 덮어쓰기 방지).
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await loadAdminTreasureDetail(treasureId);
+      setDetail(result.treasure);
+      setForm(result.treasure ? detailToForm(result.treasure) : null);
+    } catch (error) {
+      console.warn("[admin] 보물상자 수정 prefill 로딩 실패:", error);
+      setDetail(undefined);
+      setForm(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [treasureId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const initialForm = useMemo(() => (detail ? detailToForm(detail) : null), [detail]);
 
@@ -125,12 +145,22 @@ export default function AdminTreasureEditPage() {
     setErrors((current) => ({ ...current, [field]: undefined }));
   };
 
+  if (isLoading) {
+    return (
+      <AdminShell>
+        <div className="rounded-lg border border-[#e5e7eb] bg-white p-10 text-center">
+          <p className="text-sm text-[#6b7280]">보물상자 정보를 불러오는 중입니다.</p>
+        </div>
+      </AdminShell>
+    );
+  }
+
   if (!detail || !form || !initialForm) {
     return (
       <AdminShell>
         <div className="rounded-lg border border-[#e5e7eb] bg-white p-10 text-center">
           <h1 className="text-xl font-bold text-[#111827]">보물상자를 찾을 수 없습니다.</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">수정할 mock 보물상자가 없습니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">수정할 보물상자가 없습니다.</p>
           <Link href="/admin/treasures" className="mt-6 inline-flex rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white">
             목록으로
           </Link>
@@ -206,8 +236,31 @@ export default function AdminTreasureEditPage() {
       }
     }
 
+    setSaveError(null);
     setIsSaving(true);
-    await new Promise((resolve) => window.setTimeout(resolve, 500));
+
+    // 위치 문구는 DB 컬럼이 없어 저장하지 않는다. inactive는 운영 중단(paused)으로 저장.
+    const payload: AdminTreasureWritePayload = {
+      title: form.title.trim(),
+      description: form.description.trim() || null,
+      hintText: form.hintText.trim() || null,
+      latitude: Number(form.latitude),
+      longitude: Number(form.longitude),
+      radiusM: Number(form.radiusM),
+      status: form.status === "active" ? "active" : "paused",
+      // datetime-local은 타임존이 없다. 로컬 시각으로 해석해 ISO(UTC)로 변환해 저장한다.
+      startsAt: form.startsAt ? new Date(form.startsAt).toISOString() : null,
+      endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : null,
+      maxClaimCount: Number(form.maxClaimCount),
+    };
+
+    const result = await updateAdminTreasure(treasureId, payload);
+    if (!result.ok) {
+      setIsSaving(false);
+      setSaveError(result.message ?? "보물상자 수정에 실패했습니다.");
+      return;
+    }
+
     router.push(detailHref);
   };
 
@@ -231,13 +284,19 @@ export default function AdminTreasureEditPage() {
           <div>
             <h1 className="text-2xl font-bold">보물상자 수정</h1>
             <p className="mt-2 text-sm text-[#6b7280]">
-              {detail.title} · mock data 초기값 표시 · 실제 update/API 연결 없음
+              {detail.title} · 세션이 있으면 Supabase treasure_boxes를 update하고, 없으면 안내만 합니다. Naver Map API는 연결하지 않습니다.
             </p>
           </div>
           <Link href={detailHref} className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">
             상세로 돌아가기
           </Link>
         </div>
+
+        {saveError ? (
+          <div role="alert" className="mt-5 rounded-lg border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-sm text-[#b91c1c]">
+            {saveError}
+          </div>
+        ) : null}
 
         <div className="mt-7 grid grid-cols-[minmax(0,1fr)_320px] gap-4">
           <div className="space-y-4">
