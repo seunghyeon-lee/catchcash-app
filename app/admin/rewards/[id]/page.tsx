@@ -12,11 +12,10 @@ import {
   ADMIN_REWARD_RETRY_STATUS_LABEL,
   ADMIN_REWARD_STATUS_LABEL,
   formatAdminRewardDateTime,
-  getAdminRewardRetryHistoryByRewardId,
-  getLatestAdminRewardRetryRequest,
   type AdminRewardDetail,
+  type AdminRewardRetryRequestHistoryItem,
 } from "@/lib/admin/mock-reward-requests";
-import { loadAdminRewardDetail } from "@/lib/admin/reward-service";
+import { loadAdminRewardDetail, loadAdminRewardRetryHistoryByReward } from "@/lib/admin/reward-service";
 import type { AdminDataSource } from "@/lib/admin/admin-context";
 
 const adminRole = "super_admin";
@@ -92,6 +91,7 @@ export default function AdminRewardDetailPage() {
   const rewardId = params.id;
 
   const [reward, setReward] = useState<AdminRewardDetail | undefined>(undefined);
+  const [retryHistory, setRetryHistory] = useState<AdminRewardRetryRequestHistoryItem[]>([]);
   const [source, setSource] = useState<AdminDataSource | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -99,13 +99,18 @@ export default function AdminRewardDetailPage() {
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      const result = await loadAdminRewardDetail(rewardId);
-      setReward(result.reward);
-      setSource(result.source);
-      setMessage(result.message ?? null);
+      const [detailResult, historyResult] = await Promise.all([
+        loadAdminRewardDetail(rewardId),
+        loadAdminRewardRetryHistoryByReward(rewardId),
+      ]);
+      setReward(detailResult.reward);
+      setRetryHistory(historyResult.history);
+      setSource(detailResult.source);
+      setMessage(detailResult.message ?? null);
     } catch (error) {
       console.warn("[admin] 보상 상세 로딩 실패:", error);
       setReward(undefined);
+      setRetryHistory([]);
       setSource(null);
       setMessage("보상 상세를 불러오지 못했습니다.");
     } finally {
@@ -117,9 +122,8 @@ export default function AdminRewardDetailPage() {
     void load();
   }, [load]);
 
-  // 재처리 이력/최신 요청은 6차(재처리 흐름)에서 실연결한다. 현재는 mock getter 유지.
-  const retryHistory = useMemo(() => getAdminRewardRetryHistoryByRewardId(rewardId), [rewardId]);
-  const latestRetryRequest = useMemo(() => getLatestAdminRewardRetryRequest(rewardId), [rewardId]);
+  // 최신 재처리 요청 = 최신순 이력의 첫 항목.
+  const latestRetryRequest = useMemo(() => retryHistory[0] ?? null, [retryHistory]);
 
   const [memo, setMemo] = useState("");
   const [memoError, setMemoError] = useState("");
