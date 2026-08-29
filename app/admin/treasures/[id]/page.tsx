@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -11,7 +11,6 @@ import {
   ADMIN_TREASURE_HISTORY_ACTION_LABEL,
   ADMIN_TREASURE_SAVE_STATUS_LABEL,
   ADMIN_TREASURE_VISIBLE_CHECK_LABEL,
-  findAdminTreasureDetail,
   formatAdminTreasureDateTime,
   getAdminTreasureVisibleChecks,
   type AdminTreasureCalculatedStatus,
@@ -19,6 +18,8 @@ import {
   type AdminTreasureSaveStatus,
   type AdminTreasureVisibleCheckKey,
 } from "@/lib/admin/mock-treasures";
+import { loadAdminTreasureDetail } from "@/lib/admin/treasure-service";
+import type { AdminDataSource } from "@/lib/admin/admin-context";
 
 const adminRole = "super_admin";
 
@@ -95,13 +96,36 @@ function CheckRow({ label, passed }: { label: string; passed: boolean }) {
 export default function AdminTreasureDetailPage() {
   const params = useParams<{ id?: string }>();
   const treasureId = String(params.id ?? "");
-  const initialDetail = findAdminTreasureDetail(treasureId);
-  const [detail, setDetail] = useState<AdminTreasureDetail | undefined>(initialDetail);
+  const [detail, setDetail] = useState<AdminTreasureDetail | undefined>(undefined);
+  const [source, setSource] = useState<AdminDataSource | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isRestoreOpen, setIsRestoreOpen] = useState(false);
   const [deleteReason, setDeleteReason] = useState("");
   const [restoreReason, setRestoreReason] = useState("");
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await loadAdminTreasureDetail(treasureId);
+      setDetail(result.treasure);
+      setSource(result.source);
+      setMessage(result.message ?? null);
+    } catch (error) {
+      console.warn("[admin] 보물상자 상세 로딩 실패:", error);
+      setDetail(undefined);
+      setSource(null);
+      setMessage("보물상자 상세를 불러오지 못했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [treasureId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const canManage = adminRole === "super_admin" || adminRole === "operator";
   const canDanger = adminRole === "super_admin";
@@ -115,6 +139,16 @@ export default function AdminTreasureDetailPage() {
       passed: visibleChecks[key],
     }));
   }, [visibleChecks]);
+
+  if (isLoading) {
+    return (
+      <AdminShell>
+        <div className="rounded-lg border border-[#e5e7eb] bg-white p-10 text-center">
+          <p className="text-sm text-[#6b7280]">보물상자 상세를 불러오는 중입니다.</p>
+        </div>
+      </AdminShell>
+    );
+  }
 
   if (!detail) {
     return (
@@ -189,7 +223,7 @@ export default function AdminTreasureDetailPage() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold">보물상자 상세</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">{detail.title} · mock data 기준 · 실제 지도/API 연결 없음</p>
+          <p className="mt-2 text-sm text-[#6b7280]">{detail.title} · {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준 · 실제 지도/API 연결 없음</p>
         </div>
         <div className="flex gap-2">
           <Link href="/admin/treasures" className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">
@@ -205,6 +239,20 @@ export default function AdminTreasureDetailPage() {
 
       {actionMessage ? (
         <div className="mt-4 rounded-md border border-[#dbeafe] bg-[#eff6ff] px-4 py-3 text-sm text-[#1d4ed8]">{actionMessage}</div>
+      ) : null}
+
+      {source && source !== "supabase" ? (
+        <div
+          role="status"
+          className={`mt-4 flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${
+            source === "mock" ? "border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8]" : "border-[#fecaca] bg-[#fef2f2] text-[#b91c1c]"
+          }`}
+        >
+          <span>{message ?? "예시 데이터를 표시하고 있습니다."}</span>
+          <button type="button" onClick={() => void load()} className="shrink-0 font-medium underline">
+            다시 시도
+          </button>
+        </div>
       ) : null}
 
       <div className="mt-7 grid grid-cols-[minmax(0,1fr)_340px] gap-4">

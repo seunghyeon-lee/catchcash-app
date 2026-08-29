@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
-  MOCK_OPERATION_LOGS,
   MOCK_OPERATION_LOG_ADMINS,
   OPERATION_LOG_EVENT_TYPE_LABEL,
   OPERATION_LOG_RESOURCE_TYPE_LABEL,
@@ -20,6 +19,8 @@ import {
   type OperationLogResourceType,
   type OperationLogSensitivity,
 } from "@/lib/admin/mock-operation-logs";
+import { loadAdminOperationLogs } from "@/lib/admin/operation-log-service";
+import type { AdminDataSource } from "@/lib/admin/admin-context";
 
 type LogTypeTab = OperationLogSensitivity;
 type EventFilter = "all" | OperationLogEventType;
@@ -105,6 +106,32 @@ function OperationLogsPageContent() {
   const [isCsvDialogOpen, setIsCsvDialogOpen] = useState(false);
   const [isAccessDeniedOpen, setIsAccessDeniedOpen] = useState(false);
 
+  const [logs, setLogs] = useState<OperationLogListItem[]>([]);
+  const [source, setSource] = useState<AdminDataSource | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await loadAdminOperationLogs();
+      setLogs(result.logs);
+      setSource(result.source);
+      setMessage(result.message ?? null);
+    } catch (error) {
+      console.warn("[admin] 운영 로그 로딩 실패:", error);
+      setLogs([]);
+      setSource(null);
+      setMessage("운영 로그를 불러오지 못했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
   useEffect(() => {
     const nextLogType = parseLogType(searchParams.get("logType"));
     if (nextLogType === "sensitive" && !canViewSensitive) {
@@ -125,7 +152,7 @@ function OperationLogsPageContent() {
   const filteredLogs = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    const filtered = MOCK_OPERATION_LOGS.filter((log) => {
+    const filtered = logs.filter((log) => {
       if (log.sensitivity !== logType) return false;
       if (!canViewSensitive && log.sensitivity === "sensitive") return false;
 
@@ -152,7 +179,7 @@ function OperationLogsPageContent() {
       }
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-  }, [logType, query, eventType, actor, resourceType, period, sort, canViewSensitive]);
+  }, [logs, logType, query, eventType, actor, resourceType, period, sort, canViewSensitive]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLogs.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -186,7 +213,7 @@ function OperationLogsPageContent() {
         <div>
           <h1 className="text-2xl font-bold">운영 로그</h1>
           <p className="mt-2 text-sm text-[#6b7280]">
-            관리자 운영 액션 이력을 mock 기준으로 조회합니다. 로그 수정·삭제는 제공하지 않으며, 이메일·쿠폰·바코드는 표시하지 않습니다.
+            관리자 운영 액션 이력을 {source === "supabase" ? "Supabase 실데이터" : "mock"} 기준으로 조회합니다. 로그 수정·삭제는 제공하지 않으며, 이메일·쿠폰·바코드는 표시하지 않습니다.
           </p>
         </div>
         {canExportCsv ? (
@@ -199,6 +226,20 @@ function OperationLogsPageContent() {
           </button>
         ) : null}
       </div>
+
+      {source && source !== "supabase" ? (
+        <div
+          role="status"
+          className={`mt-5 flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${
+            source === "mock" ? "border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8]" : "border-[#fecaca] bg-[#fef2f2] text-[#b91c1c]"
+          }`}
+        >
+          <span>{message ?? "예시 데이터를 표시하고 있습니다."}</span>
+          <button type="button" onClick={() => void load()} className="shrink-0 font-medium underline">
+            다시 시도
+          </button>
+        </div>
+      ) : null}
 
       <div className="mt-7 flex gap-2 border-b border-[#e5e7eb]">
         <button
@@ -338,13 +379,17 @@ function OperationLogsPageContent() {
 
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
         <span>
-          {logType === "sensitive" ? "민감" : "일반"} 로그 · 총 {filteredLogs.length}건 · mock data
+          {logType === "sensitive" ? "민감" : "일반"} 로그 · 총 {filteredLogs.length}건{source === "mock" ? " · mock data" : ""}
         </span>
         <span>사용자 이메일·쿠폰·바코드는 표시하지 않습니다.</span>
       </div>
 
       <section className="mt-4 overflow-x-auto rounded-lg border border-[#e5e7eb] bg-white">
-        {pageItems.length === 0 ? (
+        {isLoading ? (
+          <div className="px-5 py-16 text-center">
+            <p className="text-sm text-[#6b7280]">운영 로그를 불러오는 중입니다.</p>
+          </div>
+        ) : pageItems.length === 0 ? (
           <div className="px-5 py-16 text-center">
             <p className="text-base font-semibold text-[#111827]">검색 결과 없음</p>
             <p className="mt-2 text-sm text-[#6b7280]">조건과 일치하는 운영 로그가 없습니다. 필터를 조정해 주세요.</p>

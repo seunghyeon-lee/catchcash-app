@@ -453,7 +453,7 @@ export default function AdminUsersPage() {
       </div>
 
       <p className="mt-4 text-xs leading-5 text-[#6b7280]">
-        유저 목록에서는 정지/해제 같은 위험 액션을 제공하지 않습니다. A18 유저 상세 merge 전까지 `/admin/users/[id]` 링크는 404일 수 있습니다.
+        유저 목록에서는 정지/해제 같은 위험 액션을 제공하지 않습니다. 상세는 `/admin/users/[id]`에서 확인할 수 있습니다.
       </p>
 
       {isCsvDialogOpen ? (

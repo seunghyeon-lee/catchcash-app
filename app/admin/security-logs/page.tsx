@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
-  MOCK_SECURITY_LOGS,
   SECURITY_LOG_EVENT_TYPE_LABEL,
   SECURITY_LOG_SEVERITY_LABEL,
   SECURITY_LOG_SEVERITY_RANK,
@@ -17,6 +16,8 @@ import {
   type SecurityLogSeverity,
   type SecurityLogStatus,
 } from "@/lib/admin/mock-security-logs";
+import { loadAdminSecurityLogs } from "@/lib/admin/security-log-service";
+import type { AdminDataSource } from "@/lib/admin/admin-context";
 
 type EventFilter = "all" | SecurityLogEventType;
 type SeverityFilter = "all" | SecurityLogSeverity;
@@ -88,6 +89,32 @@ function SecurityLogsPageContent() {
   const [pageSize, setPageSize] = useState<PageSize>(20);
   const [page, setPage] = useState(1);
 
+  const [logs, setLogs] = useState<SecurityLogListItem[]>([]);
+  const [source, setSource] = useState<AdminDataSource | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await loadAdminSecurityLogs();
+      setLogs(result.logs);
+      setSource(result.source);
+      setMessage(result.message ?? null);
+    } catch (error) {
+      console.warn("[admin] 보안 로그 로딩 실패:", error);
+      setLogs([]);
+      setSource(null);
+      setMessage("보안 로그를 불러오지 못했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
   useEffect(() => {
     const nextQuery = initialUserId || initialTreasureId;
     if (nextQuery) {
@@ -99,7 +126,7 @@ function SecurityLogsPageContent() {
   const filteredLogs = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    const filtered = MOCK_SECURITY_LOGS.filter((log) => {
+    const filtered = logs.filter((log) => {
       const searchable = [log.id, log.userPublicId ?? "", log.nickname ?? "", log.treasureId ?? ""].join(" ").toLowerCase();
       const matchesQuery = searchable.includes(normalizedQuery);
       const matchesEvent = eventType === "all" || log.eventType === eventType;
@@ -124,7 +151,7 @@ function SecurityLogsPageContent() {
       }
       return new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime();
     });
-  }, [query, eventType, severity, status, period, sort]);
+  }, [logs, query, eventType, severity, status, period, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLogs.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -149,10 +176,24 @@ function SecurityLogsPageContent() {
         <div>
           <h1 className="text-2xl font-bold">보안 로그</h1>
           <p className="mt-2 text-sm text-[#6b7280]">
-            super_admin 전용 보안 이벤트 목록입니다. 이번 shell은 mock 조회만 제공하며 제재·상태 변경은 포함하지 않습니다.
+            super_admin 전용 보안 이벤트 목록입니다. {source === "supabase" ? "Supabase 실데이터" : "mock data"} 조회이며 제재·상태 변경은 포함하지 않습니다.
           </p>
         </div>
       </div>
+
+      {source && source !== "supabase" ? (
+        <div
+          role="status"
+          className={`mt-5 flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${
+            source === "mock" ? "border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8]" : "border-[#fecaca] bg-[#fef2f2] text-[#b91c1c]"
+          }`}
+        >
+          <span>{message ?? "예시 데이터를 표시하고 있습니다."}</span>
+          <button type="button" onClick={() => void load()} className="shrink-0 font-medium underline">
+            다시 시도
+          </button>
+        </div>
+      ) : null}
 
       <section className="mt-7 rounded-lg border border-[#e5e7eb] bg-white p-4">
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
@@ -266,12 +307,16 @@ function SecurityLogsPageContent() {
       </section>
 
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
-        <span>총 {filteredLogs.length}건 · mock data</span>
+        <span>총 {filteredLogs.length}건{source === "mock" ? " · mock data" : ""}</span>
         <span>목록에는 IP/UA/좌표/payload를 표시하지 않습니다.</span>
       </div>
 
       <section className="mt-4 overflow-hidden rounded-lg border border-[#e5e7eb] bg-white">
-        {pageItems.length === 0 ? (
+        {isLoading ? (
+          <div className="px-5 py-16 text-center">
+            <p className="text-sm text-[#6b7280]">보안 로그를 불러오는 중입니다.</p>
+          </div>
+        ) : pageItems.length === 0 ? (
           <div className="px-5 py-16 text-center">
             <p className="text-base font-semibold text-[#111827]">검색 결과 없음</p>
             <p className="mt-2 text-sm text-[#6b7280]">조건과 일치하는 보안 로그가 없습니다.</p>

@@ -13,6 +13,19 @@ export type AdminContext = {
 export type AdminDataSource = "supabase" | "mock";
 
 /**
+ * 관리자 등록/수정(쓰기) 결과 공통 형태.
+ * - source "mock": 세션/관리자 컨텍스트가 없어 실제 DB 쓰기를 하지 않고 안내만 한 경우.
+ * - source "supabase" + ok true: 실제 DB 반영 성공(id 반환).
+ * - source "supabase" + ok false: 시도했으나 RLS/검증 등으로 실패(message에 사유).
+ */
+export type AdminWriteResult = {
+  source: AdminDataSource;
+  ok: boolean;
+  id?: string;
+  message?: string;
+};
+
+/**
  * 현재 Supabase 세션이 active admin인지 확인한 뒤 관리자 컨텍스트를 반환한다.
  *
  * `current_admin_user_id` RPC는 admin_users 테이블을 Data API에 직접 노출하지 않고도
