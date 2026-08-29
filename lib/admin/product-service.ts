@@ -1,4 +1,4 @@
-import { getAdminContext, type AdminDataSource } from "./admin-context";
+import { getAdminContext, type AdminDataSource, type AdminWriteResult } from "./admin-context";
 import {
   findAdminProduct,
   getAdminProductMappings,
@@ -154,5 +154,49 @@ export async function loadAdminProductDetail(id: string): Promise<AdminProductDe
       source: "mock",
       message: ERROR_MESSAGE,
     };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 4차: 상품 등록 쓰기 연결 (삭제 없음)
+// ---------------------------------------------------------------------------
+
+export type AdminProductWritePayload = {
+  brandName: string;
+  productName: string;
+  price: number;
+  status: "active" | "inactive";
+  imageUrl: string | null;
+  externalProductId: string | null;
+};
+
+const WRITE_MOCK_MESSAGE = "관리자 세션이 없어 실제 저장 없이 mock 처리했습니다.";
+
+export async function insertAdminProduct(payload: AdminProductWritePayload): Promise<AdminWriteResult> {
+  const context = await getAdminContext();
+  if (!context) return { source: "mock", ok: true, message: WRITE_MOCK_MESSAGE };
+
+  try {
+    const { data, error } = await context.client
+      .from("gift_products")
+      .insert({
+        // 외부 API 미연결: 항상 manual_mock provider로 등록한다.
+        provider: "manual_mock",
+        provider_product_id: payload.externalProductId,
+        brand_name: payload.brandName,
+        product_name: payload.productName,
+        product_image_url: payload.imageUrl,
+        price: payload.price,
+        status: payload.status,
+        created_by: context.adminUserId,
+      })
+      .select("id")
+      .single();
+
+    if (error) throw new Error(error.message);
+    return { source: "supabase", ok: true, id: data?.id as string };
+  } catch (error) {
+    console.warn("[admin] insertAdminProduct 실패:", error);
+    return { source: "supabase", ok: false, message: error instanceof Error ? error.message : "상품 등록에 실패했습니다." };
   }
 }

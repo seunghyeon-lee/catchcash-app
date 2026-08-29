@@ -1,4 +1,4 @@
-import { getAdminContext, type AdminDataSource } from "./admin-context";
+import { getAdminContext, type AdminDataSource, type AdminWriteResult } from "./admin-context";
 import {
   MOCK_ADMIN_MAPPINGS,
   type AdminMappingListItem,
@@ -125,5 +125,66 @@ export async function loadAdminMappings(): Promise<AdminMappingListResult> {
   } catch (error) {
     console.warn("[admin] loadAdminMappings는 mock으로 fallback합니다:", error);
     return { mappings: MOCK_ADMIN_MAPPINGS, source: "mock", message: ERROR_MESSAGE };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 4차: 매핑 등록/교체 쓰기 연결 (삭제 없음)
+// ---------------------------------------------------------------------------
+
+export type AdminMappingWritePayload = {
+  treasureBoxId: string;
+  giftProductId: string;
+  rewardQuantity: number;
+};
+
+const WRITE_MOCK_MESSAGE = "관리자 세션이 없어 실제 저장 없이 mock 처리했습니다.";
+
+/**
+ * 보물상자-상품 매핑(treasure_rewards)을 등록한다.
+ * 보물당 active 매핑은 1개만 허용(unique index)되므로, 기존 active가 있으면
+ * 먼저 replaced로 전환한 뒤 새 active를 insert한다(= 교체). 삭제는 하지 않는다.
+ */
+export async function createOrReplaceAdminMapping(payload: AdminMappingWritePayload): Promise<AdminWriteResult> {
+  const context = await getAdminContext();
+  if (!context) return { source: "mock", ok: true, message: WRITE_MOCK_MESSAGE };
+
+  try {
+    const { data: existing, error: findError } = await context.client
+      .from("treasure_rewards")
+      .select("id")
+      .eq("treasure_box_id", payload.treasureBoxId)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (findError) throw new Error(findError.message);
+
+    if (existing?.id) {
+      const { error: replaceError } = await context.client
+        .from("treasure_rewards")
+        .update({ status: "replaced" })
+        .eq("id", existing.id as string);
+      if (replaceError) throw new Error(replaceError.message);
+    }
+
+    const { data, error: insertError } = await context.client
+      .from("treasure_rewards")
+      .insert({
+        treasure_box_id: payload.treasureBoxId,
+        gift_product_id: payload.giftProductId,
+        reward_quantity: payload.rewardQuantity,
+        remaining_quantity: payload.rewardQuantity,
+        reward_type: "coupon",
+        status: "active",
+        created_by: context.adminUserId,
+      })
+      .select("id")
+      .single();
+
+    if (insertError) throw new Error(insertError.message);
+    return { source: "supabase", ok: true, id: data?.id as string };
+  } catch (error) {
+    console.warn("[admin] createOrReplaceAdminMapping 실패:", error);
+    return { source: "supabase", ok: false, message: error instanceof Error ? error.message : "매핑 등록에 실패했습니다." };
   }
 }
