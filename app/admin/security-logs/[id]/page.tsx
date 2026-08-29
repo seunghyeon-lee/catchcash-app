@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -13,10 +13,12 @@ import {
   formatSecurityLogDateTime,
   getRelatedSecurityLogsByTreasure,
   getRelatedSecurityLogsByUser,
-  getSecurityLogDetail,
+  type SecurityLogDetail,
   type SecurityLogSeverity,
   type SecurityLogStatus,
 } from "@/lib/admin/mock-security-logs";
+import { loadAdminSecurityLogDetail } from "@/lib/admin/security-log-service";
+import type { AdminDataSource } from "@/lib/admin/admin-context";
 
 function DetailCard({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -70,7 +72,32 @@ function StatusBadge({ status }: { status: SecurityLogStatus }) {
 export default function AdminSecurityLogDetailPage() {
   const params = useParams<{ id?: string }>();
   const logId = String(params.id ?? "");
-  const detail = getSecurityLogDetail(logId);
+
+  const [detail, setDetail] = useState<SecurityLogDetail | undefined>(undefined);
+  const [source, setSource] = useState<AdminDataSource | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await loadAdminSecurityLogDetail(logId);
+      setDetail(result.detail);
+      setSource(result.source);
+      setMessage(result.message ?? null);
+    } catch (error) {
+      console.warn("[admin] 보안 로그 상세 로딩 실패:", error);
+      setDetail(undefined);
+      setSource(null);
+      setMessage("보안 로그 상세를 불러오지 못했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [logId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const relatedByUser = useMemo(
     () => getRelatedSecurityLogsByUser(detail?.userPublicId ?? null, logId),
@@ -80,6 +107,16 @@ export default function AdminSecurityLogDetailPage() {
     () => getRelatedSecurityLogsByTreasure(detail?.treasureId ?? null, logId),
     [detail?.treasureId, logId],
   );
+
+  if (isLoading) {
+    return (
+      <AdminShell>
+        <div className="rounded-lg border border-[#e5e7eb] bg-white p-10 text-center">
+          <p className="text-sm text-[#6b7280]">보안 로그 상세를 불러오는 중입니다.</p>
+        </div>
+      </AdminShell>
+    );
+  }
 
   if (!detail) {
     return (
@@ -105,12 +142,26 @@ export default function AdminSecurityLogDetailPage() {
       <div className="flex items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">보안 로그 상세</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">조회 전용 mock 상세입니다. 원본 payload·위험 액션·상태 변경은 포함하지 않습니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">조회 전용 {source === "supabase" ? "Supabase 실데이터" : "mock"} 상세입니다. 원본 payload·좌표·위험 액션·상태 변경은 포함하지 않습니다.</p>
         </div>
         <Link href="/admin/security-logs" className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">
           목록으로
         </Link>
       </div>
+
+      {source && source !== "supabase" ? (
+        <div
+          role="status"
+          className={`mt-5 flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${
+            source === "mock" ? "border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8]" : "border-[#fecaca] bg-[#fef2f2] text-[#b91c1c]"
+          }`}
+        >
+          <span>{message ?? "예시 데이터를 표시하고 있습니다."}</span>
+          <button type="button" onClick={() => void load()} className="shrink-0 font-medium underline">
+            다시 시도
+          </button>
+        </div>
+      ) : null}
 
       <div className="mt-7 grid grid-cols-[minmax(0,1fr)_320px] gap-4">
         <div className="space-y-4">
