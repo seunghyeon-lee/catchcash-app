@@ -1,18 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
   ADMIN_USER_PROVIDER_LABEL,
   ADMIN_USER_STATUS_LABEL,
-  MOCK_ADMIN_USERS,
   formatAdminUserDate,
   formatAdminUserDateTime,
   type AdminUserListItem,
   type AdminUserStatus,
 } from "@/lib/admin/mock-users";
+import { loadAdminUsers } from "@/lib/admin/user-service";
+import type { AdminDataSource } from "@/lib/admin/admin-context";
 
 type StatusFilter = "all" | AdminUserStatus;
 type JoinedPeriodFilter = "all" | "today" | "last_7_days" | "last_30_days" | "custom";
@@ -114,6 +115,32 @@ export default function AdminUsersPage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isCsvDialogOpen, setIsCsvDialogOpen] = useState(false);
 
+  const [users, setUsers] = useState<AdminUserListItem[]>([]);
+  const [source, setSource] = useState<AdminDataSource | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await loadAdminUsers();
+      setUsers(result.users);
+      setSource(result.source);
+      setMessage(result.message ?? null);
+    } catch (error) {
+      console.warn("[admin] 유저 목록 로딩 실패:", error);
+      setUsers([]);
+      setSource(null);
+      setMessage("유저 목록을 불러오지 못했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
   const canExportCsv = adminRole === "super_admin" || adminRole === "operator";
   const joinedRangeError = Boolean(joinedPeriod === "custom" && joinedFrom && joinedTo && joinedFrom > joinedTo);
 
@@ -124,7 +151,7 @@ export default function AdminUsersPage() {
 
     if (joinedRangeError) return [];
 
-    return [...MOCK_ADMIN_USERS]
+    return [...users]
       .filter((user) => {
         const matchesQuery = [user.nickname, user.publicId, user.id, user.provider]
           .join(" ")
@@ -142,14 +169,14 @@ export default function AdminUsersPage() {
         if (sort === "inquiry_count_desc") return b.inquiryCount - a.inquiryCount;
         return new Date(b.lastActiveAt ?? 0).getTime() - new Date(a.lastActiveAt ?? 0).getTime();
       });
-  }, [joinedFrom, joinedPeriod, joinedRangeError, joinedTo, lastActive, query, sort, status]);
+  }, [joinedFrom, joinedPeriod, joinedRangeError, joinedTo, lastActive, query, sort, status, users]);
 
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const pageItems = filteredUsers.slice((safePage - 1) * pageSize, safePage * pageSize);
   const startItemNumber = filteredUsers.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
   const endItemNumber = Math.min(safePage * pageSize, filteredUsers.length);
-  const selectedUser = selectedUserId ? MOCK_ADMIN_USERS.find((user) => user.id === selectedUserId) ?? null : null;
+  const selectedUser = selectedUserId ? users.find((user) => user.id === selectedUserId) ?? null : null;
 
   const resetFilters = () => {
     setQuery(defaultFilters.query);
@@ -169,7 +196,9 @@ export default function AdminUsersPage() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold">유저 목록</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">캐치캐쉬 사용자 상태와 활동 정보를 mock data 기준으로 확인합니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">
+            캐치캐쉬 사용자 상태와 활동 정보를 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준으로 확인합니다.
+          </p>
         </div>
         {canExportCsv ? (
           <button
@@ -181,6 +210,20 @@ export default function AdminUsersPage() {
           </button>
         ) : null}
       </div>
+
+      {source && source !== "supabase" ? (
+        <div
+          role="status"
+          className={`mt-5 flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${
+            source === "mock" ? "border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8]" : "border-[#fecaca] bg-[#fef2f2] text-[#b91c1c]"
+          }`}
+        >
+          <span>{message ?? "예시 데이터를 표시하고 있습니다."}</span>
+          <button type="button" onClick={() => void load()} className="shrink-0 font-medium underline">
+            다시 시도
+          </button>
+        </div>
+      ) : null}
 
       <section className="mt-7 rounded-lg border border-[#e5e7eb] bg-white p-4">
         <div className="grid grid-cols-[minmax(240px,1fr)_140px_170px_170px_170px_150px] gap-3">
@@ -300,11 +343,11 @@ export default function AdminUsersPage() {
       </section>
 
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
-        <span>{startItemNumber}-{endItemNumber} / {filteredUsers.length}건 · mock data</span>
+        <span>{startItemNumber}-{endItemNumber} / {filteredUsers.length}건{source === "mock" ? " · mock data" : ""}</span>
         <span>사용자 이메일, 전화번호, 소셜 provider 식별자, 쿠폰 번호와 바코드는 표시하지 않습니다.</span>
       </div>
 
-      <section className="mt-4 overflow-hidden rounded-lg border border-[#e5e7eb] bg-white">
+      <section aria-busy={isLoading} className="mt-4 overflow-hidden rounded-lg border border-[#e5e7eb] bg-white">
         <table className="w-full text-left text-sm">
           <thead className="bg-[#f9fafb] text-xs text-[#6b7280]">
             <tr>
@@ -352,7 +395,11 @@ export default function AdminUsersPage() {
             ))}
           </tbody>
         </table>
-        {pageItems.length === 0 ? (
+        {isLoading ? (
+          <div className="px-6 py-16 text-center">
+            <p className="text-sm text-[#6b7280]">유저 목록을 불러오는 중입니다.</p>
+          </div>
+        ) : pageItems.length === 0 ? (
           <div className="px-6 py-16 text-center">
             <p className="text-sm font-semibold text-[#111827]">검색 결과 없음</p>
             <p className="mt-2 text-sm text-[#6b7280]">입력한 조건과 일치하는 유저가 없습니다. 필터를 조정해 주세요.</p>

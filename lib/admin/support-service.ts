@@ -1,5 +1,6 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase";
 
+import { getAdminContext } from "./admin-context";
 import {
   findAdminInquiry,
   MOCK_ADMIN_INQUIRIES,
@@ -22,11 +23,6 @@ type SupabaseInquiryRow = {
 
 type SupabaseReplyRow = Omit<AdminSupportReply, "admin_name">;
 type ProfileRow = { user_id: string; nickname: string | null };
-
-type AdminContext = {
-  client: ReturnType<typeof getSupabaseBrowserClient>;
-  adminUserId: string;
-};
 
 export type AdminInquiryDataSource = "supabase" | "mock";
 
@@ -53,26 +49,6 @@ function toAdminInquiry(row: SupabaseInquiryRow, profiles: ProfileRow[], replies
     user_nickname: profile?.nickname ?? `사용자 ${row.user_id.slice(0, 8)}`,
     replies,
   };
-}
-
-/**
- * TODO(admin-auth): 관리자 로그인 완료 전에는 현재 Supabase 세션이 active admin인지
- * 확정할 수 없다. RPC는 admin_users를 Data API에 노출하지 않고도 RLS와 동일한
- * 관리자 식별자를 반환한다. 세션/RPC가 없으면 DB mutation을 시도하지 않는다.
- */
-async function getAdminContext(): Promise<AdminContext | null> {
-  try {
-    const client = getSupabaseBrowserClient();
-    const { data: userData, error: userError } = await client.auth.getUser();
-    if (userError || !userData.user) return null;
-
-    const { data: adminUserId, error: adminError } = await client.rpc("current_admin_user_id");
-    if (adminError || !adminUserId) return null;
-
-    return { client, adminUserId };
-  } catch {
-    return null;
-  }
 }
 
 async function fetchProfiles(client: ReturnType<typeof getSupabaseBrowserClient>) {

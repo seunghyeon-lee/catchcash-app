@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, type ReactNode } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
@@ -16,8 +16,11 @@ import {
   getDashboardQuickLinks,
   getFailureSectionSummaries,
   getInquirySectionSummaries,
+  type DashboardMetricKey,
   type DashboardSectionSummaryCard,
 } from "@/lib/admin/mock-dashboard";
+import { loadAdminDashboardStats, type AdminDashboardStats } from "@/lib/admin/dashboard-service";
+import type { AdminDataSource } from "@/lib/admin/admin-context";
 
 const adminRole = "super_admin" as const;
 
@@ -103,11 +106,39 @@ function RecentStatusScrollHelper() {
 }
 
 function DashboardPageContent() {
-  const metrics = getDashboardMetricCards();
+  const metricsBase = getDashboardMetricCards();
   const quickLinks = getDashboardQuickLinks(adminRole);
   const claimRows = getDashboardClaimRows();
   const failureRows = getDashboardFailureRows();
   const inquiryRows = getDashboardInquiryRows();
+
+  const [stats, setStats] = useState<AdminDashboardStats | null>(null);
+  const [source, setSource] = useState<AdminDataSource | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void loadAdminDashboardStats().then((result) => {
+      if (!active) return;
+      setStats(result.stats);
+      setSource(result.source);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // 상단 지표 카드 값만 admin_dashboard_stats 뷰 실데이터로 덮는다.
+  // (하단 최근 현황 rows/summary는 보상·보물 조인이 필요해 이후 차수에서 연결)
+  const metrics = metricsBase.map((card) => {
+    if (!stats) return card;
+    const realValueByKey: Record<DashboardMetricKey, number> = {
+      visible_treasure: stats.visibleTreasure,
+      claim_success: stats.claimSuccessToday,
+      issue_failed: stats.issueFailed,
+      open_inquiry: stats.openInquiry,
+    };
+    return { ...card, value: realValueByKey[card.key] };
+  });
 
   return (
     <>
@@ -116,7 +147,9 @@ function DashboardPageContent() {
           <h1 className="text-2xl font-bold">운영 대시보드</h1>
           <p className="mt-2 text-sm text-[#6b7280]">Asia/Seoul 기준 · 오늘 00:00~현재</p>
         </div>
-        <span className="text-xs text-[#6b7280]">Mock data · 집계일 {MOCK_DASHBOARD_TODAY}</span>
+        <span className="text-xs text-[#6b7280]">
+          {source === "supabase" ? "Supabase 실시간 지표 · 하단 최근 현황은 mock" : `Mock data · 집계일 ${MOCK_DASHBOARD_TODAY}`}
+        </span>
       </div>
 
       <section aria-label="핵심 운영 지표" className="mt-7 grid grid-cols-4 gap-4">
