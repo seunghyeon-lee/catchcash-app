@@ -53,10 +53,6 @@ const RESOURCE_TYPE_BY_TABLE: Record<string, OperationLogResourceType> = {
   admin_users: "admin",
 };
 
-function normalizeEventType(action: string): OperationLogEventType {
-  return KNOWN_EVENT_TYPES.has(action as OperationLogEventType) ? (action as OperationLogEventType) : "admin_login";
-}
-
 function mapResourceType(table: string): OperationLogResourceType {
   return RESOURCE_TYPE_BY_TABLE[table] ?? "system";
 }
@@ -67,11 +63,14 @@ function metaString(metadata: Record<string, unknown> | null, key: string): stri
 }
 
 function toOperationLogListItem(row: OperationLogRow): OperationLogListItem {
-  const eventType = normalizeEventType(row.action);
+  const isKnown = KNOWN_EVENT_TYPES.has(row.action as OperationLogEventType);
+  // 알려진 action만 이벤트 타입으로 인정한다. 미지 action은 sensitive 취급(안전 측)하되,
+  // summary에 원본 action을 그대로 노출해 '관리자 로그인' 오분류로 정보가 사라지지 않게 한다.
+  const eventType: OperationLogEventType = isKnown ? (row.action as OperationLogEventType) : "admin_login";
   const resultValue = metaString(row.metadata, "result");
   const result: OperationLogResult =
     resultValue === "failed" || resultValue === "blocked" || resultValue === "pending" ? resultValue : "success";
-  const sensitivity: OperationLogSensitivity = SENSITIVE_EVENTS.has(eventType) ? "sensitive" : "normal";
+  const sensitivity: OperationLogSensitivity = !isKnown || SENSITIVE_EVENTS.has(eventType) ? "sensitive" : "normal";
 
   return {
     id: row.id,
@@ -83,7 +82,7 @@ function toOperationLogListItem(row: OperationLogRow): OperationLogListItem {
     adminName: "-",
     resourceType: mapResourceType(row.target_table),
     resourceId: row.target_id ?? "-",
-    summary: metaString(row.metadata, "summary") ?? OPERATION_LOG_EVENT_TYPE_LABEL[eventType],
+    summary: metaString(row.metadata, "summary") ?? (isKnown ? OPERATION_LOG_EVENT_TYPE_LABEL[eventType] : row.action),
     result,
   };
 }

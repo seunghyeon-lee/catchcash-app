@@ -165,8 +165,9 @@ export default function AdminTreasureCreatePage() {
       longitude: Number(form.longitude),
       radiusM: Number(form.radiusM),
       status: form.status === "active" ? "active" : "draft",
-      startsAt: form.startsAt || null,
-      endsAt: form.endsAt || null,
+      // datetime-local은 타임존이 없다. 로컬 시각으로 해석해 ISO(UTC)로 변환해 저장한다.
+      startsAt: form.startsAt ? new Date(form.startsAt).toISOString() : null,
+      endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : null,
       maxClaimCount: Number(form.maxClaimCount),
     };
 

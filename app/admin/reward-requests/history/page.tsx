@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -93,12 +93,16 @@ export default function AdminRewardRetryRequestHistoryPage() {
     if (searchParams.get("rewardId")) setRewardId(searchParams.get("rewardId") ?? "");
   }, []);
 
-  // 이력 로딩 후 URL의 retryRequestId 대상 상세 팝업을 자동 오픈한다.
+  // 이력 로딩 후 URL의 retryRequestId 대상 상세 팝업을 최초 1회만 자동 오픈한다.
+  // (재로딩으로 history가 바뀌어도 사용자가 닫은 팝업을 다시 열지 않도록 ref로 가드)
+  const autoOpenedRef = useRef(false);
   useEffect(() => {
+    if (autoOpenedRef.current) return;
     const initialRetryRequestId = new URLSearchParams(window.location.search).get("retryRequestId");
-    if (!initialRetryRequestId) return;
+    if (!initialRetryRequestId || history.length === 0) return;
     const target = history.find((item) => item.retryRequestId === initialRetryRequestId);
     if (target) setSelectedHistory(target);
+    autoOpenedRef.current = true;
   }, [history]);
 
   const resetPage = () => setPage(1);
