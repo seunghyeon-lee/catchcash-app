@@ -1,19 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
 import { DialogOverlay } from "@/components/admin/dialog-overlay";
 import {
   ADMIN_REWARD_RETRY_REQUEST_STATUS_LABEL,
-  MOCK_ADMIN_REWARD_RETRY_REQUEST_HISTORY,
   formatAdminRewardDateTime,
   type AdminRewardRetryRequestHistoryItem,
   type AdminRewardRetryRequestStatus,
   type AdminRewardRetryWorkerResult,
 } from "@/lib/admin/mock-reward-requests";
+import { loadAdminRewardRetryHistory } from "@/lib/admin/reward-service";
+import type { AdminDataSource } from "@/lib/admin/admin-context";
 
 type StatusFilter<T extends string> = "all" | T;
 type WorkerResultFilter = "all" | "none" | Exclude<AdminRewardRetryWorkerResult, null>;
@@ -58,19 +59,51 @@ export default function AdminRewardRetryRequestHistoryPage() {
   const [selectedHistory, setSelectedHistory] = useState<AdminRewardRetryRequestHistoryItem | null>(null);
   const [isCsvDialogOpen, setIsCsvDialogOpen] = useState(false);
 
+  const [history, setHistory] = useState<AdminRewardRetryRequestHistoryItem[]>([]);
+  const [source, setSource] = useState<AdminDataSource | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   const canExportCsv = adminRole === "super_admin" || adminRole === "operator";
   const dateRangeError = Boolean(from && to && from > to);
 
-  useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const initialRewardId = searchParams.get("rewardId");
-    const initialRetryRequestId = searchParams.get("retryRequestId");
-    if (initialRewardId) setRewardId(initialRewardId);
-    if (initialRetryRequestId) {
-      const target = MOCK_ADMIN_REWARD_RETRY_REQUEST_HISTORY.find((item) => item.retryRequestId === initialRetryRequestId);
-      if (target) setSelectedHistory(target);
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await loadAdminRewardRetryHistory();
+      setHistory(result.history);
+      setSource(result.source);
+      setMessage(result.message ?? null);
+    } catch (error) {
+      console.warn("[admin] 재처리 이력 로딩 실패:", error);
+      setHistory([]);
+      setSource(null);
+      setMessage("재처리 이력을 불러오지 못했습니다.");
+    } finally {
+      setIsLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get("rewardId")) setRewardId(searchParams.get("rewardId") ?? "");
+  }, []);
+
+  // 이력 로딩 후 URL의 retryRequestId 대상 상세 팝업을 최초 1회만 자동 오픈한다.
+  // (재로딩으로 history가 바뀌어도 사용자가 닫은 팝업을 다시 열지 않도록 ref로 가드)
+  const autoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (autoOpenedRef.current) return;
+    const initialRetryRequestId = new URLSearchParams(window.location.search).get("retryRequestId");
+    if (!initialRetryRequestId || history.length === 0) return;
+    const target = history.find((item) => item.retryRequestId === initialRetryRequestId);
+    if (target) setSelectedHistory(target);
+    autoOpenedRef.current = true;
+  }, [history]);
 
   const resetPage = () => setPage(1);
 
@@ -80,7 +113,7 @@ export default function AdminRewardRetryRequestHistoryPage() {
 
     if (dateRangeError) return [];
 
-    return [...MOCK_ADMIN_REWARD_RETRY_REQUEST_HISTORY]
+    return [...history]
       .filter((item) => {
         const matchesQuery = [item.retryRequestId, item.rewardId, item.providerRequestId ?? ""]
           .join(" ")
@@ -96,7 +129,7 @@ export default function AdminRewardRetryRequestHistoryPage() {
         return matchesQuery && matchesStatus && matchesWorker && matchesReward && matchesFrom && matchesTo;
       })
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [dateRangeError, from, query, rewardId, status, to, workerResult]);
+  }, [dateRangeError, from, history, query, rewardId, status, to, workerResult]);
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -224,8 +257,22 @@ export default function AdminRewardRetryRequestHistoryPage() {
         {dateRangeError ? <p className="mt-3 text-sm text-[#b91c1c]">시작일은 종료일보다 늦을 수 없습니다.</p> : null}
       </section>
 
+      {source && source !== "supabase" ? (
+        <div
+          role="status"
+          className={`mt-4 flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${
+            source === "mock" ? "border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8]" : "border-[#fecaca] bg-[#fef2f2] text-[#b91c1c]"
+          }`}
+        >
+          <span>{message ?? "예시 데이터를 표시하고 있습니다."}</span>
+          <button type="button" onClick={() => void load()} className="shrink-0 font-medium underline">
+            다시 시도
+          </button>
+        </div>
+      ) : null}
+
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
-        <span>총 {filteredItems.length}건 · mock data</span>
+        <span>총 {filteredItems.length}건{source === "mock" ? " · mock data" : ""}</span>
         <span>쿠폰 번호, 바코드, 사용자 이메일, 외부 API Secret은 표시하지 않습니다.</span>
       </div>
 
@@ -270,7 +317,11 @@ export default function AdminRewardRetryRequestHistoryPage() {
             ))}
           </tbody>
         </table>
-        {pageItems.length === 0 ? (
+        {isLoading ? (
+          <div className="px-6 py-16 text-center">
+            <p className="text-sm text-[#6b7280]">재처리 이력을 불러오는 중입니다.</p>
+          </div>
+        ) : pageItems.length === 0 ? (
           <div className="px-6 py-16 text-center">
             <p className="text-sm font-semibold text-[#111827]">검색 결과 없음</p>
             <p className="mt-2 text-sm text-[#6b7280]">입력한 조건과 일치하는 재처리 요청이 없습니다. 필터를 조정해 주세요.</p>

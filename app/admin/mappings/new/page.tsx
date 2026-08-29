@@ -2,19 +2,43 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
 import { DialogOverlay } from "@/components/admin/dialog-overlay";
 import {
-  MOCK_ADMIN_MAPPING_TREASURES,
-  findActiveAdminMapping,
   formatAdminMappingDateTime,
   type AdminMappingListItem,
   type AdminMappingTreasureOption,
+  type AdminMappingTreasureOptionStatus,
 } from "@/lib/admin/mock-mappings";
-import { MOCK_ADMIN_PRODUCTS, type AdminProductListItem } from "@/lib/admin/mock-products";
+import { type AdminProductListItem } from "@/lib/admin/mock-products";
+import type { AdminTreasureCalculatedStatus, AdminTreasureListItem } from "@/lib/admin/mock-treasures";
+import { createOrReplaceAdminMapping, loadAdminMappings } from "@/lib/admin/mapping-service";
+import { loadAdminTreasures } from "@/lib/admin/treasure-service";
+import { loadAdminProducts } from "@/lib/admin/product-service";
+
+const TREASURE_OPTION_STATUS: Record<AdminTreasureCalculatedStatus, AdminMappingTreasureOptionStatus> = {
+  visible: "active",
+  scheduled: "inactive",
+  sold_out: "sold_out",
+  expired: "expired",
+  invalid: "invalid",
+  hidden: "inactive",
+};
+
+function toTreasureOption(treasure: AdminTreasureListItem): AdminMappingTreasureOption {
+  return {
+    treasureId: treasure.id,
+    title: treasure.title,
+    locationLabel: treasure.locationLabel,
+    status: TREASURE_OPTION_STATUS[treasure.calculatedStatus],
+    currentClaimCount: treasure.currentClaimCount,
+    maxClaimCount: treasure.maxClaimCount,
+    deletedAt: treasure.deletedAt,
+  };
+}
 
 const adminRole = "super_admin";
 
@@ -56,54 +80,95 @@ export default function AdminMappingCreateReplacePage() {
   const [replaceError, setReplaceError] = useState("");
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [treasures, setTreasures] = useState<AdminMappingTreasureOption[]>([]);
+  const [products, setProducts] = useState<AdminProductListItem[]>([]);
+  const [mappings, setMappings] = useState<AdminMappingListItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const canManageMappings = adminRole === "super_admin" || adminRole === "operator";
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [treasuresResult, productsResult, mappingsResult] = await Promise.all([
+        loadAdminTreasures(),
+        loadAdminProducts(),
+        loadAdminMappings(),
+      ]);
+      setTreasures(treasuresResult.treasures.map(toTreasureOption));
+      setProducts(productsResult.products);
+      setMappings(mappingsResult.mappings);
+    } catch (error) {
+      console.warn("[admin] 매핑 등록 옵션 로딩 실패:", error);
+      setTreasures([]);
+      setProducts([]);
+      setMappings([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const initialTreasureId = searchParams.get("treasureId");
     const initialProductId = searchParams.get("productId");
-    if (initialTreasureId && MOCK_ADMIN_MAPPING_TREASURES.some((treasure) => treasure.treasureId === initialTreasureId && !treasure.deletedAt)) {
-      setTreasureId(initialTreasureId);
-    }
-    if (initialProductId && MOCK_ADMIN_PRODUCTS.some((product) => product.id === initialProductId && product.status === "active")) {
-      setProductId(initialProductId);
-    }
+    if (initialTreasureId) setTreasureId(initialTreasureId);
+    if (initialProductId) setProductId(initialProductId);
   }, []);
 
   const treasureOptions = useMemo(() => {
     const normalizedQuery = treasureQuery.trim().toLowerCase();
-    return MOCK_ADMIN_MAPPING_TREASURES
+    return treasures
       .filter((treasure) => !treasure.deletedAt)
       .filter((treasure) =>
         [treasure.treasureId, treasure.title, treasure.locationLabel].join(" ").toLowerCase().includes(normalizedQuery),
       );
-  }, [treasureQuery]);
+  }, [treasureQuery, treasures]);
 
   const productOptions = useMemo(() => {
     const normalizedQuery = productQuery.trim().toLowerCase();
-    return MOCK_ADMIN_PRODUCTS
+    return products
       .filter((product) => product.status === "active")
       .filter((product) =>
         [product.id, product.name, product.brandName, product.externalProductId].join(" ").toLowerCase().includes(normalizedQuery),
       );
-  }, [productQuery]);
+  }, [productQuery, products]);
 
   const selectedTreasure = useMemo(
-    () => MOCK_ADMIN_MAPPING_TREASURES.find((treasure) => treasure.treasureId === treasureId && !treasure.deletedAt) ?? null,
-    [treasureId],
+    () => treasures.find((treasure) => treasure.treasureId === treasureId && !treasure.deletedAt) ?? null,
+    [treasureId, treasures],
   );
   const selectedProduct = useMemo(
-    () => MOCK_ADMIN_PRODUCTS.find((product) => product.id === productId && product.status === "active") ?? null,
-    [productId],
+    () => products.find((product) => product.id === productId && product.status === "active") ?? null,
+    [productId, products],
   );
-  const activeMapping = useMemo(() => (selectedTreasure ? findActiveAdminMapping(selectedTreasure.treasureId) ?? null : null), [selectedTreasure]);
+  const activeMapping = useMemo(
+    () => (selectedTreasure ? mappings.find((m) => m.treasureId === selectedTreasure.treasureId && m.mappingStatus === "active") ?? null : null),
+    [selectedTreasure, mappings],
+  );
   const isSameProduct = Boolean(activeMapping && selectedProduct && activeMapping.productId === selectedProduct.id);
-  const canSubmit = canManageMappings && Boolean(selectedTreasure && selectedProduct) && !isSameProduct && !isSaving;
+  const canSubmit = canManageMappings && Boolean(selectedTreasure && selectedProduct) && !isSameProduct && !isSaving && !isLoading;
 
-  const saveMockMapping = async () => {
+  const saveMapping = async () => {
+    if (!selectedTreasure || !selectedProduct) return;
+    setSaveError(null);
     setIsSaving(true);
-    await new Promise((resolve) => window.setTimeout(resolve, 500));
+    const result = await createOrReplaceAdminMapping({
+      treasureBoxId: selectedTreasure.treasureId,
+      giftProductId: selectedProduct.id,
+      rewardQuantity: 1,
+    });
+    if (!result.ok) {
+      setIsSaving(false);
+      setIsConfirmOpen(false);
+      setSaveError(result.message ?? "매핑 등록에 실패했습니다.");
+      return;
+    }
     router.push("/admin/mappings");
   };
 
@@ -121,7 +186,7 @@ export default function AdminMappingCreateReplacePage() {
       setIsConfirmOpen(true);
       return;
     }
-    await saveMockMapping();
+    await saveMapping();
   };
 
   const confirmReplace = async () => {
@@ -130,7 +195,7 @@ export default function AdminMappingCreateReplacePage() {
       setReplaceError("처리 사유는 5자 이상 300자 이하로 입력하세요.");
       return;
     }
-    await saveMockMapping();
+    await saveMapping();
   };
 
   return (
@@ -138,12 +203,18 @@ export default function AdminMappingCreateReplacePage() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold">매칭 등록·교체</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">보물상자 하나에 하나의 active 상품만 연결합니다. 실제 DB 저장 없이 mock shell로 처리합니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">보물상자 하나에 하나의 active 상품만 연결합니다. 관리자 세션이 있으면 Supabase treasure_rewards에 저장(교체 시 기존 active→replaced)하고, 없으면 안내만 합니다.</p>
         </div>
         <Link href="/admin/mappings" className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">
           매칭 목록으로
         </Link>
       </div>
+
+      {saveError ? (
+        <div role="alert" className="mt-5 rounded-lg border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-sm text-[#b91c1c]">
+          {saveError}
+        </div>
+      ) : null}
 
       <div className="mt-7 grid grid-cols-[minmax(0,1fr)_380px] gap-4">
         <div className="space-y-4">

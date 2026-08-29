@@ -2,19 +2,20 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
 import {
   ADMIN_TREASURE_CALCULATED_STATUS_LABEL,
   ADMIN_TREASURE_SAVE_STATUS_LABEL,
-  MOCK_ADMIN_TREASURES,
   formatAdminTreasureDate,
   formatAdminTreasurePeriod,
   type AdminTreasureCalculatedStatus,
   type AdminTreasureListItem,
   type AdminTreasureSaveStatus,
 } from "@/lib/admin/mock-treasures";
+import { loadAdminTreasures } from "@/lib/admin/treasure-service";
+import type { AdminDataSource } from "@/lib/admin/admin-context";
 
 type SaveStatusFilter = "all" | AdminTreasureSaveStatus;
 type CalculatedStatusFilter = "all" | AdminTreasureCalculatedStatus;
@@ -159,6 +160,32 @@ function AdminTreasuresPageContent() {
   const [page, setPage] = useState(1);
   const [isCsvDialogOpen, setIsCsvDialogOpen] = useState(false);
 
+  const [treasures, setTreasures] = useState<AdminTreasureListItem[]>([]);
+  const [source, setSource] = useState<AdminDataSource | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await loadAdminTreasures();
+      setTreasures(result.treasures);
+      setSource(result.source);
+      setMessage(result.message ?? null);
+    } catch (error) {
+      console.warn("[admin] 보물상자 목록 로딩 실패:", error);
+      setTreasures([]);
+      setSource(null);
+      setMessage("보물상자 목록을 불러오지 못했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
   useEffect(() => {
     setCalculatedStatus(parseCalculatedStatusFilter(searchParams));
     setPage(1);
@@ -169,7 +196,7 @@ function AdminTreasuresPageContent() {
   const filteredTreasures = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return [...MOCK_ADMIN_TREASURES]
+    return [...treasures]
       .filter((treasure) => {
         const searchable = [treasure.id, treasure.treasureCode, treasure.title, treasure.locationLabel, treasure.regionLabel]
           .join(" ")
@@ -189,7 +216,7 @@ function AdminTreasuresPageContent() {
         if (sort === "claim_asc") return a.currentClaimCount - b.currentClaimCount;
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
-  }, [calculatedStatus, period, query, saveStatus, sort]);
+  }, [calculatedStatus, period, query, saveStatus, sort, treasures]);
 
   const totalPages = Math.max(1, Math.ceil(filteredTreasures.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -212,7 +239,7 @@ function AdminTreasuresPageContent() {
         <div className="min-w-0">
           <h1 className="text-2xl font-bold">보물상자 목록</h1>
           <p className="mt-2 text-sm text-[#6b7280]">
-            등록된 보물상자를 mock data 기준으로 조회합니다. 실제 지도/API 연결과 저장은 포함하지 않습니다.
+            등록된 보물상자를 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준으로 조회합니다. 실제 지도/API 연결과 저장은 포함하지 않습니다.
           </p>
         </div>
         {canManageTreasures ? (
@@ -230,6 +257,20 @@ function AdminTreasuresPageContent() {
           </div>
         ) : null}
       </div>
+
+      {source && source !== "supabase" ? (
+        <div
+          role="status"
+          className={`mt-5 flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${
+            source === "mock" ? "border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8]" : "border-[#fecaca] bg-[#fef2f2] text-[#b91c1c]"
+          }`}
+        >
+          <span>{message ?? "예시 데이터를 표시하고 있습니다."}</span>
+          <button type="button" onClick={() => void load()} className="shrink-0 font-medium underline">
+            다시 시도
+          </button>
+        </div>
+      ) : null}
 
       <section className="mt-7 rounded-lg border border-[#e5e7eb] bg-white p-4">
         <div className="overflow-x-auto">
@@ -352,7 +393,11 @@ function AdminTreasuresPageContent() {
             </tbody>
           </table>
         </div>
-        {pageItems.length === 0 ? (
+        {isLoading ? (
+          <div className="px-6 py-16 text-center">
+            <p className="text-sm text-[#6b7280]">보물상자 목록을 불러오는 중입니다.</p>
+          </div>
+        ) : pageItems.length === 0 ? (
           <div className="px-6 py-16 text-center">
             <p className="text-sm font-semibold text-[#111827]">검색 결과 없음</p>
             <p className="mt-2 text-sm text-[#6b7280]">입력한 조건과 일치하는 항목이 없습니다. 필터를 조정해 주세요.</p>
@@ -361,7 +406,7 @@ function AdminTreasuresPageContent() {
       </section>
 
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
-        <span>총 {filteredTreasures.length}건 · mock data</span>
+        <span>총 {filteredTreasures.length}건{source === "mock" ? " · mock data" : ""}</span>
         <nav aria-label="보물상자 목록 페이지네이션" className="flex items-center gap-2">
           {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
             <button

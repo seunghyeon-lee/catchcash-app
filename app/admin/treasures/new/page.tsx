@@ -5,6 +5,7 @@ import { FormEvent, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
+import { insertAdminTreasure, type AdminTreasureWritePayload } from "@/lib/admin/treasure-service";
 
 type TreasureCreateStatus = "inactive" | "active";
 
@@ -69,6 +70,7 @@ export default function AdminTreasureCreatePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isFailureDialogOpen, setIsFailureDialogOpen] = useState(false);
   const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const isDirty = useMemo(
     () => Object.entries(form).some(([key, value]) => initialForm[key as keyof TreasureCreateForm] !== value),
@@ -151,8 +153,32 @@ export default function AdminTreasureCreatePage() {
       return;
     }
 
+    setSaveError(null);
     setIsSaving(true);
-    await new Promise((resolve) => window.setTimeout(resolve, 500));
+
+    // 위치 문구(locationText)는 DB 컬럼이 없어 저장하지 않는다(좌표에서 파생). status는 UI→DB 매핑.
+    const payload: AdminTreasureWritePayload = {
+      title: form.title.trim(),
+      description: form.description.trim() || null,
+      hintText: form.hintText.trim() || null,
+      latitude: Number(form.latitude),
+      longitude: Number(form.longitude),
+      radiusM: Number(form.radiusM),
+      status: form.status === "active" ? "active" : "draft",
+      // datetime-local은 타임존이 없다. 로컬 시각으로 해석해 ISO(UTC)로 변환해 저장한다.
+      startsAt: form.startsAt ? new Date(form.startsAt).toISOString() : null,
+      endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : null,
+      maxClaimCount: Number(form.maxClaimCount),
+    };
+
+    const result = await insertAdminTreasure(payload);
+    if (!result.ok) {
+      setIsSaving(false);
+      setSaveError(result.message ?? "보물상자 등록에 실패했습니다.");
+      return;
+    }
+
+    // 세션 없음(mock) 또는 실제 저장 성공 → 목록으로 이동.
     router.push("/admin/treasures");
   };
 
@@ -176,7 +202,7 @@ export default function AdminTreasureCreatePage() {
           <div>
             <h1 className="text-2xl font-bold">보물상자 등록</h1>
             <p className="mt-2 text-sm text-[#6b7280]">
-              보물상자 기본 정보와 운영 조건을 mock data 기준으로 입력합니다. 실제 저장과 Naver Map API 연결은 포함하지 않습니다.
+              보물상자 기본 정보와 운영 조건을 입력합니다. 관리자 세션이 있으면 Supabase treasure_boxes에 저장하고, 없으면 안내만 합니다. Naver Map API는 연결하지 않습니다.
             </p>
           </div>
           <button
@@ -187,6 +213,12 @@ export default function AdminTreasureCreatePage() {
             목록으로
           </button>
         </div>
+
+        {saveError ? (
+          <div role="alert" className="mt-5 rounded-lg border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-sm text-[#b91c1c]">
+            {saveError}
+          </div>
+        ) : null}
 
         <div className="mt-7 space-y-4">
           <FormSection title="기본 정보" description="사용자 앱 힌트와 CMS 목록에 표시될 보물상자 기본 정보를 입력합니다.">

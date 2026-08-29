@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { DialogOverlay } from "@/components/admin/dialog-overlay";
 import type { AdminProductStatus } from "@/lib/admin/mock-products";
+import { insertAdminProduct, type AdminProductWritePayload } from "@/lib/admin/product-service";
 
 type ProductCreateForm = {
   brandName: string;
@@ -58,6 +59,7 @@ export default function AdminProductCreatePage() {
   const [errors, setErrors] = useState<ProductCreateErrors>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isFailureDialogOpen, setIsFailureDialogOpen] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const descriptionLength = form.description.length;
   const isDirty = useMemo(
@@ -130,8 +132,26 @@ export default function AdminProductCreatePage() {
       return;
     }
 
+    setSaveError(null);
     setIsSaving(true);
-    await new Promise((resolve) => window.setTimeout(resolve, 500));
+
+    // 설명(description)·이미지 업로드는 gift_products 스키마/Storage 범위 밖이라 저장하지 않는다.
+    const payload: AdminProductWritePayload = {
+      brandName: form.brandName.trim(),
+      productName: form.productName.trim(),
+      price: Number(form.price),
+      status: form.status,
+      imageUrl: null,
+      externalProductId: form.providerProductId.trim() || null,
+    };
+
+    const result = await insertAdminProduct(payload);
+    if (!result.ok) {
+      setIsSaving(false);
+      setSaveError(result.message ?? "상품 등록에 실패했습니다.");
+      return;
+    }
+
     router.push("/admin/products");
   };
 
@@ -141,12 +161,18 @@ export default function AdminProductCreatePage() {
         <div className="flex items-end justify-between">
           <div>
             <h1 className="text-2xl font-bold">상품 등록</h1>
-            <p className="mt-2 text-sm text-[#6b7280]">상품 정보만 등록합니다. 보물-상품 연결과 쿠폰 발급은 이 화면에서 처리하지 않습니다.</p>
+            <p className="mt-2 text-sm text-[#6b7280]">상품 정보만 등록합니다. 세션이 있으면 Supabase gift_products(manual_mock provider)에 저장하고, 없으면 안내만 합니다. 보물-상품 연결·쿠폰 발급·외부 API는 처리하지 않습니다.</p>
           </div>
           <Link href="/admin/products" className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">
             상품 목록으로
           </Link>
         </div>
+
+        {saveError ? (
+          <div role="alert" className="mt-5 rounded-lg border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-sm text-[#b91c1c]">
+            {saveError}
+          </div>
+        ) : null}
 
         <div className="mt-7 space-y-4">
           <FormSection title="기본 정보" description="사용자 앱 보상 카드와 보관함에 노출될 수 있는 상품 정보를 입력합니다.">
@@ -273,7 +299,7 @@ export default function AdminProductCreatePage() {
           </button>
         </div>
 
-        {isDirty ? <p className="mt-3 text-right text-xs text-[#6b7280]">입력값은 mock 상태로만 처리되며 실제 DB에 저장되지 않습니다.</p> : null}
+        {isDirty ? <p className="mt-3 text-right text-xs text-[#6b7280]">관리자 세션이 있으면 gift_products에 저장되고, 없으면 저장 없이 안내만 합니다. 이미지 업로드는 아직 연결되지 않습니다.</p> : null}
       </form>
 
       <DialogOverlay open={isFailureDialogOpen} onClose={() => setIsFailureDialogOpen(false)} labelledBy="product-save-failure-title" className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
