@@ -22,8 +22,9 @@ export type GetInventoryRewardDetailResult = {
 const INVENTORY_LIST_SELECT =
   "id, user_id, treasure_claim_id, treasure_box_id, treasure_reward_id, gift_product_id, status, issued_at, used_at, expired_at, issue_failed_reason, created_at, updated_at";
 
+// 4차: 쿠폰번호/바코드는 준비중 처리라 상세 조회에서도 coupon_code/barcode_value를 가져오지 않는다(노출 방지).
 const INVENTORY_ITEM_DETAIL_SELECT =
-  "id, user_id, treasure_claim_id, treasure_box_id, treasure_reward_id, gift_product_id, status, issued_at, used_at, expired_at, coupon_code, barcode_value, issue_failed_reason, created_at, updated_at";
+  "id, user_id, treasure_claim_id, treasure_box_id, treasure_reward_id, gift_product_id, status, issued_at, used_at, expired_at, issue_failed_reason, created_at, updated_at";
 
 const GIFT_PRODUCT_SELECT = "id, provider, provider_product_id, brand_name, product_name, product_image_url, price, status";
 
@@ -84,7 +85,7 @@ export async function getInventoryRewardListData(): Promise<GetInventoryRewardLi
 
 /**
  * 보상 상세 팝업 조회.
- * 쿠폰코드/바코드는 이 함수(상세)에서만 조회하고 목록에는 절대 포함하지 않는다.
+ * 4차: 쿠폰코드/바코드는 준비중 처리라 상세에서도 조회/표시하지 않는다(노출 방지).
  * 세션이 없으면 mock fallback을 유지하고, 있으면 내 소유 row만 조회한다.
  */
 export async function getInventoryRewardDetailData(rewardId: string): Promise<GetInventoryRewardDetailResult> {

@@ -6,7 +6,7 @@ import type { MockTreasureClaim } from "@/lib/hunt/mock/treasure-claims";
 
 export type TreasureStatus = "active" | "claimed";
 export type TreasureVariant = "yellow" | "purple";
-export type RewardStatus = "available" | "failed" | "used" | "expired";
+export type RewardStatus = "available" | "failed" | "used" | "expired" | "canceled";
 
 export type MockTreasure = {
   id: string;
@@ -47,6 +47,7 @@ const STATUS_MAP: Record<MockInventoryItem["status"], RewardStatus> = {
   failed: "failed",
   used: "used",
   expired: "expired",
+  canceled: "canceled",
 };
 
 function resolveRewardImage(giftProduct: MockGiftProduct | undefined): MockReward["image"] {
@@ -127,11 +128,9 @@ export function mapInventoryItemToRewardDetailUi(
   inventoryItem: MockInventoryItem,
   giftProduct: MockGiftProduct | undefined,
 ): MockRewardDetail {
-  return {
-    ...mapListFields(inventoryItem, giftProduct),
-    couponNumber: inventoryItem.coupon_code ?? undefined,
-    barcodeValue: inventoryItem.barcode_value ?? undefined,
-  };
+  // 4차: 쿠폰번호/바코드는 준비중 처리 — Giftishow(실제 발급) 연결 전까지 실제값을 화면에 노출하지 않는다.
+  // 상세 조회 select에서도 coupon_code/barcode_value를 가져오지 않는다(inventory-service 참고).
+  return mapListFields(inventoryItem, giftProduct);
 }
 
 export function mapTreasureClaimToResultUi(
