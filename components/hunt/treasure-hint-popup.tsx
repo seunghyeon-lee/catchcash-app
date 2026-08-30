@@ -4,15 +4,43 @@
 import { useRouter } from "next/navigation";
 
 import { HUNT_ASSETS } from "@/lib/hunt/assets";
+import { DISTANCE_GUIDE_END_RADIUS_M } from "@/lib/hunt/distance";
 import type { MockTreasure } from "@/lib/hunt/mock-data";
 
 const { icons, frames } = HUNT_ASSETS;
 
-export function TreasureHintPopup({ treasure, onClose }: { treasure: MockTreasure; onClose: () => void }) {
+function formatDistance(distanceM: number) {
+  if (distanceM >= 1000) return `${(distanceM / 1000).toFixed(1)}km`;
+  return `${Math.round(distanceM)}m`;
+}
+
+export function TreasureHintPopup({
+  treasure,
+  hasCurrentLocation = true,
+  onClose,
+}: {
+  treasure: MockTreasure;
+  hasCurrentLocation?: boolean;
+  onClose: () => void;
+}) {
   const router = useRouter();
-  // Mock: 진행률은 목표 반경 대비 남은 거리 기준으로 시각화만 한다 (실제 GPS 연동은 다음 단계)
-  const progressPercent = Math.max(4, Math.min(100, 100 - (treasure.distanceM / 1000) * 100 * 1.3));
-  const isNear = treasure.distanceM <= treasure.unlockRadiusM;
+  const isNearEnoughForHint = hasCurrentLocation && treasure.distanceM <= DISTANCE_GUIDE_END_RADIUS_M;
+  const progressPercent = hasCurrentLocation
+    ? Math.max(
+        4,
+        Math.min(100, (DISTANCE_GUIDE_END_RADIUS_M / Math.max(treasure.distanceM, DISTANCE_GUIDE_END_RADIUS_M)) * 100),
+      )
+    : 4;
+  const distanceMessage = !hasCurrentLocation
+    ? "현재 위치를 확인할 수 없어요."
+    : isNearEnoughForHint
+      ? "보물 근처에 도착했어요."
+      : `현재 보물과 ${formatDistance(treasure.distanceM)} 떨어져 있어요.`;
+  const statusMessage = !hasCurrentLocation
+    ? "현재 위치를 확인하고 다시 살펴봐."
+    : isNearEnoughForHint
+      ? "이제 힌트를 보고 찾아보세요."
+      : "근처까지 가면 힌트가 더 쓸모 있어진다.";
 
   return (
     <div className="fixed inset-0 z-40 mx-auto flex max-w-[480px] items-center justify-center">
@@ -22,7 +50,7 @@ export function TreasureHintPopup({ treasure, onClose }: { treasure: MockTreasur
         <div className="relative px-7 pb-9 pt-8">
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-2xl font-medium text-black">수상한 보물상자</h2>
+              <h2 className="text-2xl font-medium text-black">{treasure.name}</h2>
               <p className="mt-2 text-sm font-medium tracking-[0.7px] text-[#4c4546]">{treasure.locationHint}</p>
             </div>
             <button
@@ -39,9 +67,7 @@ export function TreasureHintPopup({ treasure, onClose }: { treasure: MockTreasur
           <div className="relative mt-8">
             <img src={frames.distanceInfo} alt="" className="absolute inset-0 size-full" />
             <div className="relative px-6 py-7">
-              <p className="text-center text-base font-bold text-black">
-                아직 멀다. {treasure.distanceM}m 남았다.
-              </p>
+              <p className="text-center text-base font-bold text-black">{distanceMessage}</p>
               <div className="mt-4 h-8 overflow-hidden rounded-[8px] border-2 border-black bg-[#f3f3f3]">
                 <div
                   className="h-full border-r-2 border-black bg-black"
@@ -50,7 +76,7 @@ export function TreasureHintPopup({ treasure, onClose }: { treasure: MockTreasur
               </div>
               <div className="mt-2 flex items-center justify-between px-1 text-xs font-bold tracking-[0.6px] text-black">
                 <span>0M</span>
-                <span>TARGET ({treasure.unlockRadiusM}m)</span>
+                <span>TARGET ({DISTANCE_GUIDE_END_RADIUS_M}m)</span>
               </div>
             </div>
           </div>
@@ -67,19 +93,17 @@ export function TreasureHintPopup({ treasure, onClose }: { treasure: MockTreasur
           </div>
 
           <p className="mt-4 text-center text-xs font-medium tracking-[0.6px] text-[#4c4546]">
-            {treasure.unlockRadiusM}m 안으로 와야 열린다.
+            {statusMessage}
           </p>
 
-          {/* CTA - Mock 단계에서는 눌러서 AR 화면으로 이동 */}
+          {/* 최신 정책: 거리 제한은 AR 화면에서 다시 확인하고, 지도 팝업에서는 항상 진입을 허용한다. */}
           <button
             type="button"
             onClick={() => router.push(`/ar-hunt?treasureId=${treasure.id}`)}
             className="relative mt-6 block h-[72px] w-full"
           >
             <img src={frames.hintCtaChip} alt="" className="absolute inset-0 size-full" />
-            <span className="relative text-2xl font-medium text-white">
-              {isNear ? "상자 열기" : "좀 더 가까이 와라"}
-            </span>
+            <span className="relative text-2xl font-medium text-white">사냥하기</span>
           </button>
         </div>
       </div>

@@ -9,6 +9,7 @@ export type GetMapTreasuresResult = {
   treasures: MockTreasure[];
   claimedMarker: ReturnType<typeof getClaimedTreasureMarker>;
   source: TreasureDataSource;
+  userId: string | null;
   errorMessage?: string;
 };
 
@@ -41,20 +42,26 @@ export async function getMapTreasuresData(): Promise<GetMapTreasuresResult> {
   const session = await getAuthenticatedUserSession();
 
   if (!session) {
-    return { treasures: getMapTreasures(), claimedMarker: getClaimedTreasureMarker(), source: "mock" };
+    return { treasures: getMapTreasures(), claimedMarker: getClaimedTreasureMarker(), source: "mock", userId: null };
   }
 
+  const nowIso = new Date().toISOString();
   const { data, error } = await session.client
     .from("treasure_boxes")
     .select(TREASURE_BOX_SELECT)
     .eq("status", "active")
-    .is("deleted_at", null);
+    .is("deleted_at", null)
+    .not("latitude", "is", null)
+    .not("longitude", "is", null)
+    .lte("starts_at", nowIso)
+    .gte("ends_at", nowIso);
 
   if (error) {
     return {
       treasures: getMapTreasures(),
       claimedMarker: getClaimedTreasureMarker(),
       source: "mock",
+      userId: session.userId,
       errorMessage: "보물 목록을 불러오지 못했어. 잠시 후 다시 확인해줘.",
     };
   }
@@ -70,5 +77,6 @@ export async function getMapTreasuresData(): Promise<GetMapTreasuresResult> {
     treasures: boxes.map((box, index) => mapTreasureBoxToTreasureUi(box, index, claimedTreasureBoxIds)),
     claimedMarker: getClaimedTreasureMarker(),
     source: "supabase",
+    userId: session.userId,
   };
 }
