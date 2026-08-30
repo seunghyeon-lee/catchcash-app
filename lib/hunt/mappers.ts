@@ -15,6 +15,8 @@ export type MockTreasure = {
   status: TreasureStatus;
   variant: TreasureVariant;
   position: { left: number; top: number };
+  latitude: number;
+  longitude: number;
   distanceM: number;
   unlockRadiusM: number;
   hint: { order: number; text: string };
@@ -111,6 +113,8 @@ export function mapTreasureBoxToTreasureUi(
     status: claimedTreasureBoxIds.has(treasureBox.id) ? "claimed" : "active",
     variant: index % 2 === 0 ? "yellow" : "purple",
     position,
+    latitude: treasureBox.latitude,
+    longitude: treasureBox.longitude,
     distanceM: index === 0 ? 700 : 180,
     unlockRadiusM: treasureBox.radius_m,
     hint: { order: 1, text: treasureBox.hint_text },

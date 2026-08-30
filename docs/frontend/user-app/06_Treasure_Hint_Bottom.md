@@ -15,8 +15,8 @@
 | 구현 기준 | Next.js App Router + React + TypeScript |
 | 지도 기준 | Naver Maps JavaScript API |
 | 스타일 기준 | Tailwind CSS + 공통 흑백 손그림 디자인 지시문 |
-| 디자인 반영 버전 | Stitch AI 힌트 팝업 최종 시안 기준 / 거리 계산 프레임 분리 / 게이지 프레임 분리 / 하단 문구는 버튼 아님 |
-| 주요 기능 | 보물 정보 표시, 거리 표시, 힌트 제공, 사냥 가능 여부 판단, AR 가이드 진입 |
+| 디자인 반영 버전 | 기존 힌트 팝업 디자인 시안 기준 / 거리 계산 프레임 분리 / 게이지 프레임 분리 / 사냥하기 CTA 제공 |
+| 주요 기능 | 보물 정보 표시, 100m 기준 거리 안내, 힌트 제공, AR 사냥 화면 진입 |
 
 ---
 
@@ -24,11 +24,11 @@
 
 보물 힌트 팝업 화면은 지도 상세 화면에서 사용자가 보물상자 마커를 선택했을 때 노출되는 레이어형 바텀시트 또는 팝업이다.
 
-Stitch AI 시안 기준으로 이 화면은 맵 상세 화면 위에 뜨는 **중앙 카드형 오버레이 팝업**으로 구성한다.  
+기존 디자인 시안 기준으로 이 화면은 맵 상세 화면 위에 뜨는 **중앙 카드형 오버레이 팝업**으로 구성한다.
 팝업 본체, 거리 게이지, CTA 버튼은 rough frame SVG 에셋을 사용하고, 모든 텍스트와 실제 클릭/입력 동작은 코드로 구현한다.
 
-이 팝업은 선택한 보물상자의 이름, 위치 힌트, 현재 거리, 사냥 가능 여부를 표시한다.  
-사용자가 보물상자 근처로 이동해 사냥 가능 반경에 들어오면 `사냥하기` 버튼을 통해 AR 가이드 화면으로 이동할 수 있다.
+이 팝업은 선택한 보물상자의 이름, 위치 힌트, 100m 기준 거리 안내 상태를 표시한다.
+`사냥하기` 버튼은 거리와 관계없이 항상 AR 사냥 화면으로 이동하며, 실제 상자 클릭/오픈 가능 여부는 AR 화면에서 현재 위치와 `treasure.radius_m` 기준으로 다시 판단한다.
 
 이 화면은 실제 보상을 지급하거나 쿠폰을 발급하는 화면이 아니다.  
 보상 획득 전, 사용자가 보물상자 위치를 찾도록 돕는 탐색 보조 화면이다.
@@ -42,8 +42,8 @@ Stitch AI 시안 기준으로 이 화면은 맵 상세 화면 위에 뜨는 **�
 - 선택한 보물상자의 상세 정보를 보여준다.
 - 현재 위치와 보물상자 간 거리를 표시한다.
 - 보물상자 힌트를 제공한다.
-- 사용자가 사냥 가능 반경에 들어왔는지 알려준다.
-- 사냥 가능 조건 충족 시 AR 가이드 화면으로 이동할 수 있게 한다.
+- 사용자가 100m 이내 근처에 도착했는지 알려준다.
+- 거리와 관계없이 AR 사냥 화면으로 이동할 수 있게 한다.
 
 ### 사용자 관점 목적
 
@@ -196,8 +196,7 @@ deleted_at is null
 | 바텀시트 아래로 스와이프 | 팝업 닫기 |
 | 딤 영역 클릭 | 팝업 닫기 |
 | Android 뒤로가기 | 팝업 먼저 닫기 |
-| 사냥하기 클릭 + 20m 이내 | AR 가이드 화면 이동 |
-| 사냥하기 클릭 + 20m 초과 | 더 가까이 이동 안내 |
+| 사냥하기 클릭 | 거리와 관계없이 AR 사냥 화면 이동 |
 | 보물 마감 감지 | 팝업 상태 변경 후 사냥 불가 처리 |
 
 ### 7.1 이동 화면 ID
@@ -322,11 +321,11 @@ Hunt Ready
 
 ---
 
-## 9.10 Stitch AI 디자인 결과 반영
+## 9.10 기존 디자인 결과 반영
 
 ### 9.10.1 확정된 화면 구조
 
-Stitch AI 재정의 시안 기준 힌트 팝업은 아래 구조를 따른다.
+기존 디자인 시안 기준 힌트 팝업은 아래 구조를 따른다.
 
 ```txt
 지도 상세 화면 배경
@@ -353,14 +352,14 @@ Stitch AI 재정의 시안 기준 힌트 팝업은 아래 구조를 따른다.
 |---|---|---|
 | 보물명 | `수상한 보물상자` | 코드 텍스트 |
 | 위치 | `반포한강공원 근처` | 코드 텍스트 |
-| 거리 상태 | `아직 멀다. 700m 남았다.` | 코드 텍스트 |
+| 거리 상태 | `현재 보물과 700m 떨어져 있어요.` / `보물 근처에 도착했어요.` | 코드 텍스트 |
 | 거리 시작 라벨 | `0M` | 코드 텍스트 |
-| 거리 목표 라벨 | `TARGET (20m)` | 코드 텍스트 |
+| 거리 목표 라벨 | `TARGET (100m)` | 코드 텍스트 |
 | 힌트 라벨 | `HINT #1` | 코드 텍스트 |
 | 힌트 내용 | `큰 트럭에서 보인다. 시선을 위쪽으로 돌려보세요` | 코드 텍스트 |
-| 안내 문구 | `20m 안으로 와야 열린다.` | 코드 텍스트 |
-| 하단 강조 문구 | `좀 더 가까이 와라` | 코드 텍스트 |
-| 사냥 가능 문구 | `이제 열 수 있다.` | 코드 텍스트 |
+| 안내 문구 | `이제 힌트를 보고 찾아보세요.` | 코드 텍스트 |
+| 하단 강조 문구 | `이제 힌트를 보고 찾아보세요.` | 코드 텍스트 |
+| CTA 문구 | `사냥하기` | 코드 텍스트 |
 
 ### 9.10.3 화면 성격
 
@@ -403,8 +402,8 @@ Stitch AI 재정의 시안 기준 힌트 팝업은 아래 구조를 따른다.
 | 0M / TARGET 라벨 | 코드 텍스트 |
 | 힌트 문구 | 코드 텍스트 |
 | 하단 강조 문구 텍스트 | 코드 텍스트 |
-| AR 이동 버튼 | 이 화면에 없음. 사냥 가능 시 별도 정책에 따라 후속 화면/버튼 제공 가능 |
-| 사냥 가능 상태 판단 | 로직/RPC 전 단계 validation |
+| AR 이동 버튼 | 거리와 관계없이 항상 활성화된 `사냥하기` 버튼 |
+| AR 오픈 가능 상태 판단 | 이 화면에서 최종 판단하지 않음. AR 화면에서 `radius_m` 기준으로 재계산 |
 
 ### 9.11.3 중요 원칙
 
@@ -438,7 +437,7 @@ Stitch AI 재정의 시안 기준 힌트 팝업은 아래 구조를 따른다.
 |---|---|---|---|---|---|
 | `ui_frame_treasure_hint_card_rough_default.svg` | hint card frame | svg | treasure hint popup | 280x96 | 힌트 텍스트 영역 rough frame |
 | `ui_frame_treasure_hint_popup_rough_lg.svg` | popup frame | svg | treasure hint popup | 340x520 | 힌트가 길거나 추가 정보가 많을 때 사용하는 확장 팝업 프레임 |
-| `ui_frame_button_hunt_join_rough_disabled.svg` | CTA frame | svg | treasure hint popup | 320x56 | 거리 부족/비활성 CTA 프레임. MVP에서는 default 프레임 + opacity 처리 가능 |
+| `ui_frame_button_hunt_join_rough_disabled.svg` | CTA frame | svg | treasure hint popup | 320x56 | 최신 정책에서는 사용하지 않음. 사냥하기 CTA는 거리와 관계없이 활성 상태를 유지 |
 
 ### 9.12.3 하단 검정 영역 정책
 
@@ -502,13 +501,12 @@ export const TREASURE_HINT_ASSETS = {
 
 ```ts
 export const TREASURE_HINT_COPY = {
-  distanceFar: '아직 멀다.',
-  distanceFarMessage: '좀 더 가까이 와라',
-  huntReady: '이제 열 수 있다.',
-  huntReadyMessage: '이제 열 수 있다.',
-  targetLabel: 'TARGET (20m)',
+  distanceFar: '현재 보물과 {distance} 떨어져 있어요.',
+  distanceGuideComplete: '보물 근처에 도착했어요.',
+  hintGuide: '이제 힌트를 보고 찾아보세요.',
+  huntCta: '사냥하기',
+  targetLabel: 'TARGET (100m)',
   startLabel: '0M',
-  activeGuide: '20m 안으로 와야 열린다.',
   loading: '힌트 뒤지는 중...',
   error: '힌트가 어디 갔다. 다시 눌러봐.',
 } as const;
@@ -562,7 +560,7 @@ export const TREASURE_HINT_COPY = {
 
   <div className="relative z-10 flex h-full flex-col items-center justify-center gap-3 px-5">
     <p className="text-sm font-bold">
-      아직 멀다. 700m 남았다.
+      현재 보물과 700m 떨어져 있어요.
     </p>
 
     <div className="relative h-6 w-[180px]">
@@ -580,7 +578,7 @@ export const TREASURE_HINT_COPY = {
 
     <div className="flex w-[180px] justify-between text-[10px] font-bold">
       <span>0M</span>
-      <span>TARGET (20m)</span>
+      <span>TARGET (100m)</span>
     </div>
   </div>
 </div>
@@ -599,7 +597,7 @@ export const TREASURE_HINT_COPY = {
     className="pointer-events-none absolute inset-0 h-full w-full"
   />
   <p className="relative z-10 flex h-full items-center justify-center text-white">
-    좀 더 가까이 와라
+    이제 힌트를 보고 찾아보세요.
   </p>
 </div>
 ```
@@ -608,28 +606,32 @@ export const TREASURE_HINT_COPY = {
 
 | 상태 | 하단 문구 | 클릭 가능 여부 |
 |---|---|---|
-| 거리 부족 | `좀 더 가까이 와라` | 클릭 불가 |
-| 사냥 가능 | `이제 열 수 있다.` | 클릭 불가 |
+| 100m 초과 | `근처까지 가면 힌트가 더 쓸모 있어진다.` | 상태 문구 |
+| 100m 이내 | `이제 힌트를 보고 찾아보세요.` | 상태 문구 |
 | 로딩 | `힌트 뒤지는 중...` | 클릭 불가 |
 | 오류 | `힌트가 어디 갔다.` | 클릭 불가 |
 
-사냥 가능 상태에서 실제 AR 진입 버튼을 별도로 둘지는 후속 AR 진입 정책에서 결정한다.  
-현재 디자인 기준에서는 하단 검정 영역을 CTA 버튼으로 사용하지 않는다.
+`사냥하기` CTA는 별도 버튼으로 제공하며, 거리와 관계없이 항상 AR 사냥 화면으로 이동한다.
 
 ---
 
 ## 9.16 정책 정리
 
-### 9.16.1 거리 기준
+### 9.16.1 거리 안내 기준
 
-MVP 기준 사냥 가능 반경은 20m로 둔다.
+MVP 기준 거리 안내 종료 반경은 100m로 둔다.
 
 ```txt
-distance_m <= 20
-→ 사냥 가능
+distance_m > 100
+→ 실제 거리 숫자 표시
+
+distance_m <= 100
+→ 정확한 거리 숫자 숨김
+→ 보물 근처 도착 안내
 ```
 
-거리 계산과 최종 검증은 클라이언트 표시와 별개로 AR 사냥 진입/클레임 RPC에서 다시 확인한다.
+100m는 사냥 가능 거리나 보물 오픈 가능 거리가 아니다.
+실제 상자 클릭/오픈 가능 여부는 AR 화면에서 `distance_m <= treasure.radius_m` 기준으로 다시 확인한다.
 
 ### 9.16.2 이 화면에서 하지 않는 것
 
@@ -643,12 +645,12 @@ AR 카메라 실행
 
 ### 9.16.3 다음 화면
 
-CTA 클릭 시 상태에 따라 아래처럼 동작한다.
+CTA 클릭 시 상태와 관계없이 AR 사냥 화면으로 이동한다.
 
 | 상태 | 동작 |
 |---|---|
-| 거리 부족 | 현재 팝업 유지 |
-| 사냥 가능 | 현재 팝업에서 사냥 가능 상태 표시. AR 진입은 별도 액션 정책에서 처리 |
+| 100m 초과 | `/ar-hunt?treasureId={id}` 이동 |
+| 100m 이내 | `/ar-hunt?treasureId={id}` 이동 |
 | 오류 | 힌트 데이터 재요청 |
 
 ---
@@ -657,7 +659,7 @@ CTA 클릭 시 상태에 따라 아래처럼 동작한다.
 
 ## 9.17 하단 검정 영역 재정의
 
-최종 Stitch AI 시안 기준으로 하단 검정색 박스는 CTA 버튼이 아니다.  
+기존 디자인 시안 기준으로 하단 검정색 박스는 CTA 버튼이 아니다.
 이 영역은 현재 거리 상태를 강조해서 보여주는 **상태 문구 영역**이다.
 
 ### 9.17.1 사용 에셋
@@ -686,8 +688,8 @@ ui_frame_button_hunt_join_rough_disabled.svg
 문구 예시:
 
 ```txt
-좀 더 가까이 와라
-이제 열 수 있다.
+근처까지 가면 힌트가 더 쓸모 있어진다.
+이제 힌트를 보고 찾아보세요.
 ```
 
 ### 9.17.4 접근성
@@ -765,7 +767,7 @@ ui_frame_treasure_status_message_black_rough_lg.svg
 ```txt
 아직 멀다. 700m 남았다.
 + 게이지바
-+ 0M / TARGET (20m)
++ 0M / TARGET (100m)
 ```
 
 게이지바 자체의 외곽은 별도 에셋인 `ui_frame_treasure_distance_gauge_rough_default.svg`를 사용한다.
@@ -804,9 +806,9 @@ ui_frame_button_hunt_join_rough_default.svg
 | 드래그 핸들 | 상단 중앙 |
 | 닫기 버튼 | 우측 상단 |
 | 보물 헤더 | 보물명, 위치 문구, 등급 배지 |
-| 거리 카드 | 현재 거리와 사냥 가능 상태 |
+| 거리 카드 | 100m 기준 거리 안내 상태 |
 | 힌트 카드 | 보물 위치 힌트 |
-| CTA 영역 | 사냥하기 또는 거리 안내 |
+| CTA 영역 | 항상 활성화된 사냥하기 버튼 |
 
 ### 스타일
 
@@ -876,30 +878,34 @@ ui_frame_button_hunt_join_rough_default.svg
 | 거리 숫자 | `700m 떨어져 있어요` |
 | 진행 바 | 0m부터 목표 거리까지 |
 | 시작 라벨 | `0M` |
-| 목표 라벨 | `TARGET` |
+| 목표 라벨 | `TARGET (100m)` |
 
 ### 거리 문구 정책
 
 | 거리 상태 | 문구 |
 |---|---|
 | 위치 없음 | `현재 위치를 확인할 수 없어요.` |
-| 20m 이내 | `보물 근처에 도착했어요!` |
-| 20m 초과 | `현재 보물과 {distance} 떨어져 있어요.` |
+| 100m 이내 | `보물 근처에 도착했어요.` |
+| 100m 초과 | `현재 보물과 {distance} 떨어져 있어요.` |
 
 ### 진행 바 정책
 
 - 진행 바는 사용자 이해를 돕는 시각 요소다.
-- 정확한 지도 거리 계산 결과는 숫자로 표시한다.
-- target은 `radius_m` 기준으로 표시한다.
+- 정확한 지도 거리 계산 결과는 100m 초과에서만 숫자로 표시한다.
+- target은 거리 안내 종료 기준인 `100m`로 표시한다.
+- 100m 이내에서는 진행 바를 완료 상태로 표시할 수 있다.
 - 거리 정보가 없으면 진행 바를 skeleton 또는 비활성 상태로 표시한다.
 
-### 사냥 가능 기준
+### AR 화면 사냥 가능 기준
 
 ```txt
 distance_m <= treasure_boxes.radius_m
 ```
 
-MVP 기본값:
+이 기준은 지도 팝업에서 CTA 상태를 결정하는 데 사용하지 않는다.
+AR 화면에서 3D 보물상자 클릭/오픈 가능 여부를 판단할 때 사용한다.
+
+radius_m 유효값이 없을 때만 MVP fallback을 사용한다.
 
 ```txt
 radius_m = 20
@@ -956,12 +962,11 @@ HINT #1
 
 ## 10.5 CTA 영역
 
-### 사냥 가능 상태
+### 기본 상태
 
 조건:
 
 ```txt
-distance_m <= radius_m
 treasure_status = active
 current_claim_count < max_claim_count
 ```
@@ -975,43 +980,60 @@ current_claim_count < max_claim_count
 클릭 시:
 
 ```txt
-AR 가이드 화면 이동
+AR 사냥 화면 이동
 ```
 
-### 사냥 불가능 상태
+### 100m 초과 상태
 
 조건:
 
 ```txt
-distance_m > radius_m
+distance_m > 100
 ```
 
 문구:
 
 ```txt
-보물 근처 20m 이내에서 활성화됩니다.
+현재 보물과 {distance} 떨어져 있어요.
 ```
 
 버튼 정책:
 
 | 방식 | 설명 |
 |---|---|
-| Disabled 버튼 | `더 가까이 이동해주세요` |
-| 안내 문구만 표시 | MVP 간단 구현 |
-| 지도 유지 | 사용자가 계속 이동하도록 지도 화면 유지 |
+| 활성 버튼 | `사냥하기` |
+| 동작 | `/ar-hunt?treasureId={id}` 이동 |
+| 거리 제한 | 지도 팝업에서는 적용하지 않음 |
+
+### 100m 이내 상태
+
+문구:
+
+```txt
+보물 근처에 도착했어요.
+이제 힌트를 보고 찾아보세요.
+```
+
+버튼 정책:
+
+| 방식 | 설명 |
+|---|---|
+| 활성 버튼 | `사냥하기` |
+| 동작 | `/ar-hunt?treasureId={id}` 이동 |
+| 정확한 거리 숫자 | 표시하지 않음 |
 
 ### 위치 없음 상태
 
 문구:
 
 ```txt
-현재 위치를 확인해야 사냥할 수 있어요.
+현재 위치를 확인할 수 없어요.
 ```
 
 CTA:
 
 ```txt
-위치 다시 확인하기
+사냥하기
 ```
 
 ---
@@ -1038,8 +1060,8 @@ export type TreasureHintSheetStatus =
   | 'opening'
   | 'loading'
   | 'ready'
-  | 'huntable'
-  | 'too_far'
+  | 'nearby_hint'
+  | 'far_distance'
   | 'location_required'
   | 'closed_treasure'
   | 'error';
@@ -1053,8 +1075,8 @@ export type TreasureHintSheetStatus =
 | `opening` | 열림 애니메이션 |
 | `loading` | 보물 정보 로딩 |
 | `ready` | 보물 정보 표시 |
-| `huntable` | 사냥하기 버튼 활성 |
-| `too_far` | 더 가까이 이동 안내 |
+| `nearby_hint` | 100m 이내, 정확한 거리 숫자 숨김 |
+| `far_distance` | 100m 초과, 실제 거리 숫자 표시 |
 | `location_required` | 위치 확인 필요 |
 | `closed_treasure` | 마감된 보물 안내 |
 | `error` | 오류 상태 표시 |
@@ -1137,14 +1159,15 @@ ends_at >= now
 distance_m = calculateDistance(currentLocation, treasureLocation)
 ```
 
-### 13.3 사냥 가능 여부 계산
+### 13.3 거리 안내 상태 계산
 
 ```txt
-isHuntable =
-  distance_m <= radius_m
-  AND status = active
-  AND current_claim_count < max_claim_count
+isNearbyHint =
+  distance_m <= 100
 ```
+
+`isNearbyHint`는 정확한 거리 안내를 종료할지 결정하는 표시 상태다.
+사냥 가능 여부나 보물 오픈 가능 여부를 의미하지 않는다.
 
 ### 13.4 Realtime 반영
 
@@ -1164,8 +1187,8 @@ isHuntable =
 ### 14.1 현재 위치 사용 목적
 
 - 보물과의 거리 계산
-- 사냥 가능 여부 표시
-- AR 가이드 진입 가능 여부 판단
+- 100m 기준 거리 안내 상태 표시
+- AR 사냥 화면 진입 버튼 제공
 
 ### 14.2 위치 재확인
 
@@ -1193,15 +1216,18 @@ CTA:
 
 ---
 
-## 15. 사냥 가능 거리 정책
+## 15. 거리 안내 및 AR 판정 정책
 
-### 15.1 기본값
+### 15.1 지도 팝업 거리 안내 종료 기준
 
 ```txt
-20m
+100m
 ```
 
-### 15.2 관리자 설정값
+100m 이내에서는 정확한 거리 숫자를 숨기고 힌트 탐색 안내를 표시한다.
+100m는 사냥 가능 거리나 보물 오픈 가능 거리가 아니다.
+
+### 15.2 AR 화면 실제 판정 기준
 
 관리자가 보물상자별로 `radius_m`을 설정할 수 있다.
 
@@ -1211,14 +1237,16 @@ MVP 정책:
 radius_m 값이 없으면 20m로 처리한다.
 ```
 
+이 기준은 AR 화면에서 현재 위치와 보물 좌표 간 거리를 다시 계산한 뒤, 3D 보물상자 클릭/오픈 가능 여부를 결정할 때 사용한다.
+
 ### 15.3 서버 검증과의 관계
 
-이 팝업의 사냥 가능 여부는 사용자 안내용이다.  
-최종 보물 획득 가능 여부는 AR 화면에서 Supabase RPC가 서버 기준으로 다시 검증한다.
+이 팝업의 거리 계산은 100m까지 사용자 안내용이다.
+최종 보물 획득 가능 여부는 AR 화면에서 위치를 재조회하고 Supabase RPC가 서버 기준으로 다시 검증한다.
 
 ```txt
 힌트 팝업 거리 계산
-→ AR 진입 가능 안내
+→ 100m까지 사용자 안내
 
 AR 획득 RPC
 → 최종 서버 검증
@@ -1250,8 +1278,7 @@ AR 획득 RPC
 
 ```txt
 사냥하기 클릭
-→ 현재 거리 재확인
-→ 20m 이내이면 AR 가이드 화면 이동
+→ 거리 제한 없이 AR 사냥 화면 이동
 → treasure_box_id 전달
 ```
 
@@ -1364,7 +1391,7 @@ AR 획득 RPC
 ## 19. 보안 및 정책
 
 - 선택한 보물이 active 상태인지 반드시 확인한다.
-- 삭제/만료/마감된 보물은 사냥하기를 제공하지 않는다.
+- 삭제/만료/마감된 보물은 팝업을 닫거나 마감 안내 상태로 처리한다.
 - 지도 화면의 거리 계산은 사용자 안내용이며 최종 보상 지급 기준이 아니다.
 - 최종 획득 검증은 AR 화면의 RPC에서 처리한다.
 - 사용자의 위치 정보는 거리 계산에만 사용한다.
@@ -1389,8 +1416,8 @@ AR 획득 RPC
 
 ### 20.3 CTA
 
-- 사냥하기 버튼은 활성/비활성 상태가 명확해야 한다.
-- 비활성 상태에서는 이유를 함께 표시한다.
+- 사냥하기 버튼은 거리와 관계없이 활성 상태를 유지한다.
+- 실제 상자 클릭/오픈 가능 여부는 AR 화면에서 별도로 안내한다.
 
 ---
 
@@ -1416,7 +1443,7 @@ TreasureHintErrorState
 useSelectedTreasure
 useTreasureHintSheet
 useTreasureDistance
-useHuntableStatus
+useDistanceGuideStatus
 useRefreshCurrentLocation
 ```
 
@@ -1426,7 +1453,7 @@ useRefreshCurrentLocation
 calculateDistanceMeters
 formatDistance
 getTreasureGradeLabel
-checkTreasureHuntable
+getDistanceGuideStatus
 mapTreasureHintErrorMessage
 ```
 
@@ -1448,7 +1475,7 @@ features/
     hooks/
       useSelectedTreasure.ts
       useTreasureDistance.ts
-      useHuntableStatus.ts
+      useDistanceGuideStatus.ts
     services/
       treasure.service.ts
     types/
@@ -1475,8 +1502,8 @@ export type TreasureHintSheetStatus =
   | 'opening'
   | 'loading'
   | 'ready'
-  | 'huntable'
-  | 'too_far'
+  | 'nearby_hint'
+  | 'far_distance'
   | 'location_required'
   | 'closed_treasure'
   | 'error';
@@ -1504,21 +1531,21 @@ export type SelectedTreasure = {
 };
 ```
 
-### 23.3 사냥 가능 상태 타입
+### 23.3 거리 안내 상태 타입
 
 ```ts
-export type HuntableStatus = {
-  isHuntable: boolean;
+export type DistanceGuideStatus = {
+  isNearbyHint: boolean;
   reason:
-    | 'within_range'
-    | 'too_far'
+    | 'within_guide_end_radius'
+    | 'far_distance'
     | 'location_required'
     | 'closed'
     | 'expired'
     | 'already_claimed'
     | 'unknown';
   distance_m?: number;
-  radius_m: number;
+  guide_end_radius_m: 100;
 };
 ```
 
@@ -1539,23 +1566,24 @@ export type HuntableStatus = {
 - [ ] 거리 진행 바가 표시된다.
 - [ ] 힌트 카드가 표시된다.
 - [ ] 힌트 텍스트가 표시된다.
-- [ ] 사냥 가능 상태에 따라 CTA 또는 안내 문구가 표시된다.
+- [ ] 100m 기준 거리 안내 상태와 사냥하기 CTA가 표시된다.
 - [ ] 전체 화면이 글로벌 디자인 토큰을 따른다.
 
 ### 24.2 기능 완료 기준
 
 - [ ] selectedTreasureId 기준으로 보물 정보를 조회한다.
 - [ ] 현재 위치와 보물 좌표 간 거리를 계산한다.
-- [ ] radius_m 기준으로 사냥 가능 여부를 판단한다.
-- [ ] 20m 이내이면 사냥하기 버튼이 활성화된다.
-- [ ] 20m 초과이면 더 가까이 이동 안내가 표시된다.
+- [ ] 100m 초과이면 실제 거리 숫자를 표시한다.
+- [ ] 100m 이내이면 정확한 거리 숫자를 숨기고 근처 도착 안내를 표시한다.
+- [ ] 사냥하기 버튼은 거리와 관계없이 항상 활성화된다.
+- [ ] radius_m은 AR 화면의 실제 상자 클릭/오픈 판정용 데이터로 유지한다.
 - [ ] 위치 정보가 없으면 위치 확인 안내가 표시된다.
 - [ ] 닫기 클릭 시 팝업이 닫힌다.
 - [ ] 아래로 스와이프 또는 바깥 클릭 시 팝업이 닫힌다.
 - [ ] Android 뒤로가기 시 팝업이 먼저 닫힌다.
 - [ ] 사냥하기 클릭 시 AR 가이드 화면으로 이동한다.
 - [ ] AR 가이드 화면 이동 시 treasure_box_id가 전달된다.
-- [ ] 보물 마감 상태에서는 사냥하기가 비활성화된다.
+- [ ] 보물 마감 상태에서는 팝업을 닫거나 마감 안내를 표시한다.
 
 ### 24.3 기술 완료 기준
 
