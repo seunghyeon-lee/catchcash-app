@@ -16,7 +16,7 @@ import {
   type AdminTreasureCalculatedStatus,
   type AdminTreasureStatus,
 } from "@/lib/admin/mock-mappings";
-import { loadAdminMappings } from "@/lib/admin/mapping-service";
+import { endAdminMapping, loadAdminMappings } from "@/lib/admin/mapping-service";
 import type { AdminDataSource } from "@/lib/admin/admin-context";
 
 type StatusFilter<T extends string> = "all" | T;
@@ -69,8 +69,9 @@ export default function AdminMappingsPage() {
   const [pageSize, setPageSize] = useState(defaultFilters.pageSize);
   const [page, setPage] = useState(1);
   const [selectedMapping, setSelectedMapping] = useState<AdminMappingListItem | null>(null);
-  const [inactiveReason, setInactiveReason] = useState("");
-  const [inactiveError, setInactiveError] = useState("");
+  const [endReason, setEndReason] = useState("");
+  const [endError, setEndError] = useState("");
+  const [isEnding, setIsEnding] = useState(false);
   const [toast, setToast] = useState("");
 
   const load = useCallback(async () => {
@@ -140,31 +141,53 @@ export default function AdminMappingsPage() {
     setPage(1);
   };
 
-  const openDeactivateDialog = (item: AdminMappingListItem) => {
+  const openEndDialog = (item: AdminMappingListItem) => {
     setSelectedMapping(item);
-    setInactiveReason("");
-    setInactiveError("");
+    setEndReason("");
+    setEndError("");
   };
 
-  const deactivateMapping = () => {
-    const reason = inactiveReason.trim();
+  const endSelectedMapping = async () => {
+    const reason = endReason.trim();
     if (reason.length < 2 || reason.length > 300) {
-      setInactiveError("비활성화 사유는 2자 이상 300자 이하로 입력하세요.");
+      setEndError("종료 사유는 2자 이상 300자 이하로 입력하세요.");
       return;
     }
-    if (!selectedMapping) return;
+    if (!selectedMapping || isEnding) return;
 
-    setItems((current) =>
-      current.map((item) =>
-        item.mappingId === selectedMapping.mappingId
-          ? { ...item, mappingStatus: "inactive", inactiveReason: reason, updatedAt: new Date().toISOString() }
-          : item,
-      ),
-    );
-    setToast(`${selectedMapping.mappingId} 매칭이 mock 상태에서 비활성화되었습니다.`);
-    setSelectedMapping(null);
-    setInactiveReason("");
-    setInactiveError("");
+    setIsEnding(true);
+    try {
+      const result = await endAdminMapping({ mappingId: selectedMapping.mappingId, reason });
+      if (!result.ok) {
+        setEndError(result.message ?? "매핑 종료에 실패했습니다.");
+        return;
+      }
+
+      if (result.source === "supabase") {
+        // 실제 DB update 완료 → 목록을 다시 불러 F5 이후와 동일한 상태를 보여준다.
+        setToast("매칭이 종료되었습니다.");
+        setSelectedMapping(null);
+        setEndReason("");
+        setEndError("");
+        await load();
+        return;
+      }
+
+      // 관리자 세션 없음(mock): 실제 저장 없이 화면 상태만 갱신한다.
+      setItems((current) =>
+        current.map((item) =>
+          item.mappingId === selectedMapping.mappingId
+            ? { ...item, mappingStatus: "inactive", inactiveReason: reason, updatedAt: new Date().toISOString() }
+            : item,
+        ),
+      );
+      setToast(`${selectedMapping.mappingId} 매칭이 mock 상태에서 종료 처리되었습니다.`);
+      setSelectedMapping(null);
+      setEndReason("");
+      setEndError("");
+    } finally {
+      setIsEnding(false);
+    }
   };
 
   return (
@@ -356,8 +379,8 @@ export default function AdminMappingsPage() {
                     {canManageMappings && item.mappingStatus === "active" ? (
                       <div className="flex gap-2">
                         <Link href={`/admin/mappings/new?treasureId=${item.treasureId}`} className="text-[#1d4ed8] underline underline-offset-2">교체</Link>
-                        <button type="button" onClick={() => openDeactivateDialog(item)} className="text-[#b91c1c] underline underline-offset-2">
-                          비활성화
+                        <button type="button" onClick={() => openEndDialog(item)} className="text-[#b91c1c] underline underline-offset-2">
+                          종료
                         </button>
                       </div>
                     ) : null}
@@ -410,34 +433,40 @@ export default function AdminMappingsPage() {
 
       <p className="mt-4 text-xs text-[#6b7280]">이 화면에는 쿠폰 번호, 바코드, 외부 API Secret, 사용자 개인정보를 표시하지 않습니다.</p>
 
-      <DialogOverlay open={!!selectedMapping} onClose={() => setSelectedMapping(null)} labelledBy="mapping-deactivate-title">
-            <h2 id="mapping-deactivate-title" className="text-lg font-bold">매칭 비활성화 확인</h2>
+      <DialogOverlay open={!!selectedMapping} onClose={() => setSelectedMapping(null)} labelledBy="mapping-end-title">
+            <h2 id="mapping-end-title" className="text-lg font-bold">이 매핑을 종료하시겠습니까?</h2>
             <p className="mt-2 text-sm leading-6 text-[#6b7280]">
-              해당 매칭을 비활성화하면 보물에 연결된 활성 상품이 없어질 수 있습니다. 계속하시겠습니까?
+              종료된 매핑은 과거 이력으로 남고 다시 활성화할 수 없습니다. 새 상품을 연결하려면 매칭 등록·교체를 사용하세요.
             </p>
             <p className="mt-2 rounded-md bg-[#fef3c7] p-3 text-sm text-[#92400e]">
-              이 매칭을 비활성화하면 해당 보물은 활성 상품이 없어 사용자 앱 지도에 노출되지 않을 수 있습니다.
+              이 매칭을 종료하면 해당 보물은 활성 상품이 없어 사용자 앱 지도에 노출되지 않을 수 있습니다.
             </p>
             <label className="mt-4 block">
-              <span className="text-sm font-medium text-[#374151]">비활성화 사유</span>
+              <span className="text-sm font-medium text-[#374151]">종료 사유</span>
               <textarea
-                value={inactiveReason}
+                value={endReason}
                 onChange={(event) => {
-                  setInactiveReason(event.target.value);
-                  setInactiveError("");
+                  setEndReason(event.target.value);
+                  setEndError("");
                 }}
                 maxLength={300}
                 className="mt-1 min-h-24 w-full rounded-md border border-[#d1d5db] px-3 py-2 text-sm outline-none focus:border-[#111827]"
-                placeholder="비활성화 사유를 입력하세요."
+                placeholder="종료 사유를 입력하세요."
               />
             </label>
-            {inactiveError ? <p className="mt-1 text-xs font-medium text-[#b91c1c]">{inactiveError}</p> : null}
+            {endError ? <p className="mt-1 text-xs font-medium text-[#b91c1c]">{endError}</p> : null}
             <div className="mt-6 flex justify-end gap-2">
               <button type="button" onClick={() => setSelectedMapping(null)} className="rounded-md border border-[#d1d5db] px-4 py-2 text-sm font-medium">
                 취소
               </button>
-              <button type="button" onClick={deactivateMapping} className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white">
-                비활성화
+              <button
+                type="button"
+                onClick={() => void endSelectedMapping()}
+                disabled={isEnding}
+                aria-busy={isEnding}
+                className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-[#9ca3af]"
+              >
+                {isEnding ? "종료 중" : "종료"}
               </button>
             </div>
       </DialogOverlay>
