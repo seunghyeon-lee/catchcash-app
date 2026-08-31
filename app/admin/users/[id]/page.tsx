@@ -403,10 +403,6 @@ export default function AdminUserDetailPage() {
         </aside>
       </div>
 
-      <p className="mt-5 rounded-md bg-[#f9fafb] p-4 text-xs leading-5 text-[#6b7280]">
-        A18 shell은 mock-only 화면입니다. Supabase/Auth/API/fetch 호출과 실제 저장 기능을 포함하지 않습니다.
-      </p>
-
       {statusDialog ? (
         <div role="dialog" aria-modal="true" aria-labelledby="user-status-dialog-title" className="fixed inset-0 z-[60] grid place-items-center bg-black/55 p-6">
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
