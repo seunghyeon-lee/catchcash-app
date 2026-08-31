@@ -62,7 +62,9 @@ function detailToForm(detail: AdminTreasureDetail): TreasureEditForm {
   return {
     title: detail.title,
     description: detail.description,
-    locationText: detail.locationLabel,
+    // DB location_text 원본으로 prefill한다. 과거 데이터(null)는 빈값으로 두어
+    // 좌표 fallback 문자열이 location_text로 저장되는 것을 막는다.
+    locationText: detail.locationText ?? "",
     hintText: detail.hintText,
     latitude: detail.latitude === null ? "" : String(detail.latitude),
     longitude: detail.longitude === null ? "" : String(detail.longitude),
@@ -239,10 +241,11 @@ export default function AdminTreasureEditPage() {
     setSaveError(null);
     setIsSaving(true);
 
-    // 위치 문구는 DB 컬럼이 없어 저장하지 않는다. inactive는 운영 중단(paused)으로 저장.
+    // inactive는 운영 중단(paused)으로 저장.
     const payload: AdminTreasureWritePayload = {
       title: form.title.trim(),
       description: form.description.trim() || null,
+      locationText: form.locationText.trim() || null,
       hintText: form.hintText.trim() || null,
       latitude: Number(form.latitude),
       longitude: Number(form.longitude),

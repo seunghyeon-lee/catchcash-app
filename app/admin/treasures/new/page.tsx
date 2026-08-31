@@ -156,10 +156,11 @@ export default function AdminTreasureCreatePage() {
     setSaveError(null);
     setIsSaving(true);
 
-    // 위치 문구(locationText)는 DB 컬럼이 없어 저장하지 않는다(좌표에서 파생). status는 UI→DB 매핑.
+    // status는 UI→DB 매핑.
     const payload: AdminTreasureWritePayload = {
       title: form.title.trim(),
       description: form.description.trim() || null,
+      locationText: form.locationText.trim() || null,
       hintText: form.hintText.trim() || null,
       latitude: Number(form.latitude),
       longitude: Number(form.longitude),

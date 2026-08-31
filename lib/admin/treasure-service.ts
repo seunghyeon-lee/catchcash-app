@@ -27,6 +27,7 @@ export type TreasureBoxRow = {
   title: string;
   description: string | null;
   hint_text: string | null;
+  location_text: string | null;
   latitude: number | null;
   longitude: number | null;
   radius_m: number;
@@ -50,7 +51,7 @@ const MOCK_MESSAGE = "관리자 인증이 연결되지 않아 예시 보물상�
 const ERROR_MESSAGE = "보물상자 데이터를 불러오지 못해 예시 데이터를 표시합니다.";
 
 const TREASURE_BOX_COLUMNS =
-  "id, title, description, hint_text, latitude, longitude, radius_m, status, starts_at, ends_at, max_claim_count, current_claim_count, created_by, created_at, updated_at, deleted_at";
+  "id, title, description, hint_text, location_text, latitude, longitude, radius_m, status, starts_at, ends_at, max_claim_count, current_claim_count, created_by, created_at, updated_at, deleted_at";
 
 /** treasure_boxes.status(enum 5종) → 관리자 저장 상태(active/inactive/deleted) */
 export function mapTreasureSaveStatus(status: TreasureBoxStatus): AdminTreasureSaveStatus {
@@ -83,6 +84,8 @@ function deriveTreasureCode(id: string) {
 }
 
 function deriveLocationLabel(box: TreasureBoxRow) {
+  const locationText = box.location_text?.trim();
+  if (locationText) return locationText;
   if (box.latitude === null || box.longitude === null) return "좌표 미등록";
   return `${box.latitude}, ${box.longitude}`;
 }
@@ -184,6 +187,7 @@ export async function loadAdminTreasureDetail(id: string): Promise<AdminTreasure
       ...base,
       description: boxRow.description ?? "",
       hintText: boxRow.hint_text ?? "",
+      locationText: boxRow.location_text,
       radiusM: boxRow.radius_m,
       mappedProductName,
       mappedProductId,
@@ -212,6 +216,7 @@ export type AdminTreasureWritePayload = {
   title: string;
   description: string | null;
   hintText: string | null;
+  locationText: string | null;
   latitude: number;
   longitude: number;
   radiusM: number;
@@ -228,6 +233,7 @@ function toTreasureRow(payload: AdminTreasureWritePayload) {
     title: payload.title,
     description: payload.description,
     hint_text: payload.hintText,
+    location_text: payload.locationText,
     latitude: payload.latitude,
     longitude: payload.longitude,
     radius_m: payload.radiusM,
