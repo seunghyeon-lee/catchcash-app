@@ -9,6 +9,7 @@ export type OperationLogEventType =
   | "mapping_created"
   | "mapping_replaced"
   | "mapping_deactivated"
+  | "mapping_ended"
   | "reward_retry_requested"
   | "inquiry_answer_saved"
   | "inquiry_status_changed"
@@ -58,6 +59,7 @@ export const OPERATION_LOG_EVENT_TYPE_LABEL: Record<OperationLogEventType, strin
   mapping_created: "매칭 생성",
   mapping_replaced: "매칭 교체",
   mapping_deactivated: "매칭 비활성화",
+  mapping_ended: "매칭 종료",
   reward_retry_requested: "보상 재처리 요청",
   inquiry_answer_saved: "문의 답변 저장",
   inquiry_status_changed: "문의 상태 변경",
@@ -117,6 +119,7 @@ const EVENT_RESOURCE: Record<OperationLogEventType, OperationLogResourceType> = 
   mapping_created: "mapping",
   mapping_replaced: "mapping",
   mapping_deactivated: "mapping",
+  mapping_ended: "mapping",
   reward_retry_requested: "reward",
   inquiry_answer_saved: "inquiry",
   inquiry_status_changed: "inquiry",

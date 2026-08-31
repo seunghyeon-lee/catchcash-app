@@ -188,3 +188,47 @@ export async function createOrReplaceAdminMapping(payload: AdminMappingWritePayl
     return { source: "supabase", ok: false, message: error instanceof Error ? error.message : "매핑 등록에 실패했습니다." };
   }
 }
+
+export type AdminMappingEndPayload = {
+  mappingId: string;
+  reason: string;
+};
+
+/**
+ * 관리자가 매핑을 직접 종료한다: treasure_rewards.status active → ended.
+ * 교체(replaced)와 달리 새 active 매핑을 만들지 않으며, 보물에 active 0개 상태를 허용한다.
+ */
+export async function endAdminMapping(payload: AdminMappingEndPayload): Promise<AdminWriteResult> {
+  const context = await getAdminContext();
+  if (!context) return { source: "mock", ok: true, message: WRITE_MOCK_MESSAGE };
+
+  try {
+    // status 조건을 update에 포함해 replaced/ended 매핑의 재종료를 DB 수준에서 차단한다.
+    const { data, error } = await context.client
+      .from("treasure_rewards")
+      .update({ status: "ended" })
+      .eq("id", payload.mappingId)
+      .eq("status", "active")
+      .select("id");
+
+    if (error) throw new Error(error.message);
+    if (!data || data.length === 0) {
+      return { source: "supabase", ok: false, message: "active 상태의 매핑만 종료할 수 있습니다." };
+    }
+
+    // 종료 사유는 operation_logs에 남긴다. 로그 기록 실패가 이미 완료된 종료를 되돌리지는 않는다.
+    const { error: logError } = await context.client.from("operation_logs").insert({
+      admin_user_id: context.adminUserId,
+      action: "mapping_ended",
+      target_table: "treasure_rewards",
+      target_id: payload.mappingId,
+      metadata: { reason: payload.reason, summary: `매칭 종료: ${payload.reason}` },
+    });
+    if (logError) console.warn("[admin] 매핑 종료 사유 로그 기록 실패:", logError.message);
+
+    return { source: "supabase", ok: true, id: payload.mappingId };
+  } catch (error) {
+    console.warn("[admin] endAdminMapping 실패:", error);
+    return { source: "supabase", ok: false, message: error instanceof Error ? error.message : "매핑 종료에 실패했습니다." };
+  }
+}
