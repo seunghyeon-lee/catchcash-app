@@ -20,6 +20,9 @@ import {
   type DashboardSectionSummaryCard,
 } from "@/lib/admin/mock-dashboard";
 import { loadAdminDashboardStats, type AdminDashboardStats } from "@/lib/admin/dashboard-service";
+import { buildAdminDashboardRecent, type AdminDashboardRecent } from "@/lib/admin/dashboard-recent";
+import { loadAdminRewardRequests } from "@/lib/admin/reward-service";
+import { loadAdminInquiries } from "@/lib/admin/support-service";
 import type { AdminDataSource } from "@/lib/admin/admin-context";
 
 const adminRole = "super_admin" as const;
@@ -108,11 +111,9 @@ function RecentStatusScrollHelper() {
 function DashboardPageContent() {
   const metricsBase = getDashboardMetricCards();
   const quickLinks = getDashboardQuickLinks(adminRole);
-  const claimRows = getDashboardClaimRows();
-  const failureRows = getDashboardFailureRows();
-  const inquiryRows = getDashboardInquiryRows();
 
   const [stats, setStats] = useState<AdminDashboardStats | null>(null);
+  const [recent, setRecent] = useState<AdminDashboardRecent | null>(null);
   const [source, setSource] = useState<AdminDataSource | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -129,9 +130,23 @@ function DashboardPageContent() {
       setStats(null);
       setSource(null);
       setMessage("대시보드 지표를 불러오지 못했습니다.");
-    } finally {
-      setIsLoading(false);
     }
+
+    // 하단 최근 현황: 보상/문의 실데이터가 모두 조회될 때만 실데이터로 구성하고,
+    // 세션 없음/오류 시에는 기존 mock 표시(상단 배지로 mock임을 안내)로 fallback한다.
+    try {
+      const [rewardsResult, inquiriesResult] = await Promise.all([loadAdminRewardRequests(), loadAdminInquiries()]);
+      if (rewardsResult.source === "supabase" && inquiriesResult.source === "supabase") {
+        setRecent(buildAdminDashboardRecent(rewardsResult.rewards, inquiriesResult.inquiries));
+      } else {
+        setRecent(null);
+      }
+    } catch (error) {
+      console.warn("[admin] 대시보드 최근 현황 로딩 실패:", error);
+      setRecent(null);
+    }
+
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -151,6 +166,14 @@ function DashboardPageContent() {
     return { ...card, value: realValueByKey[card.key] };
   });
 
+  // 최근 현황: 실데이터가 준비되면 그대로 사용하고, 아니면 mock getter로 fallback한다.
+  const claimRows = recent?.claimRows ?? getDashboardClaimRows();
+  const failureRows = recent?.failureRows ?? getDashboardFailureRows();
+  const inquiryRows = recent?.inquiryRows ?? getDashboardInquiryRows();
+  const claimSummaries = recent?.claimSummaries ?? getClaimSectionSummaries();
+  const failureSummaries = recent?.failureSummaries ?? getFailureSectionSummaries();
+  const inquirySummaries = recent?.inquirySummaries ?? getInquirySectionSummaries();
+
   return (
     <>
       <div className="flex items-end justify-between gap-4">
@@ -159,7 +182,13 @@ function DashboardPageContent() {
           <p className="mt-2 text-sm text-[#6b7280]">Asia/Seoul 기준 · 오늘 00:00~현재</p>
         </div>
         <span className="text-xs text-[#6b7280]">
-          {isLoading ? "지표 불러오는 중…" : source === "supabase" ? "Supabase 실시간 지표 · 하단 최근 현황은 mock" : `Mock data · 집계일 ${MOCK_DASHBOARD_TODAY}`}
+          {isLoading
+            ? "지표 불러오는 중…"
+            : source === "supabase"
+              ? recent
+                ? "Supabase 실시간 지표"
+                : "Supabase 실시간 지표 · 최근 현황은 예시 데이터"
+              : `Mock data · 집계일 ${MOCK_DASHBOARD_TODAY}`}
         </span>
       </div>
 
@@ -208,7 +237,7 @@ function DashboardPageContent() {
             title="최근 보물 획득"
             listHref="/admin/reward-requests"
             listLabel="보상 목록"
-            summaries={getClaimSectionSummaries()}
+            summaries={claimSummaries}
             emptyText="최근 보물 획득 내역이 없습니다."
           >
             {claimRows.length === 0 ? null : (
@@ -254,7 +283,7 @@ function DashboardPageContent() {
             title="최근 발급 실패"
             listHref="/admin/reward-requests?status=failed"
             listLabel="실패 목록"
-            summaries={getFailureSectionSummaries()}
+            summaries={failureSummaries}
             emptyText="최근 발급 실패 내역이 없습니다."
           >
             {failureRows.length === 0 ? null : (
@@ -305,7 +334,7 @@ function DashboardPageContent() {
             title="최근 문의"
             listHref="/admin/inquiries"
             listLabel="문의 목록"
-            summaries={getInquirySectionSummaries()}
+            summaries={inquirySummaries}
             emptyText="최근 문의가 없습니다."
           >
             {inquiryRows.length === 0 ? null : (

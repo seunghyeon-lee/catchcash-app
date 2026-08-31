@@ -68,9 +68,9 @@ export type DashboardInquiryRow = {
   href: string;
 };
 
-const SUCCESS_REWARD_STATUSES = new Set<AdminRewardStatus>(["ready", "issued", "used"]);
+export const SUCCESS_REWARD_STATUSES = new Set<AdminRewardStatus>(["ready", "issued", "used"]);
 
-const REWARD_STATUS_DISPLAY: Record<AdminRewardStatus, string> = {
+export const REWARD_STATUS_DISPLAY: Record<AdminRewardStatus, string> = {
   ready: "발급 전",
   issued: "발급 완료",
   failed: "발급 실패",
