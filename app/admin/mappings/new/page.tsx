@@ -332,8 +332,11 @@ export default function AdminMappingCreateReplacePage() {
           <dl className="mt-4 rounded-md bg-[#f9fafb] p-4">
             <SummaryRow label="대상 보물" value={`${selectedTreasure.title} (${selectedTreasure.treasureId})`} />
             <SummaryRow label="신규 연결 상품" value={`${selectedProduct.brandName} · ${selectedProduct.name}`} />
-            <SummaryRow label="기존 매칭 처리" value={`${activeMapping.mappingId} → 비활성 전환`} />
+            <SummaryRow label="기존 매칭 처리" value={`${activeMapping.mappingId} → 교체됨(replaced) 전환`} />
           </dl>
+          <p className="mt-4 rounded-md bg-[#eff6ff] p-3 text-sm leading-6 text-[#1d4ed8]">
+            상품을 교체하면 현재 매핑은 &lsquo;교체됨&rsquo; 이력으로 남고, 선택한 상품이 새로운 활성 매핑으로 등록됩니다.
+          </p>
           <p className="mt-4 text-sm leading-6 text-[#6b7280]">위 내용으로 매칭을 교체하시겠습니까? 이 작업은 되돌릴 수 없습니다.</p>
           <label className="mt-4 block">
             <span className="text-sm font-medium text-[#374151]">처리 사유 (필수)</span>

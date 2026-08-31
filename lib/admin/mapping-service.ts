@@ -2,7 +2,6 @@ import { getAdminContext, type AdminDataSource, type AdminWriteResult } from "./
 import {
   MOCK_ADMIN_MAPPINGS,
   type AdminMappingListItem,
-  type AdminMappingProductStatus,
   type AdminTreasureCalculatedStatus,
   type AdminTreasureStatus,
 } from "./mock-mappings";
@@ -72,10 +71,6 @@ function toMappingTreasureCalculatedStatus(box: MappingBoxRelation, hasActiveMap
   return status === "hidden" ? "invalid" : status;
 }
 
-function mapProductStatus(status: MappingProductRelation["status"]): AdminMappingProductStatus {
-  return status === "active" ? "active" : "inactive";
-}
-
 export async function loadAdminMappings(): Promise<AdminMappingListResult> {
   const context = await getAdminContext();
   if (!context) {
@@ -113,11 +108,13 @@ export async function loadAdminMappings(): Promise<AdminMappingListResult> {
         productId: row.gift_product_id ?? "-",
         productName: product?.product_name ?? "-",
         productBrand: product?.brand_name ?? "-",
-        productStatus: product ? mapProductStatus(product.status) : "inactive",
-        mappingStatus: isActive ? "active" : "inactive",
+        // gift_products.status(active/inactive/sold_out)와 treasure_rewards.status(active/replaced/ended)를 그대로 노출한다.
+        productStatus: product ? product.status : "inactive",
+        mappingStatus: row.status,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
-        inactiveReason: null,
+        // 종료 사유는 operation_logs에 기록되며 목록 조회에는 포함하지 않는다.
+        endedReason: null,
       };
     });
 

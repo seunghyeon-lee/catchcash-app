@@ -1,7 +1,8 @@
 export type AdminTreasureStatus = "active" | "inactive" | "deleted";
 export type AdminTreasureCalculatedStatus = "visible" | "scheduled" | "expired" | "sold_out" | "invalid";
-export type AdminMappingStatus = "active" | "inactive";
-export type AdminMappingProductStatus = "active" | "inactive";
+// DB treasure_rewards.status enum(active/replaced/ended)을 그대로 노출한다. inactive로 뭉뚱그리지 않는다.
+export type AdminMappingStatus = "active" | "replaced" | "ended";
+export type AdminMappingProductStatus = "active" | "inactive" | "sold_out";
 export type AdminMappingTreasureOptionStatus = "active" | "inactive" | "sold_out" | "expired" | "invalid";
 
 export type AdminMappingListItem = {
@@ -17,7 +18,7 @@ export type AdminMappingListItem = {
   mappingStatus: AdminMappingStatus;
   createdAt: string;
   updatedAt: string;
-  inactiveReason?: string | null;
+  endedReason?: string | null;
 };
 
 export type AdminMappingTreasureOption = {
@@ -31,9 +32,9 @@ export type AdminMappingTreasureOption = {
 };
 
 export const ADMIN_TREASURE_STATUS_LABEL: Record<AdminTreasureStatus, string> = {
-  active: "active",
-  inactive: "inactive",
-  deleted: "deleted",
+  active: "활성",
+  inactive: "비활성",
+  deleted: "삭제됨",
 };
 
 export const ADMIN_TREASURE_CALCULATED_STATUS_LABEL: Record<AdminTreasureCalculatedStatus, string> = {
@@ -45,8 +46,15 @@ export const ADMIN_TREASURE_CALCULATED_STATUS_LABEL: Record<AdminTreasureCalcula
 };
 
 export const ADMIN_MAPPING_STATUS_LABEL: Record<AdminMappingStatus, string> = {
-  active: "active",
-  inactive: "inactive",
+  active: "활성",
+  replaced: "교체됨",
+  ended: "종료됨",
+};
+
+export const ADMIN_MAPPING_PRODUCT_STATUS_LABEL: Record<AdminMappingProductStatus, string> = {
+  active: "활성",
+  inactive: "비활성",
+  sold_out: "품절",
 };
 
 export const MOCK_ADMIN_MAPPINGS: AdminMappingListItem[] = [
@@ -63,7 +71,7 @@ export const MOCK_ADMIN_MAPPINGS: AdminMappingListItem[] = [
     mappingStatus: "active",
     createdAt: "2026-07-26T09:00:00+09:00",
     updatedAt: "2026-07-26T09:00:00+09:00",
-    inactiveReason: null,
+    endedReason: null,
   },
   {
     mappingId: "M-1043",
@@ -75,10 +83,10 @@ export const MOCK_ADMIN_MAPPINGS: AdminMappingListItem[] = [
     productName: "GS25 모바일금액권 3천원",
     productBrand: "GS25",
     productStatus: "active",
-    mappingStatus: "inactive",
+    mappingStatus: "replaced",
     createdAt: "2026-07-20T10:10:00+09:00",
     updatedAt: "2026-07-25T18:30:00+09:00",
-    inactiveReason: "운영 상품 교체",
+    endedReason: null,
   },
   {
     mappingId: "M-1050",
@@ -93,7 +101,7 @@ export const MOCK_ADMIN_MAPPINGS: AdminMappingListItem[] = [
     mappingStatus: "active",
     createdAt: "2026-07-27T11:30:00+09:00",
     updatedAt: "2026-07-27T11:30:00+09:00",
-    inactiveReason: null,
+    endedReason: null,
   },
   {
     mappingId: "M-1061",
@@ -108,7 +116,7 @@ export const MOCK_ADMIN_MAPPINGS: AdminMappingListItem[] = [
     mappingStatus: "active",
     createdAt: "2026-07-24T10:10:00+09:00",
     updatedAt: "2026-07-28T20:00:00+09:00",
-    inactiveReason: null,
+    endedReason: null,
   },
   {
     mappingId: "M-1075",
@@ -120,10 +128,10 @@ export const MOCK_ADMIN_MAPPINGS: AdminMappingListItem[] = [
     productName: "싱글레귤러 아이스크림",
     productBrand: "배스킨라빈스",
     productStatus: "active",
-    mappingStatus: "inactive",
+    mappingStatus: "ended",
     createdAt: "2026-07-25T16:45:00+09:00",
     updatedAt: "2026-07-29T09:10:00+09:00",
-    inactiveReason: "보물 운영 중지",
+    endedReason: "보물 운영 중지",
   },
   {
     mappingId: "M-1088",
@@ -138,7 +146,7 @@ export const MOCK_ADMIN_MAPPINGS: AdminMappingListItem[] = [
     mappingStatus: "active",
     createdAt: "2026-07-22T08:00:00+09:00",
     updatedAt: "2026-07-30T08:00:00+09:00",
-    inactiveReason: null,
+    endedReason: null,
   },
   {
     mappingId: "M-1094",
@@ -150,10 +158,10 @@ export const MOCK_ADMIN_MAPPINGS: AdminMappingListItem[] = [
     productName: "교촌 허니콤보 웨지감자 세트",
     productBrand: "교촌치킨",
     productStatus: "inactive",
-    mappingStatus: "inactive",
+    mappingStatus: "ended",
     createdAt: "2026-07-13T18:20:00+09:00",
     updatedAt: "2026-07-24T17:35:00+09:00",
-    inactiveReason: "상품 inactive 전환",
+    endedReason: "상품 비활성 전환",
   },
   {
     mappingId: "M-1101",
@@ -165,10 +173,10 @@ export const MOCK_ADMIN_MAPPINGS: AdminMappingListItem[] = [
     productName: "메가박스 오리지널 팝콘 R",
     productBrand: "메가박스",
     productStatus: "inactive",
-    mappingStatus: "inactive",
+    mappingStatus: "ended",
     createdAt: "2026-07-17T11:50:00+09:00",
     updatedAt: "2026-07-26T15:30:00+09:00",
-    inactiveReason: "테스트 보물 삭제",
+    endedReason: "테스트 보물 삭제",
   },
 ];
 
