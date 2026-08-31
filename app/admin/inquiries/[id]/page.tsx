@@ -45,7 +45,6 @@ export default function AdminInquiryDetailPage() {
   const [source, setSource] = useState<AdminInquiryDataSource | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [answer, setAnswer] = useState("");
-  const [internalMemo, setInternalMemo] = useState("사용자 앱에는 노출되지 않는 내부 운영 메모입니다.");
   const [statusDraft, setStatusDraft] = useState<AdminInquiryStatus>("reading");
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [statusReason, setStatusReason] = useState("");
@@ -290,23 +289,27 @@ export default function AdminInquiryDetailPage() {
             </div>
           </section>
 
+          {/* 내부 메모 저장용 DB 구조(컬럼/테이블)가 아직 없어 기능 미지원으로 안내한다.
+              mock/localStorage로 저장되는 것처럼 보이게 하지 않는다. 지원 시점에 별도 migration과 함께 연결한다. */}
           <section className="rounded-lg border border-[#e5e7eb] bg-white p-6">
             <h2 className="font-semibold">내부 메모</h2>
             <p className="mt-1 text-sm text-[#6b7280]">viewer에게는 표시되지 않는 내부 운영 메모입니다. 사용자 앱에는 노출되지 않습니다.</p>
             <textarea
-              value={internalMemo}
-              onChange={(event) => setInternalMemo(event.target.value)}
-              maxLength={1000}
-              readOnly={!canWrite}
-              className="mt-4 min-h-28 w-full rounded-md border border-[#d1d5db] p-3 text-sm outline-none focus:border-[#111827] read-only:bg-[#f9fafb]"
+              value=""
+              readOnly
+              disabled
+              placeholder="현재 내부 메모 저장 기능은 지원하지 않습니다."
+              className="mt-4 min-h-28 w-full rounded-md border border-[#d1d5db] bg-[#f9fafb] p-3 text-sm outline-none disabled:cursor-not-allowed"
             />
             <div className="mt-3 flex items-center justify-between">
-              <span className="text-xs text-[#6b7280]">{internalMemo.length} / 1000</span>
-              {canWrite ? (
-                <button type="button" onClick={() => setMessage("내부 메모를 mock 저장했습니다. 실제 DB에는 저장하지 않았습니다.")} className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium">
-                  메모 저장
-                </button>
-              ) : null}
+              <span className="text-xs text-[#6b7280]">현재 내부 메모 저장 기능은 지원하지 않습니다. 추후 지원 예정입니다.</span>
+              <button
+                type="button"
+                disabled
+                className="cursor-not-allowed rounded-md border border-[#e5e7eb] bg-[#f3f4f6] px-4 py-2 text-sm font-medium text-[#9ca3af]"
+              >
+                메모 저장
+              </button>
             </div>
           </section>
 
