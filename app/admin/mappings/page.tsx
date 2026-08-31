@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { DialogOverlay } from "@/components/admin/dialog-overlay";
 import {
+  ADMIN_MAPPING_PRODUCT_STATUS_LABEL,
   ADMIN_MAPPING_STATUS_LABEL,
   ADMIN_TREASURE_CALCULATED_STATUS_LABEL,
   ADMIN_TREASURE_STATUS_LABEL,
@@ -20,7 +21,13 @@ import { endAdminMapping, loadAdminMappings } from "@/lib/admin/mapping-service"
 import type { AdminDataSource } from "@/lib/admin/admin-context";
 
 type StatusFilter<T extends string> = "all" | T;
-type MappingSortKey = "created_at_desc" | "updated_at_desc" | "treasure_title_asc" | "product_name_asc" | "active_first";
+type MappingSortKey =
+  | "updated_at_desc"
+  | "created_at_desc"
+  | "created_at_asc"
+  | "treasure_title_asc"
+  | "product_name_asc"
+  | "active_first";
 
 const adminRole = "super_admin";
 const defaultFilters = {
@@ -30,21 +37,22 @@ const defaultFilters = {
   productStatus: "all" as StatusFilter<AdminMappingProductStatus>,
   createdFrom: "",
   createdTo: "",
-  sort: "created_at_desc" as MappingSortKey,
+  sort: "updated_at_desc" as MappingSortKey,
   pageSize: 20,
 };
 
 const sortOptions: Array<{ label: string; value: MappingSortKey }> = [
-  { label: "최근 등록순", value: "created_at_desc" },
   { label: "최근 변경순", value: "updated_at_desc" },
-  { label: "보물명순", value: "treasure_title_asc" },
-  { label: "상품명순", value: "product_name_asc" },
-  { label: "active 우선", value: "active_first" },
+  { label: "최근 등록순", value: "created_at_desc" },
+  { label: "오래된 등록순", value: "created_at_asc" },
+  { label: "보물명 가나다순", value: "treasure_title_asc" },
+  { label: "상품명 가나다순", value: "product_name_asc" },
+  { label: "활성 상태 우선", value: "active_first" },
 ];
 
 function getTone(status: string) {
   if (status === "active" || status === "visible") return "bg-[#dcfce7] text-[#166534]";
-  if (status === "scheduled") return "bg-[#dbeafe] text-[#1d4ed8]";
+  if (status === "scheduled" || status === "replaced") return "bg-[#dbeafe] text-[#1d4ed8]";
   if (status === "sold_out" || status === "expired") return "bg-[#fef3c7] text-[#92400e]";
   if (status === "deleted" || status === "invalid") return "bg-[#fee2e2] text-[#991b1b]";
   return "bg-[#f3f4f6] text-[#4b5563]";
@@ -119,9 +127,14 @@ export default function AdminMappingsPage() {
       })
       .sort((a, b) => {
         if (sort === "updated_at_desc") return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+        if (sort === "created_at_asc") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         if (sort === "treasure_title_asc") return a.treasureTitle.localeCompare(b.treasureTitle, "ko");
         if (sort === "product_name_asc") return a.productName.localeCompare(b.productName, "ko");
-        if (sort === "active_first") return Number(b.mappingStatus === "active") - Number(a.mappingStatus === "active");
+        if (sort === "active_first") {
+          const activeDiff = Number(b.mappingStatus === "active") - Number(a.mappingStatus === "active");
+          if (activeDiff !== 0) return activeDiff;
+          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+        }
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
   }, [createdFrom, createdTo, items, keyword, mappingStatus, productStatus, sort, treasureStatus]);
@@ -177,7 +190,7 @@ export default function AdminMappingsPage() {
       setItems((current) =>
         current.map((item) =>
           item.mappingId === selectedMapping.mappingId
-            ? { ...item, mappingStatus: "inactive", inactiveReason: reason, updatedAt: new Date().toISOString() }
+            ? { ...item, mappingStatus: "ended", endedReason: reason, updatedAt: new Date().toISOString() }
             : item,
         ),
       );
@@ -217,7 +230,7 @@ export default function AdminMappingsPage() {
             className="h-10 rounded-md border border-[#d1d5db] px-3 text-sm outline-none focus:border-[#111827]"
           />
           <select
-            aria-label="매칭 상태"
+            aria-label="매핑 상태"
             value={mappingStatus}
             onChange={(event) => {
               setMappingStatus(event.target.value as StatusFilter<AdminMappingStatus>);
@@ -225,9 +238,10 @@ export default function AdminMappingsPage() {
             }}
             className="h-10 rounded-md border border-[#d1d5db] bg-white px-3 text-sm"
           >
-            <option value="all">매칭 전체</option>
-            <option value="active">active</option>
-            <option value="inactive">inactive</option>
+            <option value="all">매핑 상태 전체</option>
+            <option value="active">활성</option>
+            <option value="replaced">교체됨</option>
+            <option value="ended">종료됨</option>
           </select>
           <select
             aria-label="보물 상태"
@@ -238,10 +252,10 @@ export default function AdminMappingsPage() {
             }}
             className="h-10 rounded-md border border-[#d1d5db] bg-white px-3 text-sm"
           >
-            <option value="all">보물 전체</option>
-            <option value="active">active</option>
-            <option value="inactive">inactive</option>
-            <option value="deleted">deleted</option>
+            <option value="all">보물 상태 전체</option>
+            <option value="active">활성</option>
+            <option value="inactive">비활성</option>
+            <option value="deleted">삭제됨</option>
           </select>
           <select
             aria-label="상품 상태"
@@ -252,9 +266,10 @@ export default function AdminMappingsPage() {
             }}
             className="h-10 rounded-md border border-[#d1d5db] bg-white px-3 text-sm"
           >
-            <option value="all">상품 전체</option>
-            <option value="active">active</option>
-            <option value="inactive">inactive</option>
+            <option value="all">상품 상태 전체</option>
+            <option value="active">활성</option>
+            <option value="inactive">비활성</option>
+            <option value="sold_out">품절</option>
           </select>
           <input
             aria-label="등록 시작일"
@@ -330,19 +345,18 @@ export default function AdminMappingsPage() {
 
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
         <span>총 {filteredItems.length}건{source === "mock" ? " · mock data" : ""}</span>
-        <span>보물당 active 매칭은 최대 1개만 허용됩니다.</span>
+        <span>보물당 활성 매핑은 최대 1개만 허용됩니다.</span>
       </div>
 
       <section className="mt-4 overflow-hidden rounded-lg border border-[#e5e7eb] bg-white">
         <table className="w-full text-left text-sm">
           <thead className="bg-[#f9fafb] text-xs text-[#6b7280]">
             <tr>
-              <th className="px-5 py-3 font-medium">매칭 ID</th>
               <th className="px-5 py-3 font-medium">보물명</th>
-              <th className="px-5 py-3 font-medium">보물 상태</th>
               <th className="px-5 py-3 font-medium">상품명</th>
+              <th className="px-5 py-3 font-medium">매핑 상태</th>
+              <th className="px-5 py-3 font-medium">보물 상태</th>
               <th className="px-5 py-3 font-medium">상품 상태</th>
-              <th className="px-5 py-3 font-medium">매칭 상태</th>
               <th className="px-5 py-3 font-medium">등록일</th>
               <th className="px-5 py-3 font-medium">변경일</th>
               <th className="px-5 py-3 font-medium">액션</th>
@@ -351,10 +365,19 @@ export default function AdminMappingsPage() {
           <tbody>
             {pageItems.map((item) => (
               <tr key={item.mappingId} className="border-t border-[#f3f4f6] hover:bg-[#f9fafb]">
-                <td className="px-5 py-4 font-mono text-xs">{item.mappingId}</td>
                 <td className="px-5 py-4">
                   <Link href={`/admin/treasures/${item.treasureId}`} prefetch={false} className="font-medium text-[#111827] underline underline-offset-2">{item.treasureTitle}</Link>
                   <p className="mt-1 font-mono text-xs text-[#6b7280]">{item.treasureId}</p>
+                </td>
+                <td className="px-5 py-4">
+                  <Link href={`/admin/products/${item.productId}`} className="font-medium text-[#111827] underline underline-offset-2">{item.productName}</Link>
+                  <p className="mt-1 text-xs text-[#6b7280]">{item.productBrand} · {item.productId}</p>
+                </td>
+                <td className="px-5 py-4">
+                  <StatusBadge label={ADMIN_MAPPING_STATUS_LABEL[item.mappingStatus]} status={item.mappingStatus} />
+                  <p className="mt-1 font-mono text-xs text-[#9ca3af]" title={item.mappingId}>
+                    {item.mappingId.slice(0, 8)}
+                  </p>
                 </td>
                 <td className="px-5 py-4">
                   <div className="flex flex-col gap-1">
@@ -362,19 +385,14 @@ export default function AdminMappingsPage() {
                     <StatusBadge label={ADMIN_TREASURE_CALCULATED_STATUS_LABEL[item.treasureCalculatedStatus]} status={item.treasureCalculatedStatus} />
                   </div>
                 </td>
-                <td className="px-5 py-4">
-                  <Link href={`/admin/products/${item.productId}`} className="font-medium text-[#111827] underline underline-offset-2">{item.productName}</Link>
-                  <p className="mt-1 text-xs text-[#6b7280]">{item.productBrand} · {item.productId}</p>
-                </td>
-                <td className="px-5 py-4"><StatusBadge label={item.productStatus} status={item.productStatus} /></td>
-                <td className="px-5 py-4"><StatusBadge label={ADMIN_MAPPING_STATUS_LABEL[item.mappingStatus]} status={item.mappingStatus} /></td>
+                <td className="px-5 py-4"><StatusBadge label={ADMIN_MAPPING_PRODUCT_STATUS_LABEL[item.productStatus]} status={item.productStatus} /></td>
                 <td className="px-5 py-4 text-[#6b7280]">{formatAdminMappingDateTime(item.createdAt)}</td>
                 <td className="px-5 py-4 text-[#6b7280]">{formatAdminMappingDateTime(item.updatedAt)}</td>
                 <td className="px-5 py-4">
                   <div className="flex flex-col items-start gap-1">
                     <div className="flex gap-2">
-                      <Link href={`/admin/treasures/${item.treasureId}`} prefetch={false} className="font-medium underline underline-offset-2">보물</Link>
-                      <Link href={`/admin/products/${item.productId}`} className="font-medium underline underline-offset-2">상품</Link>
+                      <Link href={`/admin/treasures/${item.treasureId}`} prefetch={false} className="font-medium underline underline-offset-2">보물 보기</Link>
+                      <Link href={`/admin/products/${item.productId}`} className="font-medium underline underline-offset-2">상품 보기</Link>
                     </div>
                     {canManageMappings && item.mappingStatus === "active" ? (
                       <div className="flex gap-2">
@@ -383,6 +401,11 @@ export default function AdminMappingsPage() {
                           종료
                         </button>
                       </div>
+                    ) : null}
+                    {item.mappingStatus !== "active" ? (
+                      <span className="text-xs text-[#9ca3af]">
+                        {item.mappingStatus === "replaced" ? "교체된 과거 이력 · 수정 불가" : "종료된 과거 이력 · 수정 불가"}
+                      </span>
                     ) : null}
                   </div>
                 </td>
