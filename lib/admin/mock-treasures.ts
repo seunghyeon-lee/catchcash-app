@@ -260,6 +260,8 @@ export type AdminTreasureHistoryItem = {
 export type AdminTreasureDetail = AdminTreasureListItem & {
   description: string;
   hintText: string;
+  /** DB location_text 원본. 과거 데이터는 null이며 표시용 locationLabel은 좌표 fallback을 사용한다. */
+  locationText: string | null;
   radiusM: number;
   mappedProductName: string | null;
   mappedProductId: string | null;
@@ -298,7 +300,8 @@ const TREASURE_DETAIL_EXTRA: Record<
   Pick<
     AdminTreasureDetail,
     "description" | "hintText" | "radiusM" | "mappedProductName" | "mappedProductId" | "mappingStatus" | "createdBy" | "updatedBy" | "history"
-  >
+  > &
+    Partial<Pick<AdminTreasureDetail, "locationText">>
 > = {
   "treasure-jongno-factory-01": {
     description: "광화문 광장 인근 시즌 이벤트 보물상자입니다.",
@@ -379,7 +382,7 @@ export function findAdminTreasureDetail(id: string): AdminTreasureDetail | undef
   if (!treasure) return undefined;
 
   const extra = TREASURE_DETAIL_EXTRA[id] ?? buildDefaultDetailExtra(treasure);
-  return { ...treasure, ...extra };
+  return { locationText: treasure.locationLabel, ...treasure, ...extra };
 }
 
 export function getAdminTreasureVisibleChecks(detail: AdminTreasureDetail) {
