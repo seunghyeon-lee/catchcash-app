@@ -203,7 +203,7 @@ export default function AdminMappingCreateReplacePage() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold">매칭 등록·교체</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">보물상자 하나에 하나의 active 상품만 연결합니다. 관리자 세션이 있으면 Supabase treasure_rewards에 저장(교체 시 기존 active→replaced)하고, 없으면 안내만 합니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">보물상자 하나에는 활성 상품 하나만 연결할 수 있습니다. 교체 시 기존 매핑은 &lsquo;교체됨&rsquo; 이력으로 남습니다.</p>
         </div>
         <Link href="/admin/mappings" className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">
           매칭 목록으로
@@ -390,14 +390,13 @@ function ActiveMappingSummary({ mapping }: { mapping: AdminMappingListItem }) {
   return (
     <div>
       <p className="rounded-md bg-[#fef3c7] p-4 text-sm leading-6 text-[#92400e]">
-        현재 이 보물에는 활성 매칭이 1건 존재합니다. 저장 시 기존 매칭은 비활성으로 전환되고, 선택한 상품으로 신규 활성 매칭이 생성됩니다.
+        현재 이 보물에는 활성 매칭이 1건 존재합니다. 저장 시 기존 매칭은 &lsquo;교체됨&rsquo; 이력으로 전환되고, 선택한 상품으로 신규 활성 매칭이 생성됩니다.
       </p>
       <dl className="mt-4 rounded-md bg-[#f9fafb] p-4">
         <SummaryRow label="기존 매칭 ID" value={mapping.mappingId} />
         <SummaryRow label="기존 연결 상품" value={`${mapping.productBrand} · ${mapping.productName}`} />
         <SummaryRow label="기존 매칭 등록일" value={formatAdminMappingDateTime(mapping.createdAt)} />
       </dl>
-      <p className="mt-3 text-xs text-[#6b7280]">이 작업은 실제 구현 시 단일 트랜잭션으로 처리되어야 합니다. 현재 화면은 mock shell입니다.</p>
     </div>
   );
 }

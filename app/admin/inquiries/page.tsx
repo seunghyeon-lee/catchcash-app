@@ -314,7 +314,7 @@ export default function AdminInquiriesPage() {
       ) : null}
 
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
-        <span>{startItemNumber}-{endItemNumber} / {items.length}건 {source === "mock" ? "· mock data" : ""}</span>
+        <span>{startItemNumber}-{endItemNumber} / {items.length}건 {source === "mock" ? "· 예시 데이터" : ""}</span>
         <span>사용자 이메일, 전화번호, 쿠폰 번호, 바코드, token은 표시하지 않습니다.</span>
       </div>
 
@@ -426,7 +426,7 @@ export default function AdminInquiriesPage() {
       <DialogOverlay open={isCsvDialogOpen} onClose={() => setIsCsvDialogOpen(false)} labelledBy="inquiry-csv-dialog-title">
         <h2 id="inquiry-csv-dialog-title" className="text-lg font-bold">CSV 내보내기</h2>
         <p className="mt-2 text-sm leading-6 text-[#6b7280]">
-          현재 필터 조건 기준으로 문의 목록 CSV를 내보내는 shell입니다. 사용자 이메일, 전화번호, 쿠폰 번호, 바코드, API Secret, token은 포함하지 않습니다.
+          CSV 내보내기 기능은 준비 중입니다. 사용자 이메일, 전화번호, 쿠폰 번호, 바코드, API Secret, token은 포함하지 않습니다.
         </p>
         <div className="mt-6 flex justify-end gap-2">
           <button type="button" onClick={() => setIsCsvDialogOpen(false)} className="rounded-md border border-[#d1d5db] px-4 py-2 text-sm font-medium">취소</button>

@@ -176,7 +176,7 @@ function SecurityLogsPageContent() {
         <div>
           <h1 className="text-2xl font-bold">보안 로그</h1>
           <p className="mt-2 text-sm text-[#6b7280]">
-            super_admin 전용 보안 이벤트 목록입니다. {source === "supabase" ? "Supabase 실데이터" : "mock data"} 조회이며 제재·상태 변경은 포함하지 않습니다.
+            super_admin 전용 보안 이벤트 목록입니다. 조회 전용이며 제재·상태 변경은 포함하지 않습니다.
           </p>
         </div>
       </div>
@@ -307,7 +307,7 @@ function SecurityLogsPageContent() {
       </section>
 
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
-        <span>총 {filteredLogs.length}건{source === "mock" ? " · mock data" : ""}</span>
+        <span>총 {filteredLogs.length}건{source === "mock" ? " · 예시 데이터" : ""}</span>
         <span>목록에는 IP/UA/좌표/payload를 표시하지 않습니다.</span>
       </div>
 

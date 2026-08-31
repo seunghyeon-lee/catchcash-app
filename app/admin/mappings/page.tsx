@@ -194,7 +194,7 @@ export default function AdminMappingsPage() {
             : item,
         ),
       );
-      setToast(`${selectedMapping.mappingId} 매칭이 mock 상태에서 종료 처리되었습니다.`);
+      setToast("관리자 인증 전이라 예시 데이터에서만 종료 처리했습니다. 실제 DB에는 저장되지 않았습니다.");
       setSelectedMapping(null);
       setEndReason("");
       setEndError("");
@@ -208,7 +208,7 @@ export default function AdminMappingsPage() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold">매칭 목록</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">보물상자와 상품의 연결 상태를 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준으로 확인합니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">보물상자와 상품의 연결 상태를 확인합니다.</p>
         </div>
         {canManageMappings ? (
           <Link href="/admin/mappings/new" className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white hover:bg-black">
@@ -344,7 +344,7 @@ export default function AdminMappingsPage() {
       ) : null}
 
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
-        <span>총 {filteredItems.length}건{source === "mock" ? " · mock data" : ""}</span>
+        <span>총 {filteredItems.length}건{source === "mock" ? " · 예시 데이터" : ""}</span>
         <span>보물당 활성 매핑은 최대 1개만 허용됩니다.</span>
       </div>
 

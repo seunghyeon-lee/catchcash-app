@@ -287,7 +287,7 @@ export default function AdminTreasureEditPage() {
           <div>
             <h1 className="text-2xl font-bold">보물상자 수정</h1>
             <p className="mt-2 text-sm text-[#6b7280]">
-              {detail.title} · 세션이 있으면 Supabase treasure_boxes를 update하고, 없으면 안내만 합니다. Naver Map API는 연결하지 않습니다.
+              {detail.title} · 보물상자 정보를 수정합니다. 지도에서 위치를 선택하는 기능은 준비 중입니다.
             </p>
           </div>
           <Link href={detailHref} className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">
@@ -363,7 +363,7 @@ export default function AdminTreasureEditPage() {
               </div>
             </FormSection>
 
-            <FormSection title="위치 정보" description="지도는 placeholder이며 Naver Map API는 연결하지 않습니다.">
+            <FormSection title="위치 정보" description="좌표와 반경을 수정합니다. 지도 미리보기는 준비 중입니다.">
               <div className="grid grid-cols-3 gap-4">
                 <label className="block">
                   <span className="text-sm font-medium text-[#374151]">위도</span>
@@ -415,7 +415,7 @@ export default function AdminTreasureEditPage() {
                   </button>
                 </div>
                 <div className="mt-4 grid h-40 place-items-center rounded-md border border-[#e5e7eb] bg-white text-sm text-[#9ca3af]">
-                  지도 placeholder · mock UI
+                  지도 미리보기 준비 중
                 </div>
               </div>
             </FormSection>
@@ -460,7 +460,7 @@ export default function AdminTreasureEditPage() {
           </div>
 
           <div className="space-y-4">
-            <FormSection title="active 전환 조건 검사" description="active 저장 전에 충족해야 하는 mock 조건입니다.">
+            <FormSection title="active 전환 조건 검사" description="active로 저장하기 전에 충족해야 하는 조건입니다.">
               <ul className="space-y-2">
                 {activeChecks.map((item) => (
                   <li key={item.label} className="flex items-center justify-between gap-3 text-sm">
@@ -507,7 +507,6 @@ export default function AdminTreasureEditPage() {
           </button>
         </div>
 
-        {isDirty ? <p className="mt-3 text-right text-xs text-[#6b7280]">입력값은 mock 상태로만 처리되며 실제 DB에 저장되지 않습니다.</p> : null}
       </form>
 
       {isFailureDialogOpen ? (

@@ -143,7 +143,7 @@ export default function AdminUserDetailPage() {
     }
 
     setMemoError("");
-    setToast("내부 관리자 메모를 mock 저장했습니다. 실제 DB에는 저장되지 않습니다.");
+    setToast("내부 메모 저장 기능은 준비 중입니다. 입력한 내용은 실제로 저장되지 않았습니다.");
   };
 
   const openStatusDialog = (type: "suspend" | "unsuspend") => {
@@ -165,7 +165,7 @@ export default function AdminUserDetailPage() {
       return;
     }
 
-    setToast(statusDialog === "suspend" ? "유저 정지 shell 확인만 완료했습니다. 실제 상태는 변경하지 않았습니다." : "정지 해제 shell 확인만 완료했습니다. 실제 상태는 변경하지 않았습니다.");
+    setToast(statusDialog === "suspend" ? "유저 정지 기능은 준비 중입니다. 실제 상태는 변경되지 않았습니다." : "정지 해제 기능은 준비 중입니다. 실제 상태는 변경되지 않았습니다.");
     closeStatusDialog();
   };
 
@@ -199,7 +199,7 @@ export default function AdminUserDetailPage() {
         <div>
           <h1 className="text-2xl font-bold">유저 상세</h1>
           <p className="mt-2 text-sm text-[#6b7280]">
-            특정 유저의 운영 정보와 활동 요약을 확인합니다. 기본 정보·카운트·보상/문의 요약은 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준이며, 활동·보안 요약은 예시(mock)로 표시됩니다.
+            특정 유저의 운영 정보와 활동 요약을 확인합니다. 활동·보안 요약은 예시 데이터로 표시됩니다.
           </p>
         </div>
         <div className="flex gap-2">
@@ -298,7 +298,7 @@ export default function AdminUserDetailPage() {
             </DetailCard>
           ) : null}
 
-          <DetailCard title="최근 활동 mock 리스트">
+          <DetailCard title="최근 활동 (예시 데이터)">
             {activities.length ? (
               <ul className="divide-y divide-[#f3f4f6]">
                 {activities.map((activity) => (
@@ -312,7 +312,7 @@ export default function AdminUserDetailPage() {
                 ))}
               </ul>
             ) : (
-              <p className="rounded-md bg-[#f9fafb] p-4 text-sm text-[#6b7280]">최근 활동 mock 데이터가 없습니다.</p>
+              <p className="rounded-md bg-[#f9fafb] p-4 text-sm text-[#6b7280]">표시할 최근 활동 예시가 없습니다.</p>
             )}
           </DetailCard>
 
@@ -394,7 +394,7 @@ export default function AdminUserDetailPage() {
 
           <DetailCard title="상태 관련 안내 영역">
             <p className="text-sm leading-6 text-[#6b7280]">
-              이 화면의 정지/해제 버튼은 shell 확인만 제공합니다. 실제 유저 정지, 차단, 해제, 저장, Auth 연동은 수행하지 않습니다.
+              유저 정지/해제 기능은 준비 중입니다. 실제 유저 정지, 차단, 해제, 저장, Auth 연동은 수행하지 않습니다.
             </p>
             <p className="mt-3 rounded-md bg-[#fef3c7] p-3 text-xs leading-5 text-[#92400e]">
               사용자 이메일, 전화번호, 소셜 provider 원문 식별자, 쿠폰 번호, 바코드, API Secret, token은 표시하지 않습니다.
@@ -408,7 +408,7 @@ export default function AdminUserDetailPage() {
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
             <h2 id="user-status-dialog-title" className="text-lg font-bold">{statusDialog === "suspend" ? "유저 정지 확인" : "유저 정지 해제 확인"}</h2>
             <p className="mt-2 text-sm leading-6 text-[#6b7280]">
-              {statusDialog === "suspend" ? "이 유저를 정지하면 앱의 주요 기능이 차단되는 정책을 따릅니다. 현재 shell에서는 실제 상태를 변경하지 않습니다." : "이 유저의 정지를 해제하면 앱 기능이 복구되는 정책을 따릅니다. 현재 shell에서는 실제 상태를 변경하지 않습니다."}
+              {statusDialog === "suspend" ? "이 유저를 정지하면 앱의 주요 기능이 차단되는 정책을 따릅니다. 기능 준비 중으로 실제 상태는 변경되지 않습니다." : "이 유저의 정지를 해제하면 앱 기능이 복구되는 정책을 따릅니다. 기능 준비 중으로 실제 상태는 변경되지 않습니다."}
             </p>
             <label className="mt-4 block">
               <span className="text-sm font-medium text-[#374151]">{statusDialog === "suspend" ? "정지 사유 (필수)" : "해제 사유 (필수)"}</span>

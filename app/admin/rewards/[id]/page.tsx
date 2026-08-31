@@ -148,7 +148,7 @@ export default function AdminRewardDetailPage() {
       return;
     }
     setMemoError("");
-    setToast("내부 메모를 mock 저장했습니다.");
+    setToast("내부 메모 저장 기능은 준비 중입니다. 입력한 내용은 실제로 저장되지 않았습니다.");
   };
 
   const createRetryRequest = async () => {
@@ -173,7 +173,7 @@ export default function AdminRewardDetailPage() {
     setRetryReason("");
     setRetryMemo("");
     setRetryError("");
-    setToast("재처리 요청을 mock 생성했습니다. 실제 발급 재시도는 Worker 처리 대상입니다.");
+    setToast("재처리 요청 기능은 준비 중입니다. 실제 요청은 생성되지 않았습니다.");
   };
 
   if (isLoading) {
@@ -205,7 +205,7 @@ export default function AdminRewardDetailPage() {
       <div className="flex items-end justify-between gap-6">
         <div>
           <h1 className="text-2xl font-bold">보상 상세</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">보상 상태, 발급 요청, 실패 사유, 재처리 요청 현황을 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준으로 확인합니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">보상 상태, 발급 요청, 실패 사유, 재처리 요청 현황을 확인합니다.</p>
         </div>
         <div className="flex gap-2">
           <Link href="/admin/reward-requests" className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">

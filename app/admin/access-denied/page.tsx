@@ -78,7 +78,7 @@ function AccessDeniedContent() {
         <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-[#4b5563]">
           <li>대시보드로 돌아가 조회 권한이 있는 페이지를 확인하세요.</li>
           <li>필요한 권한이 없다면 super_admin에게 권한 부여를 요청하세요.</li>
-          <li>문의 버튼이나 내부 정책·오류 상세는 이번 shell에서 제공하지 않습니다.</li>
+          <li>문의 버튼이나 내부 정책·오류 상세는 제공하지 않습니다.</li>
         </ul>
       </section>
 

@@ -210,7 +210,7 @@ export default function AdminRewardRequestsPage() {
       ),
     );
     setIsCreatingRetry(false);
-    setToast("재처리 요청을 생성했습니다.");
+    setToast("재처리 요청 기능은 준비 중입니다. 화면에만 반영되며 실제 요청은 생성되지 않았습니다.");
     setSelectedRetryReward(null);
     setRetryReason("");
     setRetryNote("");
@@ -222,7 +222,7 @@ export default function AdminRewardRequestsPage() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold">보상 목록</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">보상 상태와 재처리 요청 현황을 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준으로 조회합니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">보상 상태와 재처리 요청 현황을 조회합니다.</p>
         </div>
         <div className="flex gap-2">
           <Link href="/admin/reward-requests/history" className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white hover:bg-black">
@@ -367,7 +367,7 @@ export default function AdminRewardRequestsPage() {
       ) : null}
 
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
-        <span>{startItemNumber}-{endItemNumber} / {filteredItems.length}건{source === "mock" ? " · mock data" : ""}</span>
+        <span>{startItemNumber}-{endItemNumber} / {filteredItems.length}건{source === "mock" ? " · 예시 데이터" : ""}</span>
         <span>쿠폰 번호, 바코드, 사용자 이메일은 목록과 CSV에 포함하지 않습니다.</span>
       </div>
 

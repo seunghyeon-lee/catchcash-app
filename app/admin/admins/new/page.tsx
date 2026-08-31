@@ -125,7 +125,7 @@ export default function AdminAccountCreatePage() {
           <div>
             <h1 className="text-2xl font-bold">관리자 계정 등록</h1>
             <p className="mt-2 text-sm text-[#6b7280]">
-              신규 CMS 관리자 계정 등록 폼입니다. 이번 shell은 mock submit만 수행하며 비밀번호는 저장·표시하지 않습니다.
+              신규 CMS 관리자 계정 등록 폼입니다. 계정 등록 기능은 준비 중이며 비밀번호는 저장·표시하지 않습니다.
             </p>
           </div>
           <Link

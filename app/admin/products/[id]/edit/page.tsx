@@ -179,7 +179,7 @@ export default function AdminProductEditPage() {
           <div className="min-w-0">
             <h1 className="text-2xl font-bold">상품 수정</h1>
             <p className="mt-2 text-sm text-[#6b7280]">
-              {product.name} · 세션이 있으면 Supabase gift_products를 update하고, 없으면 안내만 합니다. 외부 API는 호출하지 않습니다.
+              {product.name} · 상품 정보를 수정합니다. 외부 API는 호출하지 않습니다.
             </p>
           </div>
           <button
@@ -301,9 +301,6 @@ export default function AdminProductEditPage() {
           </button>
         </div>
 
-        {isDirty ? (
-          <p className="mt-3 text-right text-xs text-[#6b7280]">관리자 세션이 있으면 gift_products가 수정되고, 없으면 저장 없이 안내만 합니다.</p>
-        ) : null}
       </form>
 
       <DialogOverlay open={isFailureDialogOpen} onClose={() => setIsFailureDialogOpen(false)} labelledBy="product-edit-failure-title" className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">

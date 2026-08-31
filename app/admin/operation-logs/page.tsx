@@ -213,7 +213,7 @@ function OperationLogsPageContent() {
         <div>
           <h1 className="text-2xl font-bold">운영 로그</h1>
           <p className="mt-2 text-sm text-[#6b7280]">
-            관리자 운영 액션 이력을 {source === "supabase" ? "Supabase 실데이터" : "mock"} 기준으로 조회합니다. 로그 수정·삭제는 제공하지 않으며, 이메일·쿠폰·바코드는 표시하지 않습니다.
+            관리자 운영 액션 이력을 조회합니다. 로그 수정·삭제는 제공하지 않으며, 이메일·쿠폰·바코드는 표시하지 않습니다.
           </p>
         </div>
         {canExportCsv ? (
@@ -379,7 +379,7 @@ function OperationLogsPageContent() {
 
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
         <span>
-          {logType === "sensitive" ? "민감" : "일반"} 로그 · 총 {filteredLogs.length}건{source === "mock" ? " · mock data" : ""}
+          {logType === "sensitive" ? "민감" : "일반"} 로그 · 총 {filteredLogs.length}건{source === "mock" ? " · 예시 데이터" : ""}
         </span>
         <span>사용자 이메일·쿠폰·바코드는 표시하지 않습니다.</span>
       </div>

@@ -107,10 +107,10 @@ export default function AdminAccountDetailPage() {
     await new Promise((resolve) => window.setTimeout(resolve, 400));
 
     const messageByKind: Record<Exclude<DialogKind, null>, string> = {
-      role: "역할 변경을 mock으로 완료했습니다. 원본 데이터는 변경되지 않았습니다.",
-      deactivate: "계정 비활성화를 mock으로 완료했습니다. 원본 데이터는 변경되지 않았습니다.",
-      activate: "계정 활성화를 mock으로 완료했습니다. 원본 데이터는 변경되지 않았습니다.",
-      password: "비밀번호 재설정을 mock으로 완료했습니다. 임시 비밀번호는 생성·표시하지 않습니다.",
+      role: "역할 변경 기능은 준비 중입니다. 실제 데이터는 변경되지 않았습니다.",
+      deactivate: "계정 비활성화 기능은 준비 중입니다. 실제 데이터는 변경되지 않았습니다.",
+      activate: "계정 활성화 기능은 준비 중입니다. 실제 데이터는 변경되지 않았습니다.",
+      password: "비밀번호 재설정 기능은 준비 중입니다. 임시 비밀번호는 생성·표시하지 않습니다.",
     };
 
     setNotice(messageByKind[dialog as Exclude<DialogKind, null>]);
@@ -125,7 +125,7 @@ export default function AdminAccountDetailPage() {
       <AdminShell>
         <div className="rounded-lg border border-[#e5e7eb] bg-white p-10 text-center">
           <h1 className="text-xl font-bold text-[#111827]">관리자 계정을 찾을 수 없음</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">요청한 관리자 ID와 일치하는 mock 계정이 없습니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">요청한 관리자 ID와 일치하는 계정이 없습니다.</p>
           <Link href="/admin/admins" className="mt-6 inline-flex rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white">
             관리자 계정 목록으로
           </Link>
@@ -142,7 +142,7 @@ export default function AdminAccountDetailPage() {
       <div className="flex items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">관리자 계정 상세</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">계정 정보와 역할·상태를 확인합니다. 액션은 mock-only이며 실제 저장/상태 변경은 하지 않습니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">계정 정보와 역할·상태를 확인합니다. 계정 관리 액션은 준비 중이며 실제 저장/상태 변경은 하지 않습니다.</p>
         </div>
         <div className="flex flex-wrap justify-end gap-2">
           <Link href="/admin/admins" className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">
@@ -161,7 +161,7 @@ export default function AdminAccountDetailPage() {
             </button>
           ) : (
             <button type="button" disabled className="rounded-md border border-[#d1d5db] bg-[#f9fafb] px-4 py-2 text-sm font-medium text-[#9ca3af]">
-              locked 해제는 이번 shell 제외
+              잠금 해제 준비 중
             </button>
           )}
           <button type="button" onClick={() => openDialog("password")} className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">
@@ -262,10 +262,10 @@ export default function AdminAccountDetailPage() {
 
           <DetailCard title="관리 액션 안내">
             <ul className="space-y-2 text-sm text-[#4b5563]">
-              <li>역할 변경은 mock 확인만 수행하며 원본 데이터는 바꾸지 않습니다.</li>
-              <li>계정 활성화/비활성화도 mock 안내만 표시합니다.</li>
-              <li>비밀번호 재설정은 사유 검증 후 mock 완료만 알리며 임시 비밀번호를 생성·표시하지 않습니다.</li>
-              <li>locked 해제는 이번 shell 범위에서 제외합니다.</li>
+              <li>역할 변경은 확인 절차만 제공하며 실제 데이터는 바꾸지 않습니다.</li>
+              <li>계정 활성화/비활성화도 안내만 표시합니다.</li>
+              <li>비밀번호 재설정은 사유 확인만 진행하며 임시 비밀번호를 생성·표시하지 않습니다.</li>
+              <li>잠금(locked) 해제 기능은 준비 중입니다.</li>
             </ul>
           </DetailCard>
         </div>
@@ -283,11 +283,11 @@ export default function AdminAccountDetailPage() {
             </h2>
             <p className="mt-2 text-sm text-[#6b7280]">
               {dialog === "role"
-                ? "대상 계정의 역할을 변경할까요? 원본 mock 데이터는 변경되지 않습니다."
+                ? "대상 계정의 역할을 변경할까요? 실제 데이터는 변경되지 않습니다."
                 : dialog === "deactivate"
-                  ? "계정을 비활성화할까요? 원본 mock 데이터는 변경되지 않습니다."
+                  ? "계정을 비활성화할까요? 실제 데이터는 변경되지 않습니다."
                   : dialog === "activate"
-                    ? "계정을 활성화할까요? 원본 mock 데이터는 변경되지 않습니다."
+                    ? "계정을 활성화할까요? 실제 데이터는 변경되지 않습니다."
                     : "비밀번호 재설정을 진행할까요? 임시 비밀번호는 생성·표시하지 않습니다."}
             </p>
 
