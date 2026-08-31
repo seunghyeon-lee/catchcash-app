@@ -106,7 +106,7 @@ export default function AdminProductDetailPage() {
       <AdminShell>
         <div className="rounded-lg border border-[#e5e7eb] bg-white p-10 text-center">
           <h1 className="text-xl font-bold text-[#111827]">상품을 찾을 수 없음</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">요청한 상품 ID와 일치하는 mock 상품이 없습니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">요청한 상품 ID와 일치하는 상품이 없습니다.</p>
           <Link href="/admin/products" className="mt-6 inline-flex rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white">
             상품 목록으로
           </Link>
@@ -120,7 +120,7 @@ export default function AdminProductDetailPage() {
       <div className="flex items-end justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold">상품 상세</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">상품 정보와 보물 연결 영향을 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준으로 확인합니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">상품 정보와 보물 연결 영향을 확인합니다.</p>
         </div>
         <div className="flex shrink-0 gap-2">
           <Link href="/admin/products" className="whitespace-nowrap rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">

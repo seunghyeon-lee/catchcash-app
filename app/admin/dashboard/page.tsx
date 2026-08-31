@@ -186,9 +186,9 @@ function DashboardPageContent() {
             ? "지표 불러오는 중…"
             : source === "supabase"
               ? recent
-                ? "Supabase 실시간 지표"
-                : "Supabase 실시간 지표 · 최근 현황은 예시 데이터"
-              : `Mock data · 집계일 ${MOCK_DASHBOARD_TODAY}`}
+                ? "실시간 집계"
+                : "실시간 집계 · 최근 현황은 예시 데이터"
+              : `예시 데이터 · 집계일 ${MOCK_DASHBOARD_TODAY}`}
         </span>
       </div>
 

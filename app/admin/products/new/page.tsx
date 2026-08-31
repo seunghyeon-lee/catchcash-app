@@ -161,7 +161,7 @@ export default function AdminProductCreatePage() {
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">
             <h1 className="text-2xl font-bold">상품 등록</h1>
-            <p className="mt-2 text-sm text-[#6b7280]">상품 정보만 등록합니다. 세션이 있으면 Supabase gift_products(manual_mock provider)에 저장하고, 없으면 안내만 합니다. 보물-상품 연결·쿠폰 발급·외부 API는 처리하지 않습니다.</p>
+            <p className="mt-2 text-sm text-[#6b7280]">상품 정보만 등록합니다. 보물-상품 연결·쿠폰 발급·외부 API 연동은 이 화면에서 처리하지 않습니다.</p>
           </div>
           <Link
             href="/admin/products"
@@ -232,7 +232,7 @@ export default function AdminProductCreatePage() {
             </div>
           </FormSection>
 
-          <FormSection title="상품 이미지" description="JPG, PNG, WebP 파일을 5MB 이하로 선택합니다. MVP shell에서는 브라우저 미리보기만 제공합니다.">
+          <FormSection title="상품 이미지" description="JPG, PNG, WebP 파일을 5MB 이하로 선택합니다. 이미지 업로드 저장은 준비 중이며 브라우저 미리보기만 제공합니다.">
             <div className="grid grid-cols-[240px_1fr] gap-5">
               <div
                 className="grid h-52 place-items-center rounded-lg border border-dashed border-[#d1d5db] bg-[#f9fafb] text-sm text-[#9ca3af]"
@@ -302,7 +302,7 @@ export default function AdminProductCreatePage() {
           </button>
         </div>
 
-        {isDirty ? <p className="mt-3 text-right text-xs text-[#6b7280]">관리자 세션이 있으면 gift_products에 저장되고, 없으면 저장 없이 안내만 합니다. 이미지 업로드는 아직 연결되지 않습니다.</p> : null}
+        {isDirty ? <p className="mt-3 text-right text-xs text-[#6b7280]">이미지 업로드는 준비 중이라 선택한 이미지는 저장되지 않습니다.</p> : null}
       </form>
 
       <DialogOverlay open={isFailureDialogOpen} onClose={() => setIsFailureDialogOpen(false)} labelledBy="product-save-failure-title" className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">

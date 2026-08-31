@@ -52,7 +52,7 @@ export default function AdminAccountsPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("created") === "1") {
-      setToast("관리자 계정 등록을 mock으로 완료했습니다. 실제 계정은 생성되지 않습니다.");
+      setToast("관리자 계정 등록 기능은 준비 중입니다. 실제 계정은 생성되지 않았습니다.");
       window.history.replaceState(null, "", "/admin/admins");
     }
   }, []);
@@ -95,7 +95,7 @@ export default function AdminAccountsPage() {
         <div>
           <h1 className="text-2xl font-bold">관리자 계정</h1>
           <p className="mt-2 text-sm text-[#6b7280]">
-            CMS 관리자 계정 목록을 mock data 기준으로 조회합니다. 실제 계정 생성·수정은 이번 shell 범위가 아닙니다.
+            CMS 관리자 계정 목록을 예시 데이터로 표시합니다. 실제 계정 생성·수정 기능은 준비 중입니다.
           </p>
         </div>
         <Link href="/admin/admins/new" className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white hover:bg-black">
@@ -155,7 +155,7 @@ export default function AdminAccountsPage() {
 
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
         <span>
-          총 {filteredAccounts.length}명 · mock data
+          총 {filteredAccounts.length}명 · 예시 데이터
         </span>
         <span>관리자 계정 이메일은 가상 주소만 표시합니다.</span>
       </div>

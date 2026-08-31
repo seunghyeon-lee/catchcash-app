@@ -127,7 +127,7 @@ export default function AdminProductsPage() {
       <div className="flex items-end justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold">상품 목록</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">보물상자에 연결 가능한 상품을 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준으로 조회합니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">보물상자에 연결 가능한 상품을 조회합니다.</p>
         </div>
         {canManageProducts ? (
           <Link href="/admin/products/new" className="shrink-0 whitespace-nowrap rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white hover:bg-black">
@@ -266,7 +266,7 @@ export default function AdminProductsPage() {
       </section>
 
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
-        <span>총 {filteredProducts.length}건{source === "mock" ? " · mock data" : ""}</span>
+        <span>총 {filteredProducts.length}건{source === "mock" ? " · 예시 데이터" : ""}</span>
         <nav aria-label="상품 목록 페이지네이션" className="flex items-center gap-2">
           {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
             <button

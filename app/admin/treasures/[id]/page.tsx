@@ -155,7 +155,7 @@ export default function AdminTreasureDetailPage() {
       <AdminShell>
         <div className="rounded-lg border border-[#e5e7eb] bg-white p-10 text-center">
           <h1 className="text-xl font-bold text-[#111827]">보물상자를 찾을 수 없습니다.</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">요청한 ID와 일치하는 mock 보물상자가 없습니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">요청한 ID와 일치하는 보물상자가 없습니다.</p>
           <Link href="/admin/treasures" className="mt-6 inline-flex rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white">
             목록으로
           </Link>
@@ -189,7 +189,7 @@ export default function AdminTreasureDetailPage() {
     });
     setDeleteReason("");
     setIsDeleteOpen(false);
-    setActionMessage("mock 삭제가 반영되었습니다. 실제 DB에는 저장되지 않습니다.");
+    setActionMessage("삭제 기능은 준비 중입니다. 화면에만 반영되며 실제 DB는 변경되지 않았습니다.");
   };
 
   const handleMockRestore = () => {
@@ -215,7 +215,7 @@ export default function AdminTreasureDetailPage() {
     });
     setRestoreReason("");
     setIsRestoreOpen(false);
-    setActionMessage("mock 복구가 inactive 상태로 반영되었습니다. 실제 DB에는 저장되지 않습니다.");
+    setActionMessage("복구 기능은 준비 중입니다. 화면에만 반영되며 실제 DB는 변경되지 않았습니다.");
   };
 
   return (
@@ -223,7 +223,7 @@ export default function AdminTreasureDetailPage() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold">보물상자 상세</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">{detail.title} · {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준 · 실제 지도/API 연결 없음</p>
+          <p className="mt-2 text-sm text-[#6b7280]">{detail.title} · 보물상자 운영 정보를 확인합니다.</p>
         </div>
         <div className="flex gap-2">
           <Link href="/admin/treasures" className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">
@@ -269,14 +269,14 @@ export default function AdminTreasureDetailPage() {
             </dl>
           </DetailCard>
 
-          <DetailCard title="위치 및 반경" description="Naver Map API는 연결하지 않으며 좌표는 mock 값만 표시합니다.">
+          <DetailCard title="위치 및 반경" description="등록된 좌표와 반경을 표시합니다. 지도 미리보기는 준비 중입니다.">
             <dl>
               <DetailRow label="위도" value={detail.latitude ?? "-"} />
               <DetailRow label="경도" value={detail.longitude ?? "-"} />
               <DetailRow label="허용 반경" value={`${detail.radiusM}m`} />
             </dl>
             <div className="mt-5 grid h-48 place-items-center rounded-lg border border-dashed border-[#d1d5db] bg-[#f9fafb] text-sm text-[#9ca3af]">
-              {detail.latitude === null || detail.longitude === null ? "좌표가 등록되지 않았습니다." : "지도 placeholder · mock UI"}
+              {detail.latitude === null || detail.longitude === null ? "좌표가 등록되지 않았습니다." : "지도 미리보기 준비 중"}
             </div>
           </DetailCard>
 
@@ -321,7 +321,7 @@ export default function AdminTreasureDetailPage() {
             ) : null}
           </DetailCard>
 
-          <DetailCard title="visible 조건 체크" description="사용자 앱 지도 노출 가능 여부를 mock 조건으로 확인합니다.">
+          <DetailCard title="visible 조건 체크" description="사용자 앱 지도 노출 가능 여부를 조건별로 확인합니다.">
             <div>
               {checkEntries.map((item) => (
                 <CheckRow key={item.key} label={item.label} passed={item.passed} />
@@ -335,7 +335,7 @@ export default function AdminTreasureDetailPage() {
 
         <div className="space-y-4">
           {canDanger ? (
-            <DetailCard title="위험 액션" description="shell 단계에서는 확인 팝업과 local mock 상태만 변경합니다.">
+            <DetailCard title="위험 액션" description="삭제·복구 기능은 준비 중이며 화면 상태만 변경됩니다. 실제 DB는 변경되지 않습니다.">
               {!isDeleted ? (
                 <button
                   type="button"
@@ -387,7 +387,7 @@ export default function AdminTreasureDetailPage() {
       </div>
 
       <p className="mt-5 text-xs text-[#6b7280]">
-        쿠폰 번호, 바코드, 사용자 이메일, 관리자 이메일은 표시하지 않습니다. 실제 treasure_boxes DB 연결과 Naver Map API는 이번 shell 범위가 아닙니다.
+        쿠폰 번호, 바코드, 사용자 이메일, 관리자 이메일은 표시하지 않습니다.
       </p>
 
       {isDeleteOpen ? (

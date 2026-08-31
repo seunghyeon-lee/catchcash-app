@@ -272,7 +272,7 @@ export default function AdminRewardRetryRequestHistoryPage() {
       ) : null}
 
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
-        <span>총 {filteredItems.length}건{source === "mock" ? " · mock data" : ""}</span>
+        <span>총 {filteredItems.length}건{source === "mock" ? " · 예시 데이터" : ""}</span>
         <span>쿠폰 번호, 바코드, 사용자 이메일, 외부 API Secret은 표시하지 않습니다.</span>
       </div>
 

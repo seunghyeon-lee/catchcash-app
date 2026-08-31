@@ -239,7 +239,7 @@ function AdminTreasuresPageContent() {
         <div className="min-w-0">
           <h1 className="text-2xl font-bold">보물상자 목록</h1>
           <p className="mt-2 text-sm text-[#6b7280]">
-            등록된 보물상자를 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준으로 조회합니다. 실제 지도/API 연결과 저장은 포함하지 않습니다.
+            등록된 보물상자를 조회합니다. 지도 미리보기는 준비 중입니다.
           </p>
         </div>
         {canManageTreasures ? (
@@ -406,7 +406,7 @@ function AdminTreasuresPageContent() {
       </section>
 
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
-        <span>총 {filteredTreasures.length}건{source === "mock" ? " · mock data" : ""}</span>
+        <span>총 {filteredTreasures.length}건{source === "mock" ? " · 예시 데이터" : ""}</span>
         <nav aria-label="보물상자 목록 페이지네이션" className="flex items-center gap-2">
           {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
             <button
@@ -432,10 +432,7 @@ function AdminTreasuresPageContent() {
         </nav>
       </div>
 
-      <p className="mt-5 text-xs text-[#6b7280]">
-        쿠폰 번호, 바코드, 사용자 이메일은 목록과 CSV에 포함하지 않습니다. 실제 Naver Map API와 treasure_boxes DB 연결은 이번
-        shell 범위가 아닙니다.
-      </p>
+      <p className="mt-5 text-xs text-[#6b7280]">쿠폰 번호, 바코드, 사용자 이메일은 목록과 CSV에 포함하지 않습니다.</p>
 
       {isCsvDialogOpen ? (
         <div role="dialog" aria-modal="true" aria-labelledby="treasure-csv-title" className="fixed inset-0 z-[60] grid place-items-center bg-black/40 p-6">

@@ -123,7 +123,7 @@ export default function AdminSecurityLogDetailPage() {
       <AdminShell>
         <div className="rounded-lg border border-[#e5e7eb] bg-white p-10 text-center">
           <h1 className="text-xl font-bold text-[#111827]">보안 로그를 찾을 수 없음</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">요청한 로그 ID와 일치하는 mock 보안 로그가 없습니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">요청한 로그 ID와 일치하는 보안 로그가 없습니다.</p>
           <Link href="/admin/security-logs" className="mt-6 inline-flex rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white">
             보안 로그 목록으로
           </Link>
@@ -142,7 +142,7 @@ export default function AdminSecurityLogDetailPage() {
       <div className="flex items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">보안 로그 상세</h1>
-          <p className="mt-2 text-sm text-[#6b7280]">조회 전용 {source === "supabase" ? "Supabase 실데이터" : "mock"} 상세입니다. 원본 payload·좌표·위험 액션·상태 변경은 포함하지 않습니다.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">조회 전용 상세입니다. 원본 payload·좌표·위험 액션·상태 변경은 포함하지 않습니다.</p>
         </div>
         <Link href="/admin/security-logs" className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">
           목록으로

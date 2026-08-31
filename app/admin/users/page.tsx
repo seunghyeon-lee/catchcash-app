@@ -197,7 +197,7 @@ export default function AdminUsersPage() {
         <div>
           <h1 className="text-2xl font-bold">유저 목록</h1>
           <p className="mt-2 text-sm text-[#6b7280]">
-            캐치캐쉬 사용자 상태와 활동 정보를 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준으로 확인합니다.
+            캐치캐쉬 사용자 상태와 활동 정보를 확인합니다.
           </p>
         </div>
         {canExportCsv ? (
@@ -343,7 +343,7 @@ export default function AdminUsersPage() {
       </section>
 
       <div className="mt-4 flex items-center justify-between text-sm text-[#6b7280]">
-        <span>{startItemNumber}-{endItemNumber} / {filteredUsers.length}건{source === "mock" ? " · mock data" : ""}</span>
+        <span>{startItemNumber}-{endItemNumber} / {filteredUsers.length}건{source === "mock" ? " · 예시 데이터" : ""}</span>
         <span>사용자 이메일, 전화번호, 소셜 provider 식별자, 쿠폰 번호와 바코드는 표시하지 않습니다.</span>
       </div>
 
@@ -461,7 +461,7 @@ export default function AdminUsersPage() {
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
             <h2 id="user-csv-title" className="text-lg font-bold">CSV 내보내기</h2>
             <p className="mt-2 text-sm leading-6 text-[#6b7280]">
-              현재 검색·필터 조건의 유저 목록을 CSV로 내보냅니다. 사용자 이메일, 전화번호, 소셜 provider 식별자, 쿠폰 번호, 바코드, API Secret은 포함하지 않습니다.
+              CSV 내보내기 기능은 준비 중입니다. 사용자 이메일, 전화번호, 소셜 provider 식별자, 쿠폰 번호, 바코드, API Secret은 포함하지 않습니다.
             </p>
             <div className="mt-6 flex justify-end gap-2">
               <button type="button" onClick={() => setIsCsvDialogOpen(false)} className="rounded-md border border-[#d1d5db] px-4 py-2 text-sm font-medium">

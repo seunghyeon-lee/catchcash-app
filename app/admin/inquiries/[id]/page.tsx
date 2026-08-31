@@ -85,7 +85,7 @@ export default function AdminInquiryDetailPage() {
           ...inquiry,
           status: "resolved",
           updated_at: new Date().toISOString(),
-          replies: [{ id: `mock-${Date.now()}`, inquiry_id: inquiry.id, admin_user_id: "mock-admin", admin_name: "Mock 관리자", content: answer.trim(), created_at: new Date().toISOString(), updated_at: new Date().toISOString() }, ...inquiry.replies],
+          replies: [{ id: `mock-${Date.now()}`, inquiry_id: inquiry.id, admin_user_id: "mock-admin", admin_name: "예시 관리자", content: answer.trim(), created_at: new Date().toISOString(), updated_at: new Date().toISOString() }, ...inquiry.replies],
         });
         setAnswer("");
         setMessage("관리자 인증 전이라 예시 답변으로만 처리했습니다. DB에는 저장되지 않았습니다.");
@@ -116,7 +116,7 @@ export default function AdminInquiryDetailPage() {
       return;
     }
 
-    setMessage("상태 변경 shell 확인만 완료했습니다. 실제 상태 변경이나 저장은 수행하지 않았습니다.");
+    setMessage("상태 변경 기능은 준비 중입니다. 실제 상태는 변경되지 않았습니다.");
     setIsStatusDialogOpen(false);
   };
 
@@ -222,7 +222,7 @@ export default function AdminInquiryDetailPage() {
               </div>
               <div>
                 <dt className="text-[#6b7280]">데이터 소스</dt>
-                <dd className="mt-1 font-medium">{source === "mock" ? "Mock fallback" : "Supabase"}</dd>
+                <dd className="mt-1 font-medium">{source === "mock" ? "예시 데이터" : "실데이터"}</dd>
               </div>
             </dl>
             <p className="mt-5 rounded-md bg-[#f9fafb] p-3 text-xs leading-5 text-[#6b7280]">
@@ -265,7 +265,7 @@ export default function AdminInquiryDetailPage() {
                 <h2 className="font-semibold">답변 작성</h2>
                 <p className="mt-1 text-sm text-[#6b7280]">사용자에게 전달할 답변을 입력하세요.</p>
               </div>
-              {source === "mock" ? <span className="rounded bg-[#f3f4f6] px-2 py-1 text-xs text-[#6b7280]">Mock fallback</span> : null}
+              {source === "mock" ? <span className="rounded bg-[#f3f4f6] px-2 py-1 text-xs text-[#6b7280]">예시 데이터</span> : null}
             </div>
             <label htmlFor="answer" className="mt-4 block text-sm font-medium text-[#374151]">답변 내용</label>
             <textarea
@@ -349,7 +349,7 @@ export default function AdminInquiryDetailPage() {
         <aside className="space-y-5">
           <section className="rounded-lg border border-[#e5e7eb] bg-white p-5">
             <h2 className="font-semibold">상태 변경</h2>
-            <p className="mt-1 text-sm text-[#6b7280]">현재 화면에서는 상태 변경 확인 shell만 제공합니다.</p>
+            <p className="mt-1 text-sm text-[#6b7280]">상태 변경 기능은 준비 중입니다. 답변을 등록하면 문의는 자동으로 해결됨 상태가 됩니다.</p>
             <select value={statusDraft} onChange={(event) => setStatusDraft(event.target.value as AdminInquiryStatus)} disabled={!canWrite} className="mt-4 h-10 w-full rounded-md border border-[#d1d5db] bg-white px-3 text-sm disabled:bg-[#f9fafb]">
               {statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>

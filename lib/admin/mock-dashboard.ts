@@ -148,7 +148,7 @@ export function getClaimSectionSummaries(): DashboardSectionSummaryCard[] {
   return [
     { title: "오늘 획득 성공", value: String(todayClaims), description: "claimed_at 오늘 기준" },
     { title: "오늘 보상 생성", value: String(todayRewards), description: "ready / issued" },
-    { title: "최근 4시간 획득", value: String(Math.min(recentWindowClaims, 3)), description: "mock 최근 흐름" },
+    { title: "최근 4시간 획득", value: String(Math.min(recentWindowClaims, 3)), description: "예시 데이터" },
   ];
 }
 
@@ -179,7 +179,7 @@ export function getInquirySectionSummaries(): DashboardSectionSummaryCard[] {
   return [
     { title: "미처리 문의", value: String(openCount), description: "open + in_progress" },
     { title: "오늘 접수", value: String(todayCount), description: "당일 문의 유입" },
-    { title: "평균 응답 대기", value: "4.2시간", description: "open 기준 mock" },
+    { title: "평균 응답 대기", value: "4.2시간", description: "예시 데이터" },
   ];
 }
 
