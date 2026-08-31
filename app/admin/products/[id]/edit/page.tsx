@@ -175,8 +175,8 @@ export default function AdminProductEditPage() {
   return (
     <AdminShell>
       <form onSubmit={handleSubmit} className="max-w-[1040px]">
-        <div className="flex items-end justify-between">
-          <div>
+        <div className="flex items-end justify-between gap-4">
+          <div className="min-w-0">
             <h1 className="text-2xl font-bold">상품 수정</h1>
             <p className="mt-2 text-sm text-[#6b7280]">
               {product.name} · 세션이 있으면 Supabase gift_products를 update하고, 없으면 안내만 합니다. 외부 API는 호출하지 않습니다.
@@ -185,7 +185,7 @@ export default function AdminProductEditPage() {
           <button
             type="button"
             onClick={handleLeave}
-            className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
+            className="shrink-0 whitespace-nowrap rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]"
           >
             상세로 돌아가기
           </button>
