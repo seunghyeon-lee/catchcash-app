@@ -200,3 +200,31 @@ export async function insertAdminProduct(payload: AdminProductWritePayload): Pro
     return { source: "supabase", ok: false, message: error instanceof Error ? error.message : "상품 등록에 실패했습니다." };
   }
 }
+
+// 이미지 업로드(Storage)는 미연결이므로 수정 화면에서는 product_image_url을 건드리지 않는다.
+export type AdminProductUpdatePayload = Omit<AdminProductWritePayload, "imageUrl">;
+
+export async function updateAdminProduct(id: string, payload: AdminProductUpdatePayload): Promise<AdminWriteResult> {
+  const context = await getAdminContext();
+  if (!context) return { source: "mock", ok: true, message: WRITE_MOCK_MESSAGE };
+
+  try {
+    const { error } = await context.client
+      .from("gift_products")
+      .update({
+        // provider(manual_mock)와 created_by는 등록 시점 값을 유지한다.
+        provider_product_id: payload.externalProductId,
+        brand_name: payload.brandName,
+        product_name: payload.productName,
+        price: payload.price,
+        status: payload.status,
+      })
+      .eq("id", id);
+
+    if (error) throw new Error(error.message);
+    return { source: "supabase", ok: true, id };
+  } catch (error) {
+    console.warn("[admin] updateAdminProduct 실패:", error);
+    return { source: "supabase", ok: false, message: error instanceof Error ? error.message : "상품 수정에 실패했습니다." };
+  }
+}
