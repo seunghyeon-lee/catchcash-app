@@ -124,13 +124,13 @@ export default function AdminProductsPage() {
 
   return (
     <AdminShell>
-      <div className="flex items-end justify-between">
-        <div>
+      <div className="flex items-end justify-between gap-4">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold">상품 목록</h1>
           <p className="mt-2 text-sm text-[#6b7280]">보물상자에 연결 가능한 상품을 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준으로 조회합니다.</p>
         </div>
         {canManageProducts ? (
-          <Link href="/admin/products/new" className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white hover:bg-black">
+          <Link href="/admin/products/new" className="shrink-0 whitespace-nowrap rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white hover:bg-black">
             상품 등록
           </Link>
         ) : null}
