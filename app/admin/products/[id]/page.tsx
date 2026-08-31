@@ -117,13 +117,13 @@ export default function AdminProductDetailPage() {
 
   return (
     <AdminShell>
-      <div className="flex items-end justify-between">
-        <div>
+      <div className="flex items-end justify-between gap-4">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold">상품 상세</h1>
           <p className="mt-2 text-sm text-[#6b7280]">상품 정보와 보물 연결 영향을 {source === "supabase" ? "Supabase 실데이터" : "mock data"} 기준으로 확인합니다.</p>
         </div>
-        <div className="flex gap-2">
-          <Link href="/admin/products" className="rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">
+        <div className="flex shrink-0 gap-2">
+          <Link href="/admin/products" className="whitespace-nowrap rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">
             목록으로
           </Link>
           {canEditProduct ? (
@@ -131,7 +131,7 @@ export default function AdminProductDetailPage() {
               href={`/admin/products/${product.id}/edit`}
               prefetch={false}
               onClick={handleEditClick}
-              className="rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white hover:bg-black"
+              className="whitespace-nowrap rounded-md bg-[#111827] px-4 py-2 text-sm font-medium text-white hover:bg-black"
             >
               상품 수정
             </Link>
