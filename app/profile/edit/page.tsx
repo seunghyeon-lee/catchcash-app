@@ -182,19 +182,9 @@ export default function ProfileEditPage() {
       return;
     }
 
-    if (result.source === "mock") {
-      console.log("[CatchCash] mock profile save", {
-        nickname: trimmedNickname,
-        intro: trimmedIntro,
-        characterKey,
-        colorKey,
-      });
-      show("로그인 연결 전이라 예시 저장으로 처리했어.");
-    } else {
-      show("저장했다");
-    }
-
-    window.setTimeout(() => router.push("/profile"), 900);
+    show("저장했다");
+    router.push("/profile");
+    router.refresh();
   };
 
   return (

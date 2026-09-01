@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { AppHeader } from "@/components/layout/app-header";
@@ -83,6 +83,7 @@ function MenuRow({
 
 export default function ProfilePage() {
   const router = useRouter();
+  const pathname = usePathname();
   // 로그아웃 실패 안내용. GNB 아이콘이 배선된 뒤로는 이 토스트만 남았다.
   const { message, show } = useToast();
   const [showLogout, setShowLogout] = useState(false);
@@ -95,6 +96,7 @@ export default function ProfilePage() {
     let isMounted = true;
 
     const loadProfile = async () => {
+      setIsLoading(true);
       const result = await getProfile();
       if (!isMounted) return;
 
@@ -109,7 +111,7 @@ export default function ProfilePage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [pathname]);
 
   const { nickname, intro, characterKey, colorKey, stats } = profile;
   const character = findCharacter(characterKey);

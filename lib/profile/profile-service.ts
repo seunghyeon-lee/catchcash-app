@@ -156,17 +156,21 @@ export async function ensureProfileForCurrentSession(input: EnsureProfileInput):
 
 /**
  * `/profile/edit` 저장.
- * 세션이 없으면 DB에 쓰지 않고 mock 성공만 반환한다.
+ * 세션이 없으면 DB에 쓸 수 없으므로 저장 실패로 반환한다.
  * 매핑: nickname / intro_text / avatar_key(characterKey) / background_key(colorKey)
  */
 export async function updateProfile(input: UpdateProfileInput): Promise<UpdateProfileResult> {
   const session = await getAuthenticatedUserSession();
 
   if (!session) {
-    return { source: "mock", ok: true };
+    return {
+      source: "mock",
+      ok: false,
+      errorMessage: "로그인 세션이 없어 실제 프로필을 저장하지 못했어.",
+    };
   }
 
-  const { error } = await session.client
+  const { data, error } = await session.client
     .from("profiles")
     .update({
       nickname: input.nickname.trim(),
@@ -174,13 +178,23 @@ export async function updateProfile(input: UpdateProfileInput): Promise<UpdatePr
       avatar_key: input.characterKey,
       background_key: input.colorKey,
     })
-    .eq("user_id", session.userId);
+    .eq("user_id", session.userId)
+    .select("user_id")
+    .maybeSingle();
 
   if (error) {
     return {
       source: "supabase",
       ok: false,
       errorMessage: "저장에 실패했어. 잠시 후 다시 시도해줘.",
+    };
+  }
+
+  if (!data) {
+    return {
+      source: "supabase",
+      ok: false,
+      errorMessage: "저장할 프로필을 찾지 못했어. 다시 로그인한 뒤 시도해줘.",
     };
   }
 
