@@ -22,8 +22,15 @@ export type CreateHuntClaimResult = {
  * 이미 있는지 조회해 중복 insert를 막는다. 이 클라이언트 측 선조회는 best-effort이며
  * 동시 요청(race)까지는 막지 못한다. 확실한 1인 1회 보장은 DB unique 제약 또는
  * 서버 RPC가 필요하다(마이그레이션/서버 = 리더 영역, 후속 이슈).
+ *
+ * `coords`(선택): AR 화면에서 상자 터치 시 재조회한 현재 위치. 기존 `treasure_claims`의
+ * `claimed_latitude`/`claimed_longitude` 컬럼에 기록만 한다(스키마 변경 아님). 거리 기반
+ * 서버 검증은 `claim_treasure_with_lock` RPC 도입 전까지 하지 않는다.
  */
-export async function createHuntClaim(treasureBoxId: string | null): Promise<CreateHuntClaimResult> {
+export async function createHuntClaim(
+  treasureBoxId: string | null,
+  coords?: { latitude: number; longitude: number },
+): Promise<CreateHuntClaimResult> {
   const session = await getAuthenticatedUserSession();
 
   if (!session || !treasureBoxId) {
@@ -49,6 +56,9 @@ export async function createHuntClaim(treasureBoxId: string | null): Promise<Cre
     user_id: session.userId,
     treasure_box_id: treasureBoxId,
     result: "success",
+    ...(coords
+      ? { claimed_latitude: coords.latitude, claimed_longitude: coords.longitude }
+      : {}),
   });
 
   if (error) {

@@ -9,17 +9,24 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@capacitor/app": "^7.1.2",
     "@capacitor/core": "^7.4.0",
+    "@capacitor/geolocation": "^7.1.8",
+    "@capacitor/haptics": "^7.0.5",
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
     "@supabase/supabase-js": "^2.50.0",
     "next": "^14.2.31",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "three": "^0.169.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^7.4.0",
     "@types/node": "^20.17.30",
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18.3.7",
+    "@types/three": "^0.169.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.31",
