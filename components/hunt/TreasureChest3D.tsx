@@ -218,7 +218,7 @@ export function TreasureChest3D({
     document.body.style.cursor = "auto";
   }, []);
 
-  useFrame((state, delta) => {
+  useFrame((state) => {
     const g = groupRef.current;
     if (!g) return;
     const t = state.clock.elapsedTime;
@@ -226,7 +226,8 @@ export function TreasureChest3D({
     // idle: 둥실둥실 + 아주 약한 회전
     if (phaseRef.current === "idle") {
       g.position.y = Math.sin(t * CHEST_IDLE.floatSpeed) * CHEST_IDLE.floatAmplitude;
-      g.rotation.y += delta * CHEST_IDLE.rotationSpeed;
+      // 한 방향 누적 회전(뒷면 노출) 대신 좌우 흔들림 — 앞면이 항상 카메라를 향함
+      g.rotation.y = Math.sin(t * CHEST_IDLE.swaySpeed) * CHEST_IDLE.swayAngleRad;
       g.rotation.z = 0;
       g.scale.setScalar(1);
       return;

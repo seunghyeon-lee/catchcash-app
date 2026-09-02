@@ -34,11 +34,16 @@ export const CHEST_CLIP_CANDIDATES = {
   close: ["Chest_Close", "Close", "Lid_Close", "ChestClose", "close"],
 } as const;
 
-/** idle(둥실둥실) 동작 파라미터 */
+/**
+ * idle(둥실둥실) 동작 파라미터.
+ * ⚠️ Y축을 한 방향으로 계속 돌리면 상자 뒷면(자물쇠 없는 밋밋한 면)이 정면에 오고
+ *    조명 받는 면이 계속 바뀌어 어둡게 보인다. 그래서 좌우로 살짝 흔드는 방식(sway)을 쓴다.
+ */
 export const CHEST_IDLE = {
   floatAmplitude: 0.08, // 위아래 부유 폭(월드 단위)
   floatSpeed: 1.6, // 부유 속도
-  rotationSpeed: 0.25, // 아주 약한 Y축 회전(라디안/초)
+  swayAngleRad: 0.14, // 좌우로 흔들 최대 각도(약 8도) — 앞면이 항상 카메라를 향함
+  swaySpeed: 0.5, // 좌우 흔들림 속도
 } as const;
 
 /** 클릭 직후 흔들림(shake) — 코드 기반. 에셋 애니메이션과 무관 */
