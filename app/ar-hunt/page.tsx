@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
 import { ARCloseButton } from "@/features/ar/components/ARCloseButton";
 import { ARErrorFallback } from "@/features/ar/components/ARErrorFallback";
@@ -66,6 +66,11 @@ function ArHuntContent() {
   const [status, setStatus] = useState<ARHuntStatus>("initial");
   const [chestResult, setChestResult] = useState<ChestResult | undefined>(undefined);
   const [arError, setArError] = useState<OverlayError | null>(null);
+  // 상자를 닫힘·idle로 되돌리는 신호(운영/검증 실패 시 증가).
+  const [resetNonce, setResetNonce] = useState(0);
+  // 라우팅 타이밍용: 상자 open 연출과 claim 응답 중 늦은 쪽 기준으로 결과 화면 이동.
+  const chestResultRef = useRef<ChestResult | null>(null);
+  const openCompletePendingRef = useRef(false);
 
   // 추후 보물/보상 정책에 따라 variant를 결정한다(현재는 basic 고정).
   const chestVariant: ChestVariant = "basic";
@@ -129,42 +134,65 @@ function ArHuntContent() {
 
   const handleClaimRetry = useCallback(() => {
     setArError(null);
+    chestResultRef.current = null;
+    openCompletePendingRef.current = false;
     setStatus("ready");
   }, []);
 
-  // 상자 터치 → 중복 잠금 → 햅틱 → GPS 재조회 → claim(공식 명세 10.2 / 12.1).
-  const handleTap = useCallback(async () => {
+  // 정상 결과 확정 시 카메라 정리 후 결과 화면으로 이동(공식 명세 22·23장).
+  const finishToResult = useCallback(
+    (result: ChestResult) => {
+      if (!treasureId) return;
+      setStatus("claimed");
+      stopCamera();
+      // SUCCESS→win→result=success, EMPTY→lose→result=empty (기존 result=fail 폐기, 리더 v2 §5).
+      const resultParam = result === "lose" ? "empty" : "success";
+      router.push(`/hunt-result?result=${resultParam}&treasureId=${encodeURIComponent(treasureId)}`);
+    },
+    [router, treasureId, stopCamera],
+  );
+
+  // 상자 탭(TreasureChest3D onOpenStart) → 중복 잠금 → 햅틱 → GPS 재조회 → claim RPC.
+  // 상자는 탭과 동시에 열림 연출을 시작하므로, 운영/검증 실패면 resetNonce로 즉시 닫는다(공식 명세 10.2).
+  const handleChestOpenStart = useCallback(async () => {
     if (status !== "ready" || !treasureId) return;
-    setStatus("touching");
-    void impact();
     setStatus("claiming");
+    void impact();
 
     const outcome = await claimTreasure(treasureId);
     if (outcome.kind === "failure") {
-      // 운영/검증 실패는 상자를 열지 않고 오류로 안내한다.
+      // 운영/검증 실패: 상자를 열지 않고(닫고) 오류로 안내(리더 v2 §5 — open 금지).
+      openCompletePendingRef.current = false;
+      chestResultRef.current = null;
+      setResetNonce((n) => n + 1);
       setStatus("failed");
       setArError(mapClaimFailure(outcome.reason, outcome.message));
       return;
     }
 
-    // 정상 결과일 때만 Open 연출 시작(공식 명세 10.3).
+    // 정상 결과(SUCCESS=win / EMPTY=lose). 상자 open 연출은 이미 진행 중.
+    chestResultRef.current = outcome.result;
     setChestResult(outcome.result);
     setStatus("opening");
-  }, [status, treasureId, impact, claimTreasure]);
+    // 열림 연출이 claim보다 먼저 끝나 대기 중이었다면 지금 이동.
+    if (openCompletePendingRef.current) {
+      openCompletePendingRef.current = false;
+      finishToResult(outcome.result);
+    }
+  }, [status, treasureId, impact, claimTreasure, finishToResult]);
 
-  // 상자 Open 연출 완료 → 카메라 정리 후 기존 결과 화면으로 이동(공식 명세 22·23장).
+  // 상자 Open 연출 완료(onOpenComplete). claim 응답과 늦은 쪽 기준으로 결과 화면 이동.
   const handleOpenComplete = useCallback(() => {
-    if (!treasureId) return;
-    setStatus("claimed");
-    stopCamera();
-    // SUCCESS→win→result=success, EMPTY→lose→result=empty (기존 result=fail 폐기, 리더 v2 §5).
-    const resultParam = chestResult === "lose" ? "empty" : "success";
-    router.push(`/hunt-result?result=${resultParam}&treasureId=${encodeURIComponent(treasureId)}`);
-  }, [router, treasureId, stopCamera, chestResult]);
+    const result = chestResultRef.current;
+    if (result) {
+      finishToResult(result); // claim 이미 완료 → 이동
+    } else {
+      openCompletePendingRef.current = true; // claim 대기 중 → 응답 시 이동
+    }
+  }, [finishToResult]);
 
   const showCanvas =
     status === "ready" ||
-    status === "touching" ||
     status === "claiming" ||
     status === "opening" ||
     status === "claimed";
@@ -186,8 +214,8 @@ function ArHuntContent() {
           variant={chestVariant}
           result={chestResult}
           disabled={status !== "ready"}
-          onTap={handleTap}
-          onOpenStart={() => setStatus("opening")}
+          resetNonce={resetNonce}
+          onOpenStart={handleChestOpenStart}
           onOpenComplete={handleOpenComplete}
         />
       ) : null}
@@ -196,11 +224,13 @@ function ArHuntContent() {
       <ARCloseButton onClose={handleClose} />
       <ARInstructionCard text="상자를 터치해 열어보거라" />
       {status === "ready" ? <ARTapIndicator /> : null}
-      <ARStatusBadge label="AR 사냥 모드 활성화" active={status === "ready"} />
+      <ARStatusBadge
+        label={status === "claiming" ? "보상 확인 중..." : "AR 사냥 모드 활성화"}
+        active={status === "ready"}
+      />
 
-      {/* Layer 5: 로딩 / 오류 */}
+      {/* Layer 5: 로딩 / 오류 (claiming은 상자 열림 연출 + 상태배지로 표시, 전체 오버레이 미사용) */}
       {status === "camera_loading" ? <ARLoadingOverlay message="카메라를 준비하고 있어요..." /> : null}
-      {status === "claiming" ? <ARLoadingOverlay message="보상 확인 중..." /> : null}
 
       {arError ? (
         <ARErrorFallback

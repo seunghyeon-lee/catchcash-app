@@ -1,106 +1,56 @@
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Suspense, useEffect, useRef, useState } from "react";
-import type { Mesh } from "three";
+import { Canvas } from "@react-three/fiber";
+import { Suspense } from "react";
 
+import { TreasureChest3D } from "@/components/hunt/TreasureChest3D";
 import type { ChestResult, ChestVariant } from "@/features/ar/types/ar.types";
 
-type ChestProps = {
+type ARCanvasProps = {
   variant: ChestVariant;
   result?: ChestResult;
   disabled?: boolean;
-  onTap?: () => void;
+  /** 값이 바뀌면 상자를 닫힘·idle로 리셋(운영/검증 실패 시 사용). */
+  resetNonce?: number;
   onOpenStart?: () => void;
   onOpenComplete?: () => void;
 };
 
-const VARIANT_COLOR: Record<ChestVariant, string> = {
-  basic: "#c9a06a",
-  gold: "#f5b400",
-  mystery: "#7c5cff",
-};
-
 /**
- * ⚠️ 임시 fallback 상자.
- * 팀원2 `components/hunt/TreasureChest3D.tsx` 병합 전까지만 사용한다.
- * 병합 후 이 mesh를 <TreasureChest3D .../>로 교체하면 되고, 부모(ARCanvas/page) 계약은 동일하다.
- * 여기에 GLB 로딩/복잡한 Open 로직을 넣지 않는다(팀원2 소유 영역).
- *
- * 계약(04 문서): variant / result / disabled / onOpenStart / onOpenComplete + onTap.
- * result가 세팅되면 Open 연출(짧은 shake → 확대) 후 onOpenComplete를 1회 호출한다.
+ * 투명 R3F Canvas (공식 명세 6·8장). 카메라 영상 위에 팀원2 TreasureChest3D를 배치한다.
+ * 카메라/조명은 팀원2 TreasureChestScene 기준을 그대로 채용(모바일 최적화, shadow 미사용).
+ * 상자 탭 감지·open 연출은 TreasureChest3D가 담당하고, AR은 onOpenStart/onOpenComplete만 받는다.
  */
-function FallbackChest({ variant, result, disabled, onTap, onOpenStart, onOpenComplete }: ChestProps) {
-  const meshRef = useRef<Mesh>(null);
-  const [opening, setOpening] = useState(false);
-  const openStartRef = useRef<number | null>(null);
-  const firedRef = useRef(false);
-
-  useEffect(() => {
-    if (result && !opening) {
-      setOpening(true);
-      onOpenStart?.();
-    }
-  }, [result, opening, onOpenStart]);
-
-  useFrame((frame, delta) => {
-    const mesh = meshRef.current;
-    if (!mesh) return;
-
-    if (!opening) {
-      // Idle floating + 느린 회전.
-      mesh.position.y = Math.sin(frame.clock.elapsedTime * 1.5) * 0.15;
-      mesh.rotation.y += delta * 0.5;
-      return;
-    }
-
-    if (openStartRef.current === null) openStartRef.current = frame.clock.elapsedTime;
-    const t = frame.clock.elapsedTime - openStartRef.current;
-
-    if (t < 0.5) {
-      mesh.rotation.z = Math.sin(t * 40) * 0.15; // shake
-    } else {
-      mesh.rotation.z = 0;
-      mesh.scale.setScalar(1 + (t - 0.5) * 1.2); // 확대
-    }
-
-    if (t >= 1.4 && !firedRef.current) {
-      firedRef.current = true;
-      onOpenComplete?.();
-    }
-  });
-
-  return (
-    <mesh
-      ref={meshRef}
-      onPointerDown={(event) => {
-        event.stopPropagation();
-        if (disabled || opening) return;
-        onTap?.();
-      }}
-    >
-      <boxGeometry args={[1.2, 1, 1]} />
-      <meshStandardMaterial color={VARIANT_COLOR[variant]} />
-    </mesh>
-  );
-}
-
-/**
- * 투명 R3F Canvas (공식 명세 6·8장). 카메라 영상 위에 3D 상자를 중앙 배치한다.
- * gl.alpha=true로 배경을 투명하게 유지해 카메라가 비치게 한다.
- */
-export function ARCanvas(props: ChestProps) {
+export function ARCanvas({
+  variant,
+  result,
+  disabled,
+  resetNonce,
+  onOpenStart,
+  onOpenComplete,
+}: ARCanvasProps) {
   return (
     <Canvas
       className="absolute inset-0"
-      gl={{ alpha: true, antialias: true }}
-      camera={{ position: [0, 0, 4], fov: 50 }}
+      dpr={[1, 1.8]}
+      shadows={false}
+      camera={{ position: [0, 0.5, 3.5], fov: 40 }}
+      gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
     >
-      <ambientLight intensity={0.9} />
+      <hemisphereLight args={[0xffffff, 0x444455, 0.9]} />
+      <ambientLight intensity={0.35} />
       <directionalLight position={[3, 5, 2]} intensity={1.1} />
+      <directionalLight position={[-3, 2, -2]} intensity={0.4} />
+
       <Suspense fallback={null}>
-        {/* 병합 후 교체 지점: <TreasureChest3D {...props} /> */}
-        <FallbackChest {...props} />
+        <TreasureChest3D
+          variant={variant}
+          result={result}
+          disabled={disabled}
+          resetNonce={resetNonce}
+          onOpenStart={onOpenStart}
+          onOpenComplete={onOpenComplete}
+        />
       </Suspense>
     </Canvas>
   );
