@@ -40,6 +40,19 @@ export type TreasureChest3DProps = {
   resetNonce?: number;
   /** 코인 연출 모드 (기본 burst) */
   coinMode?: CoinMode;
+  /**
+   * controlled 모드. true면 탭해도 바로 열리지 않고 onTap만 호출한다.
+   * 실제 열림은 외부(AR)가 GPS/RPC 성공을 확인한 뒤 openSignal을 바꿔 승인해야 시작된다.
+   * 기본 false → 기존 uncontrolled(탭=즉시 열림) 동작 유지.
+   */
+  controlled?: boolean;
+  /** 탭된 순간 호출. controlled에서 AR이 GPS/RPC를 실행하는 신호로 쓴다. */
+  onTap?: () => void;
+  /**
+   * controlled 열림 승인 트리거. 값이 바뀌면(초기값 제외) shake→open을 시작한다.
+   * 운영 실패(TOO_FAR/EXPIRED/ALREADY_CLAIMED)면 이 값을 바꾸지 않으면 상자는 idle 유지.
+   */
+  openSignal?: number;
   onOpenStart?: () => void;
   onOpenComplete?: () => void;
 };
@@ -59,6 +72,9 @@ export function TreasureChest3D({
   disabled = false,
   resetNonce = 0,
   coinMode = "burst",
+  controlled = false,
+  onTap,
+  openSignal = 0,
   onOpenStart,
   onOpenComplete,
 }: TreasureChest3DProps) {
@@ -215,17 +231,37 @@ export function TreasureChest3D({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetNonce]);
 
+  // 열림(shake→open) 시작. 탭(uncontrolled)과 openSignal(controlled 승인)이 공유한다.
+  const startOpening = useCallback(() => {
+    if (phaseRef.current !== "idle") return; // 이미 여는 중/열림이면 무시
+    setPhaseBoth("opening");
+    shakeStartRef.current = null; // 다음 프레임에서 현재 시각으로 초기화됨
+    onOpenStart?.();
+  }, [onOpenStart, setPhaseBoth]);
+
   const handleClick = useCallback(
     (e: ThreeEvent<MouseEvent>) => {
       e.stopPropagation();
       if (disabled) return;
       if (phaseRef.current !== "idle") return; // 중복 클릭 방지
-      setPhaseBoth("opening");
-      shakeStartRef.current = null; // 다음 프레임에서 현재 시각으로 초기화됨
-      onOpenStart?.();
+      onTap?.(); // 탭 알림 (controlled에서 AR이 GPS/RPC 실행)
+      if (controlled) return; // controlled면 외부 openSignal 승인 전까지 열지 않음
+      startOpening();
     },
-    [disabled, onOpenStart, setPhaseBoth],
+    [disabled, controlled, onTap, startOpening],
   );
+
+  // controlled 열림 승인: openSignal이 바뀌면(초기값 제외) 열림 시작
+  const firstOpenSignalRef = useRef(true);
+  useEffect(() => {
+    if (firstOpenSignalRef.current) {
+      firstOpenSignalRef.current = false;
+      return;
+    }
+    if (!controlled) return; // uncontrolled에서는 openSignal 무시
+    startOpening();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openSignal]);
 
   const handlePointerOver = useCallback(() => {
     if (!disabled && phaseRef.current === "idle") document.body.style.cursor = "pointer";
