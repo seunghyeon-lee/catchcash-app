@@ -37,14 +37,14 @@ type OverlayError = {
 /** 운영/검증 실패 사유 → AR 오버레이 문구/동작 매핑(공식 명세 20 STEP20). */
 function mapClaimFailure(reason: ClaimFailureReason, message: string): OverlayError {
   const retryable: ClaimFailureReason[] = ["LOCATION_ERROR", "SERVER_ERROR", "TOO_FAR"];
-  const titleByReason: Partial<Record<ClaimFailureReason, string>> = {
+  const titleByReason: Record<ClaimFailureReason, string> = {
     LOCATION_ERROR: "현재 위치를 확인할 수 없어요.",
     TOO_FAR: "보물에서 너무 멀어졌어요.",
-    ALREADY_CLOSED: "앗! 눈앞에서 보물을 놓쳤어요.",
     ALREADY_CLAIMED: "이미 획득한 보물이에요.",
     SUSPENDED_USER: "현재 계정으로는 사냥할 수 없어요.",
     EXPIRED_TREASURE: "사냥 기간이 끝난 보물이에요.",
     INVALID_TREASURE: "보물 정보를 찾을 수 없어요.",
+    UNAUTHENTICATED: "로그인이 필요해요.",
     SERVER_ERROR: "사냥에 실패했어요. 다시 시도해주세요.",
   };
   return {
@@ -157,7 +157,8 @@ function ArHuntContent() {
     if (!treasureId) return;
     setStatus("claimed");
     stopCamera();
-    const resultParam = chestResult === "lose" ? "fail" : "success";
+    // SUCCESS→win→result=success, EMPTY→lose→result=empty (기존 result=fail 폐기, 리더 v2 §5).
+    const resultParam = chestResult === "lose" ? "empty" : "success";
     router.push(`/hunt-result?result=${resultParam}&treasureId=${encodeURIComponent(treasureId)}`);
   }, [router, treasureId, stopCamera, chestResult]);
 

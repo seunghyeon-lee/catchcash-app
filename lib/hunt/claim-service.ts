@@ -1,73 +1,103 @@
 import { getAuthenticatedUserSession } from "@/lib/profile/auth-session";
 
-export type ClaimDataSource = "supabase" | "mock";
+/**
+ * `claim_treasure_with_lock` RPC 반환 status.
+ * 정상 게임 결과(SUCCESS/EMPTY)와 운영/검증 실패를 구분한다.
+ * 계약: docs/db/Claim_Treasure_RPC_Contract.md,
+ *      supabase/migrations/20260902090000_claim_treasure_with_lock_rpc.sql
+ */
+export type ClaimStatus =
+  | "SUCCESS"
+  | "EMPTY"
+  | "TOO_FAR"
+  | "EXPIRED_TREASURE"
+  | "ALREADY_CLAIMED"
+  | "INVALID_TREASURE"
+  | "UNAUTHENTICATED"
+  | "SUSPENDED_USER"
+  | "LOCATION_ERROR"
+  | "SERVER_ERROR";
 
-export type CreateHuntClaimResult = {
+const CLAIM_STATUSES: readonly ClaimStatus[] = [
+  "SUCCESS",
+  "EMPTY",
+  "TOO_FAR",
+  "EXPIRED_TREASURE",
+  "ALREADY_CLAIMED",
+  "INVALID_TREASURE",
+  "UNAUTHENTICATED",
+  "SUSPENDED_USER",
+  "LOCATION_ERROR",
+  "SERVER_ERROR",
+];
+
+export type ClaimTreasureResult = {
+  status: ClaimStatus;
+  /** SUCCESS/EMPTY만 true(정상 게임 결과). 나머지는 운영/검증 실패. */
   ok: boolean;
-  source: ClaimDataSource;
-  /**
-   * 같은 보물상자에서 이미 성공 claim을 받은 경우 true.
-   * 결과 화면(already_claimed) 처리와 UI 매핑은 6차 작업에서 이 값을 소비한다.
-   */
-  alreadyClaimed?: boolean;
-  errorMessage?: string;
+  claimId: string | null;
+  rewardType: string | null;
+  distanceM: number | null;
+  radiusM: number | null;
+  detail: string | null;
 };
 
+function toNumberOrNull(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function toStringOrNull(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+/** 알 수 없는 응답은 SERVER_ERROR로 정규화해 UI가 raw response 구조에 직접 의존하지 않게 한다. */
+function normalizeClaimResult(raw: Record<string, unknown>): ClaimTreasureResult {
+  const status = raw.status;
+  const safeStatus: ClaimStatus =
+    typeof status === "string" && (CLAIM_STATUSES as readonly string[]).includes(status)
+      ? (status as ClaimStatus)
+      : "SERVER_ERROR";
+
+  return {
+    status: safeStatus,
+    ok: safeStatus === "SUCCESS" || safeStatus === "EMPTY",
+    claimId: toStringOrNull(raw.claim_id),
+    rewardType: toStringOrNull(raw.reward_type),
+    distanceM: toNumberOrNull(raw.distance_m),
+    radiusM: toNumberOrNull(raw.radius_m),
+    detail: toStringOrNull(raw.detail),
+  };
+}
+
 /**
- * `/ar-hunt` 상자 열기 결과로 `treasure_claims` row 생성을 시도한다.
- * 세션이 없거나 대상 보물이 없으면 DB에 쓰지 않고 기존 mock 성공 흐름을 유지한다.
- * 위치/기간/수량 검증은 아직 서버 RPC가 없어 이 단계에서는 하지 않는다.
+ * 서버에서 보물 획득을 원자적으로 판정하는 `claim_treasure_with_lock` RPC를 호출한다.
  *
- * 중복 획득 방어(2차 "준비"): insert 전에 같은 사용자+상자의 success claim이
- * 이미 있는지 조회해 중복 insert를 막는다. 이 클라이언트 측 선조회는 best-effort이며
- * 동시 요청(race)까지는 막지 못한다. 확실한 1인 1회 보장은 DB unique 제약 또는
- * 서버 RPC가 필요하다(마이그레이션/서버 = 리더 영역, 후속 이슈).
- *
- * `coords`(선택): AR 화면에서 상자 터치 시 재조회한 현재 위치. 기존 `treasure_claims`의
- * `claimed_latitude`/`claimed_longitude` 컬럼에 기록만 한다(스키마 변경 아님). 거리 기반
- * 서버 검증은 `claim_treasure_with_lock` RPC 도입 전까지 하지 않는다.
+ * 사용자 식별은 서버 `auth.uid()` 기준이므로 클라이언트가 user_id를 넘기지 않고 좌표만 전달한다.
+ * 인증/거리/기간/수량/중복/동시성 검증은 모두 서버(DB 함수)에서 처리하며,
+ * 클라이언트는 결과 status만 소비한다(당첨/꽝을 프론트에서 확정하지 않음).
+ * 세션 없음·네트워크·파싱 실패는 UNAUTHENTICATED / SERVER_ERROR로 정규화한다.
  */
-export async function createHuntClaim(
-  treasureBoxId: string | null,
-  coords?: { latitude: number; longitude: number },
-): Promise<CreateHuntClaimResult> {
+export async function claimTreasureWithLock(
+  treasureBoxId: string,
+  coords: { latitude: number; longitude: number },
+): Promise<ClaimTreasureResult> {
   const session = await getAuthenticatedUserSession();
-
-  if (!session || !treasureBoxId) {
-    return { ok: true, source: "mock" };
+  if (!session) {
+    return normalizeClaimResult({ status: "UNAUTHENTICATED", detail: "NO_SESSION" });
   }
 
-  // 이미 성공 claim이 있으면 다시 insert하지 않는다.
-  // 선조회 자체가 실패하면 사용자 흐름을 막지 않도록 그대로 insert를 시도한다(기존 동작 유지).
-  const { data: existingClaim } = await session.client
-    .from("treasure_claims")
-    .select("id")
-    .eq("user_id", session.userId)
-    .eq("treasure_box_id", treasureBoxId)
-    .eq("result", "success")
-    .limit(1)
-    .maybeSingle();
-
-  if (existingClaim) {
-    return { ok: true, source: "supabase", alreadyClaimed: true };
-  }
-
-  const { error } = await session.client.from("treasure_claims").insert({
-    user_id: session.userId,
-    treasure_box_id: treasureBoxId,
-    result: "success",
-    ...(coords
-      ? { claimed_latitude: coords.latitude, claimed_longitude: coords.longitude }
-      : {}),
+  const { data, error } = await session.client.rpc("claim_treasure_with_lock", {
+    p_treasure_id: treasureBoxId,
+    p_latitude: coords.latitude,
+    p_longitude: coords.longitude,
   });
 
   if (error) {
-    return {
-      ok: false,
-      source: "supabase",
-      errorMessage: "사냥 결과를 저장하지 못했어. 잠시 후 다시 시도해줘.",
-    };
+    return normalizeClaimResult({ status: "SERVER_ERROR", detail: error.message });
+  }
+  if (!data || typeof data !== "object") {
+    return normalizeClaimResult({ status: "SERVER_ERROR", detail: "EMPTY_RESPONSE" });
   }
 
-  return { ok: true, source: "supabase" };
+  return normalizeClaimResult(data as Record<string, unknown>);
 }

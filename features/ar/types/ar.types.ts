@@ -1,6 +1,8 @@
 // AR 사냥 화면(WebAR Lite) 공용 타입.
 // 기준: docs/frontend/user-app/07_AR_Hunt_Screen.md (12장 상태 정의 / 13장 Claim 정책)
 
+import type { ClaimStatus } from "@/lib/hunt/claim-service";
+
 /** AR 사냥 화면 상태 머신. 공식 명세 12장과 1:1 대응한다. */
 export type ARHuntStatus =
   | "initial"
@@ -32,18 +34,11 @@ export type GeoCoords = {
 };
 
 /**
- * 운영/검증 실패 사유. 이 값들은 "꽝"이 아니라 오류로 취급하며
- * AR 화면 내 오류 오버레이로 안내한다(결과 화면으로 보내지 않음).
+ * 운영/검증 실패 사유(= RPC status에서 정상 결과 SUCCESS/EMPTY를 뺀 나머지).
+ * 이 값들은 "꽝"이 아니라 오류로 취급하며 AR 화면 내 오류 오버레이로 안내한다(결과 화면으로 보내지 않음).
+ * claim-service의 ClaimStatus에서 파생해 서버 계약과 항상 일치시킨다.
  */
-export type ClaimFailureReason =
-  | "LOCATION_ERROR"
-  | "TOO_FAR"
-  | "ALREADY_CLOSED"
-  | "ALREADY_CLAIMED"
-  | "SUSPENDED_USER"
-  | "EXPIRED_TREASURE"
-  | "INVALID_TREASURE"
-  | "SERVER_ERROR";
+export type ClaimFailureReason = Exclude<ClaimStatus, "SUCCESS" | "EMPTY">;
 
 /**
  * Claim 처리 결과.
