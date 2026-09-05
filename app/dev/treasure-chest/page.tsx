@@ -10,6 +10,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { notFound } from "next/navigation";
 
 import type { ChestVariant, ChestResult, CoinMode } from "@/lib/hunt/treasure-chest-config";
 
@@ -42,6 +43,12 @@ const STATUS_LABEL: Record<Status, string> = {
 };
 
 export default function TreasureChestDevPage() {
+  // 개발/QA 전용 페이지 — production 빌드에서는 경로를 노출하지 않고 404 처리한다.
+  // (process.env.NODE_ENV는 빌드 시 상수로 치환되어 dev에서만 아래 렌더가 실행됨)
+  if (process.env.NODE_ENV === "production") {
+    notFound();
+  }
+
   const [variant, setVariant] = useState<ChestVariant>("basic");
   const [result, setResult] = useState<ChestResult>("win");
   const [coinMode, setCoinMode] = useState<CoinMode>("burst");

@@ -117,6 +117,7 @@ export function TreasureChest3D({
   const shakeStartRef = useRef<number | null>(null);
   const openStartedRef = useRef(false);
   const completedRef = useRef(false);
+  const completeTimerRef = useRef<number | null>(null); // 완료 안전장치 타이머 id (cleanup용)
   const lightRef = useRef<THREE.PointLight>(null);
 
   /**
@@ -169,12 +170,27 @@ export function TreasureChest3D({
     return () => mixer.removeEventListener("finished", onFinished);
   }, [mixer, completeOpen]);
 
+  // unmount 시 진행 중인 완료 타이머 정리 + 커서 복구 (effect cleanup)
+  useEffect(() => {
+    return () => {
+      if (completeTimerRef.current !== null) {
+        clearTimeout(completeTimerRef.current);
+        completeTimerRef.current = null;
+      }
+      document.body.style.cursor = "auto";
+    };
+  }, []);
+
   // resetNonce 변경 시 닫힘·idle로 리셋 (Canvas remount 없이). 초기값은 무시
   const firstResetRef = useRef(true);
   useEffect(() => {
     if (firstResetRef.current) {
       firstResetRef.current = false;
       return;
+    }
+    if (completeTimerRef.current !== null) {
+      clearTimeout(completeTimerRef.current);
+      completeTimerRef.current = null;
     }
     openStartedRef.current = false;
     completedRef.current = false;
@@ -259,10 +275,10 @@ export function TreasureChest3D({
           action.play();
           // 안전장치: finished 이벤트를 놓쳐도 재생시간 후 완료 처리
           const dur = action.getClip().duration || 1;
-          window.setTimeout(() => completeOpen(), (dur + 0.3) * 1000);
+          completeTimerRef.current = window.setTimeout(() => completeOpen(), (dur + 0.3) * 1000);
         } else {
           // 열림 클립이 없는 에셋 → crash 금지, 짧게 대기 후 완료 처리
-          window.setTimeout(() => completeOpen(), 250);
+          completeTimerRef.current = window.setTimeout(() => completeOpen(), 250);
         }
       }
     }
