@@ -56,9 +56,13 @@ export default function TreasureChestDevPage() {
   const [resetKey, setResetKey] = useState(0);
   const [status, setStatus] = useState<Status>("idle");
   const [completeCount, setCompleteCount] = useState(0);
+  const [controlled, setControlled] = useState(false);
+  const [openSignal, setOpenSignal] = useState(0);
+  const [tapped, setTapped] = useState(false); // controlled에서 탭됨(열림 승인 대기)
 
   const handleReset = () => {
     setStatus("idle");
+    setTapped(false);
     setResetKey((k) => k + 1);
   };
 
@@ -79,8 +83,16 @@ export default function TreasureChestDevPage() {
           result={result}
           resetNonce={resetKey}
           coinMode={coinMode}
+          controlled={controlled}
+          openSignal={openSignal}
+          onTap={() => {
+            if (controlled) setTapped(true);
+          }}
           enableControls={controls}
-          onOpenStart={() => setStatus("opening")}
+          onOpenStart={() => {
+            setStatus("opening");
+            setTapped(false);
+          }}
           onOpenComplete={() => {
             setStatus("opened");
             setCompleteCount((c) => c + 1);
@@ -91,7 +103,8 @@ export default function TreasureChestDevPage() {
           {STATUS_LABEL[status]}
         </div>
         <div className="pointer-events-none absolute bottom-3 left-3 text-[11px] text-white/50">
-          상자를 탭하면 열립니다{controls ? " · 드래그로 회전" : ""}
+          {controlled ? "탭 → '열림 승인' 눌러야 열림" : "상자를 탭하면 열립니다"}
+          {controls ? " · 드래그로 회전" : ""}
         </div>
       </div>
 
@@ -135,6 +148,23 @@ export default function TreasureChestDevPage() {
           </Btn>
         </ControlRow>
 
+        <ControlRow label="제어">
+          <Btn
+            active={controlled}
+            onClick={() => {
+              setControlled((c) => !c);
+              handleReset();
+            }}
+          >
+            controlled {controlled ? "ON" : "OFF"}
+          </Btn>
+          {controlled && (
+            <Btn active={false} onClick={() => setOpenSignal((k) => k + 1)}>
+              열림 승인 (openSignal)
+            </Btn>
+          )}
+        </ControlRow>
+
         <ControlRow label="옵션">
           <Btn active={controls} onClick={() => setControls((c) => !c)}>
             카메라 조작 {controls ? "ON" : "OFF"}
@@ -153,6 +183,13 @@ export default function TreasureChestDevPage() {
             onOpenComplete 호출 횟수: <span className="text-white">{completeCount}</span>
             <span className="text-white/40"> (열림 1회당 정확히 +1이어야 정상)</span>
           </div>
+          {controlled && (
+            <div className="mt-1">
+              controlled 탭 상태:{" "}
+              <span className="text-white">{tapped ? "감지됨 (열림 승인 대기)" : "대기"}</span>
+              <span className="text-white/40"> · 승인 안 하면 상자는 idle 유지(운영 실패 시뮬레이션)</span>
+            </div>
+          )}
         </div>
       </section>
     </main>
