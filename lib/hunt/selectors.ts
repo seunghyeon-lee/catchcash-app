@@ -4,6 +4,7 @@ import { mockInventoryItems } from "@/lib/hunt/mock/inventory-items";
 import { mockTreasureBoxes } from "@/lib/hunt/mock/treasure-boxes";
 import { mockTreasureClaims } from "@/lib/hunt/mock/treasure-claims";
 import {
+  buildHuntFailContent,
   mapInventoryItemToRewardDetailUi,
   mapInventoryListRowToRewardUi,
   mapTreasureBoxToTreasureUi,
@@ -56,14 +57,10 @@ export function getSuccessReward() {
 
 export function getHuntResultByQuery(result?: string) {
   const successClaim = mockTreasureClaims.find((item) => item.result === "success");
-  const failClaim =
-    result === "fail"
-      ? mockTreasureClaims.find((item) => item.result === "too_far") ??
-        mockTreasureClaims.find((item) => item.result !== "success")
-      : mockTreasureClaims.find((item) => item.result !== "success");
 
   return {
     success: mapTreasureClaimToResultUi(successClaim, getSuccessReward()),
-    fail: mapTreasureClaimToResultUi(failClaim, undefined),
+    // 결과 상태(result)에 따라 실패형 화면 콘텐츠를 매핑한다 (too_far/empty/expired/already_claimed/fail).
+    fail: buildHuntFailContent(result),
   } as const;
 }
