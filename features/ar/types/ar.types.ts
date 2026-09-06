@@ -9,6 +9,7 @@ export type ARHuntStatus =
   | "checking_permission"
   | "camera_loading"
   | "asset_loading"
+  | "target_resolving"
   | "ready"
   | "touching"
   | "claiming"
