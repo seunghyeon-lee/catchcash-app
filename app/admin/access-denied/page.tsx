@@ -93,7 +93,7 @@ function AccessDeniedContent() {
 
 export default function AdminAccessDeniedPage() {
   return (
-    <AdminShell>
+    <AdminShell guard="session">
       <Suspense fallback={<p className="text-sm text-[#6b7280]">접근 안내를 불러오는 중...</p>}>
         <AccessDeniedContent />
       </Suspense>

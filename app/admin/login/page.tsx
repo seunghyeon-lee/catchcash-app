@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { getAdminContext } from "@/lib/admin/admin-context";
+import { clearAdminSessionCache, loadAdminSession } from "@/lib/admin/admin-session";
 import { getSupabaseBrowserClientOrNull } from "@/lib/supabase";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -14,6 +15,19 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // 이미 active 관리자로 로그인되어 있으면 로그인 화면을 다시 보여주지 않고 대시보드로 보낸다.
+  useEffect(() => {
+    let active = true;
+    void loadAdminSession().then((result) => {
+      if (active && result.state === "authorized") {
+        router.replace("/admin/dashboard");
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -54,9 +68,13 @@ export default function AdminLoginPage() {
         return;
       }
 
+      // 로그인/로그아웃으로 세션이 바뀌었으므로 가드 세션 캐시를 무효화한다.
+      clearAdminSessionCache();
+
       const adminContext = await getAdminContext();
       if (!adminContext) {
         await client.auth.signOut();
+        clearAdminSessionCache();
         router.replace("/admin/access-denied?reason=role_missing");
         return;
       }
