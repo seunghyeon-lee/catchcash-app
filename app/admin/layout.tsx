@@ -32,12 +32,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       const session = await loadAdminSession();
       if (!isMounted) return;
 
-      if (session.status === "authorized") {
+      if (session.state === "authorized") {
         setCanRender(true);
         return;
       }
 
-      if (session.status === "unauthenticated") {
+      if (session.state === "unauthenticated") {
         router.replace("/admin/login");
         return;
       }
