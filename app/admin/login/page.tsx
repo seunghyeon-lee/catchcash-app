@@ -3,7 +3,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { getAdminContext } from "@/lib/admin/admin-context";
 import { clearAdminSessionCache, loadAdminSession } from "@/lib/admin/admin-session";
 import { getSupabaseBrowserClientOrNull } from "@/lib/supabase";
 
@@ -71,15 +70,26 @@ export default function AdminLoginPage() {
       // 로그인/로그아웃으로 세션이 바뀌었으므로 가드 세션 캐시를 무효화한다.
       clearAdminSessionCache();
 
-      const adminContext = await getAdminContext();
-      if (!adminContext) {
+      const adminSession = await loadAdminSession();
+
+      if (adminSession.state === "authorized") {
+        router.replace("/admin/dashboard");
+        return;
+      }
+
+      if (adminSession.state === "forbidden") {
         await client.auth.signOut();
         clearAdminSessionCache();
         router.replace("/admin/access-denied?reason=role_missing");
         return;
       }
 
-      router.replace("/admin/dashboard");
+      if (adminSession.state === "unauthenticated") {
+        setError("로그인 세션을 확인할 수 없습니다. 다시 로그인해주세요.");
+        return;
+      }
+
+      setError("관리자 권한을 확인할 수 없습니다.");
     } catch {
       setError("관리자 권한을 확인할 수 없습니다.");
     } finally {
