@@ -37,5 +37,7 @@ export async function getAdminContext(): Promise<AdminContext | null> {
   const session = await loadAdminSession();
   if (session.state !== "authorized") return null;
 
-  return { client: session.client, adminUserId: session.adminUserId };
+  const client = getSupabaseBrowserClient();
+
+  return { client, adminUserId: session.adminUserId };
 }
