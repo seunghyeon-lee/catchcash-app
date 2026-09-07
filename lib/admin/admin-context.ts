@@ -35,7 +35,7 @@ export type AdminWriteResult = {
  */
 export async function getAdminContext(): Promise<AdminContext | null> {
   const session = await loadAdminSession();
-  if (session.status !== "authorized") return null;
+  if (session.state !== "authorized") return null;
 
   return { client: session.client, adminUserId: session.adminUserId };
 }
