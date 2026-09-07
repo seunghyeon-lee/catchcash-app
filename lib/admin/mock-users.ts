@@ -1,3 +1,5 @@
+import { formatAdminDateValue } from "./date-format";
+
 export type AdminUserStatus = "active" | "suspended" | "deleted" | "inactive";
 export type AdminUserLoginProvider = "google" | "kakao" | "apple";
 
@@ -372,13 +374,11 @@ const MOCK_ADMIN_USER_SECURITY_LOGS: Record<string, AdminUserSecurityLogSummaryI
 };
 
 export function formatAdminUserDate(value: string | null) {
-  if (!value) return "-";
-
-  return new Intl.DateTimeFormat("ko-KR", {
+  return formatAdminDateValue(value, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(new Date(value));
+  });
 }
 
 export function findAdminUser(id: string) {
@@ -426,14 +426,12 @@ export function getAdminUserSecurityLogSummaries(userId: string) {
 }
 
 export function formatAdminUserDateTime(value: string | null) {
-  if (!value) return "-";
-
-  return new Intl.DateTimeFormat("ko-KR", {
+  return formatAdminDateValue(value, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).format(new Date(value));
+  });
 }

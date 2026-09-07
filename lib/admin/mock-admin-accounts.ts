@@ -1,3 +1,5 @@
+import { formatAdminDateValue } from "./date-format";
+
 export type AdminRole = "super_admin" | "operator" | "viewer";
 
 export type AdminStatus = "active" | "inactive" | "locked";
@@ -244,24 +246,22 @@ export const MOCK_ADMIN_ACCOUNTS: AdminAccountListItem[] = [
 ];
 
 export function formatAdminAccountDateTime(value: string | null) {
-  if (!value) return "-";
-
-  return new Intl.DateTimeFormat("ko-KR", {
+  return formatAdminDateValue(value, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).format(new Date(value));
+  });
 }
 
 export function formatAdminAccountDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
+  return formatAdminDateValue(value, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(new Date(value));
+  });
 }
 
 export function findAdminAccount(adminId: string) {

@@ -1,3 +1,5 @@
+import { formatAdminDateValue } from "./date-format";
+
 export type OperationLogEventType =
   | "treasure_created"
   | "treasure_updated"
@@ -200,16 +202,14 @@ export const MOCK_OPERATION_LOGS: OperationLogListItem[] = buildMockOperationLog
 export const MOCK_OPERATION_LOG_ADMINS = admins;
 
 export function formatOperationLogDateTime(value: string | null) {
-  if (!value) return "-";
-
-  return new Intl.DateTimeFormat("ko-KR", {
+  return formatAdminDateValue(value, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).format(new Date(value));
+  });
 }
 
 export function getOperationLogResourceHref(log: OperationLogListItem): string | null {

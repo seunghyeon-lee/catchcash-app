@@ -1,3 +1,4 @@
+import { loadAdminSession } from "./admin-session";
 import { getSupabaseBrowserClient } from "@/lib/supabase";
 
 /**
@@ -28,23 +29,15 @@ export type AdminWriteResult = {
 /**
  * 현재 Supabase 세션이 active admin인지 확인한 뒤 관리자 컨텍스트를 반환한다.
  *
- * `current_admin_user_id` RPC는 admin_users 테이블을 Data API에 직접 노출하지 않고도
- * RLS와 동일한 관리자 식별자를 돌려준다. env가 없거나, 세션이 없거나, admin이
- * 아니거나, 조회 중 에러가 발생하면 null을 반환하며 이 경우 각 서비스는 mock
- * fallback을 사용한다. 세션이 없을 때 임의의 admin id를 만들지 않는다.
+ * `get_current_admin_session` RPC는 admin_users 테이블을 Data API에 직접 노출하지 않고도
+ * active admin 여부와 허용 role을 확인한다. env가 없거나, 세션이 없거나, admin이
+ * 아니거나, 조회 중 에러가 발생하면 null을 반환하며 이 경우 각 서비스는 mock fallback을 사용한다.
  */
 export async function getAdminContext(): Promise<AdminContext | null> {
-  try {
-    const client = getSupabaseBrowserClient();
+  const session = await loadAdminSession();
+  if (session.state !== "authorized") return null;
 
-    const { data: userData, error: userError } = await client.auth.getUser();
-    if (userError || !userData.user) return null;
+  const client = getSupabaseBrowserClient();
 
-    const { data: adminUserId, error: adminError } = await client.rpc("current_admin_user_id");
-    if (adminError || !adminUserId) return null;
-
-    return { client, adminUserId: adminUserId as string };
-  } catch {
-    return null;
-  }
+  return { client, adminUserId: session.adminUserId };
 }

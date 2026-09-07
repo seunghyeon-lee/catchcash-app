@@ -20,6 +20,14 @@ export type AdminSessionResult =
 
 const ALLOWED_ADMIN_ROLES: readonly AdminRole[] = ["super_admin", "operator", "viewer"];
 
+type AdminSessionRpcRow = {
+  id: string | null;
+  role: string | null;
+  status: string | null;
+  name: string | null;
+  email: string | null;
+};
+
 // active↔active 페이지 이동 시 매번 getUser round-trip으로 로딩이 깜빡이지 않도록
 // 확정 결과(authorized/forbidden)만 짧게 캐시한다. 전체 새로고침 시 모듈이 초기화되어 재확인한다.
 const CACHE_TTL_MS = 20_000;
@@ -30,12 +38,17 @@ export function clearAdminSessionCache() {
   cache = null;
 }
 
+function firstAdminSessionRow(data: AdminSessionRpcRow[] | AdminSessionRpcRow | null): AdminSessionRpcRow | null {
+  if (!data) return null;
+  if (Array.isArray(data)) return data[0] ?? null;
+  return data;
+}
+
 /**
  * 현재 브라우저 세션이 active 관리자(admin_users row 존재 + status=active + 허용 role)인지 판정한다.
  *
- * admin_users RLS(select)는 `has_admin_role`(active 관리자)만 통과하므로,
- * inactive 관리자·일반 사용자·비관리자는 select 결과가 비어 `forbidden`으로 판정된다.
- * 세션이 없을 때 임의 관리자 정보를 만들지 않는다.
+ * `get_current_admin_session` RPC가 SECURITY DEFINER로 active 관리자 여부를 판정하므로,
+ * 브라우저에서 admin_users를 직접 select하지 않는다. 세션이 없을 때 임의 관리자 정보를 만들지 않는다.
  */
 export async function loadAdminSession(): Promise<AdminSessionResult> {
   const client = getSupabaseBrowserClientOrNull();
@@ -45,23 +58,21 @@ export async function loadAdminSession(): Promise<AdminSessionResult> {
     const { data: userData, error: userError } = await client.auth.getUser();
     if (userError || !userData.user) return { state: "unauthenticated" };
 
-    const { data, error } = await client
-      .from("admin_users")
-      .select("id, role, status, name, email")
-      .eq("user_id", userData.user.id)
-      .maybeSingle();
+    const { data, error } = await client.rpc("get_current_admin_session");
 
     if (error) return { state: "error" };
-    if (!data) return { state: "forbidden" };
-    if (data.status !== "active") return { state: "forbidden" };
-    if (!ALLOWED_ADMIN_ROLES.includes(data.role as AdminRole)) return { state: "forbidden" };
+    const admin = firstAdminSessionRow(data as AdminSessionRpcRow[] | AdminSessionRpcRow | null);
+    if (!admin) return { state: "forbidden" };
+    if (!admin.id) return { state: "forbidden" };
+    if (admin.status !== "active") return { state: "forbidden" };
+    if (!ALLOWED_ADMIN_ROLES.includes(admin.role as AdminRole)) return { state: "forbidden" };
 
     return {
       state: "authorized",
-      adminUserId: data.id as string,
-      role: data.role as AdminRole,
-      name: (data.name as string | null) ?? "",
-      email: (data.email as string | null) ?? "",
+      adminUserId: admin.id as string,
+      role: admin.role as AdminRole,
+      name: admin.name ?? "",
+      email: admin.email ?? "",
     };
   } catch {
     return { state: "error" };
