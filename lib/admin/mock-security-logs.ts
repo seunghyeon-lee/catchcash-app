@@ -1,3 +1,5 @@
+import { formatAdminDateValue } from "./date-format";
+
 export type SecurityLogEventType =
   | "location_validation_failed"
   | "repeated_claim_attempt"
@@ -119,16 +121,14 @@ function buildMockSecurityLogs(): SecurityLogListItem[] {
 export const MOCK_SECURITY_LOGS: SecurityLogListItem[] = buildMockSecurityLogs();
 
 export function formatSecurityLogDateTime(value: string | null) {
-  if (!value) return "-";
-
-  return new Intl.DateTimeFormat("ko-KR", {
+  return formatAdminDateValue(value, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).format(new Date(value));
+  });
 }
 
 export function findSecurityLog(logId: string) {

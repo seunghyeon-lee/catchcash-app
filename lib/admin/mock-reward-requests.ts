@@ -1,3 +1,5 @@
+import { formatAdminDateValue } from "./date-format";
+
 export type AdminRewardStatus = "ready" | "issued" | "failed" | "used" | "expired" | "canceled";
 export type AdminRewardRetryStatus = "none" | "requested" | "in_progress" | "succeeded" | "failed";
 export type AdminRewardDateField = "claimed_at" | "issue_requested_at" | "issued_at" | "failed_at" | "expires_at";
@@ -439,16 +441,14 @@ const ADMIN_REWARD_DETAIL_OVERRIDES: Record<string, Pick<AdminRewardDetail, "int
 };
 
 export function formatAdminRewardDateTime(value: string | null) {
-  if (!value) return "-";
-
-  return new Intl.DateTimeFormat("ko-KR", {
+  return formatAdminDateValue(value, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).format(new Date(value));
+  });
 }
 
 export function getAdminRewardDateValue(item: AdminRewardRequestListItem, field: AdminRewardDateField) {

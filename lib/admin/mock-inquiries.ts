@@ -1,3 +1,5 @@
+import { formatAdminDateValue } from "./date-format";
+
 export type AdminInquiryCategory = "general" | "usage" | "coupon" | "reward" | "account" | "bug" | "error" | "improvement" | "etc" | "other";
 export type AdminInquiryStatus = "received" | "reading" | "open" | "in_progress" | "resolved" | "answered" | "closed";
 
@@ -105,12 +107,12 @@ export function findAdminInquiry(id: string) {
 }
 
 export function formatAdminDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
+  return formatAdminDateValue(value, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).format(new Date(value));
+  });
 }

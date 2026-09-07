@@ -1,6 +1,8 @@
 export type AdminTreasureStatus = "active" | "inactive" | "deleted";
 export type AdminTreasureCalculatedStatus = "visible" | "scheduled" | "expired" | "sold_out" | "invalid";
 // DB treasure_rewards.status enum(active/replaced/ended)을 그대로 노출한다. inactive로 뭉뚱그리지 않는다.
+import { formatAdminDateValue } from "./date-format";
+
 export type AdminMappingStatus = "active" | "replaced" | "ended";
 export type AdminMappingProductStatus = "active" | "inactive" | "sold_out";
 export type AdminMappingTreasureOptionStatus = "active" | "inactive" | "sold_out" | "expired" | "invalid";
@@ -242,12 +244,12 @@ export function findActiveAdminMapping(treasureId: string) {
 }
 
 export function formatAdminMappingDateTime(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
+  return formatAdminDateValue(value, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).format(new Date(value));
+  });
 }

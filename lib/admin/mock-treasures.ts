@@ -1,3 +1,5 @@
+import { formatAdminDateValue } from "./date-format";
+
 export type AdminTreasureSaveStatus = "active" | "inactive" | "deleted";
 
 export type AdminTreasureCalculatedStatus =
@@ -402,24 +404,28 @@ export function getAdminTreasureVisibleChecks(detail: AdminTreasureDetail) {
 }
 
 export function formatAdminTreasureDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
+  return formatAdminDateValue(value, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(new Date(value));
+  });
 }
 
 export function formatAdminTreasureDateTime(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
+  return formatAdminDateValue(value, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).format(new Date(value));
+  });
 }
 
 export function formatAdminTreasurePeriod(startsAt: string, endsAt: string) {
-  return `${formatAdminTreasureDate(startsAt)} ~ ${formatAdminTreasureDate(endsAt)}`;
+  const startLabel = formatAdminTreasureDate(startsAt);
+  const endLabel = formatAdminTreasureDate(endsAt);
+
+  if (startLabel === "-" && endLabel === "-") return "-";
+  return `${startLabel} ~ ${endLabel}`;
 }
