@@ -18,5 +18,6 @@ export async function getCurrentCoords(): Promise<GeoCoords> {
   return {
     latitude: position.coords.latitude,
     longitude: position.coords.longitude,
+    accuracy: position.coords.accuracy,
   };
 }

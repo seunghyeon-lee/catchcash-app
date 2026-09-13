@@ -7,6 +7,8 @@ import { TreasureChest3D } from "@/components/hunt/TreasureChest3D";
 import type { ChestResult, ChestVariant } from "@/features/ar/types/ar.types";
 
 type ARCanvasProps = {
+  visible: boolean;
+  xOffset: number;
   variant: ChestVariant;
   result?: ChestResult;
   disabled?: boolean;
@@ -17,6 +19,12 @@ type ARCanvasProps = {
   onOpenComplete?: () => void;
 };
 
+const CHEST_X_RANGE = 1.3;
+
+function clampXOffset(value: number) {
+  return Math.min(1, Math.max(-1, value));
+}
+
 /**
  * 투명 R3F Canvas (공식 명세 6·8장). 카메라 영상 위에 팀원2 TreasureChest3D를 배치한다.
  * controlled 모드: 탭은 onTap만 알리고 즉시 열지 않는다. 서버 claim 성공을 확인한 뒤
@@ -24,6 +32,8 @@ type ARCanvasProps = {
  * 카메라/조명은 팀원2 TreasureChestScene 기준을 그대로 채용(모바일 최적화, shadow 미사용).
  */
 export function ARCanvas({
+  visible,
+  xOffset,
   variant,
   result,
   disabled,
@@ -31,6 +41,10 @@ export function ARCanvas({
   onTap,
   onOpenComplete,
 }: ARCanvasProps) {
+  if (!visible) return null;
+
+  const chestWorldX = clampXOffset(xOffset) * CHEST_X_RANGE;
+
   return (
     <Canvas
       className="absolute inset-0"
@@ -45,15 +59,17 @@ export function ARCanvas({
       <directionalLight position={[-3, 2, -2]} intensity={0.4} />
 
       <Suspense fallback={null}>
-        <TreasureChest3D
-          variant={variant}
-          result={result}
-          disabled={disabled}
-          controlled
-          openSignal={openSignal}
-          onTap={onTap}
-          onOpenComplete={onOpenComplete}
-        />
+        <group position={[chestWorldX, 0, 0]}>
+          <TreasureChest3D
+            variant={variant}
+            result={result}
+            disabled={disabled}
+            controlled
+            openSignal={openSignal}
+            onTap={onTap}
+            onOpenComplete={onOpenComplete}
+          />
+        </group>
       </Suspense>
     </Canvas>
   );

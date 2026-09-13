@@ -12,9 +12,10 @@ import { ARStatusBadge } from "@/features/ar/components/ARStatusBadge";
 import { ARTapIndicator } from "@/features/ar/components/ARTapIndicator";
 import { CameraVideoBackground } from "@/features/ar/components/CameraVideoBackground";
 import { useARLifecycleCleanup } from "@/features/ar/hooks/useARLifecycleCleanup";
+import { useARTreasureTargets } from "@/features/ar/hooks/useARTreasureTargets";
 import { useCameraStream } from "@/features/ar/hooks/useCameraStream";
+import { useDeviceHeading } from "@/features/ar/hooks/useDeviceHeading";
 import { useHapticFeedback } from "@/features/ar/hooks/useHapticFeedback";
-import { useNearestTreasureTarget } from "@/features/ar/hooks/useNearestTreasureTarget";
 import { useTreasureClaim } from "@/features/ar/hooks/useTreasureClaim";
 import type {
   ARHuntStatus,
@@ -31,8 +32,8 @@ const ARCanvas = dynamic(() => import("@/features/ar/components/ARCanvas").then(
 type OverlayError = {
   title: string;
   description?: string;
-  /** camera=권한/카메라 재시도, claim-retry=재터치, target-retry=보물 재탐색, map-only=지도 복귀만 */
-  kind: "camera" | "claim-retry" | "target-retry" | "map-only";
+  /** camera=권한/카메라 재시도, claim-retry=재터치, map-only=지도 복귀만 */
+  kind: "camera" | "claim-retry" | "map-only";
 };
 
 /** 운영/검증 실패 사유 → AR 오버레이 문구/동작 매핑(공식 명세 20 STEP20). */
@@ -58,31 +59,42 @@ function mapClaimFailure(reason: ClaimFailureReason, message: string): OverlayEr
 function ArHuntContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // 지도/힌트 진입은 query treasureId, BNB 직접 진입은 없음(nearest 자동 선택). 지시서 3장.
+  // query 진입만 특정 보물을 target으로 사용한다. 직접 진입은 자동 target을 확정하지 않는다.
   const queryTreasureId = searchParams.get("treasureId");
+  const {
+    heading: deviceHeading,
+    permission: headingPermission,
+    canRequestPermission: canRequestHeadingPermission,
+    requestPermission: requestHeadingPermission,
+  } = useDeviceHeading();
+  const { visibleCandidate, xOffset } = useARTreasureTargets(queryTreasureId, deviceHeading);
 
   const { state: cameraState, stream, requestCamera, stopCamera } = useCameraStream();
   const { impact } = useHapticFeedback();
   const { claimTreasure } = useTreasureClaim();
-  const { resolvedTreasureId, resolving, resolveError, retryResolve } =
-    useNearestTreasureTarget(queryTreasureId);
 
   const [status, setStatus] = useState<ARHuntStatus>("initial");
   const [chestResult, setChestResult] = useState<ChestResult | undefined>(undefined);
   const [arError, setArError] = useState<OverlayError | null>(null);
   // controlled 열림 승인 신호. 정상 claim(SUCCESS/EMPTY) 후 증가시켜 상자 open을 시작한다.
   const [openSignal, setOpenSignal] = useState(0);
+  const [lockedTarget, setLockedTarget] = useState<{ id: string; xOffset: number } | null>(null);
 
   // 추후 보물/보상 정책에 따라 variant를 결정한다(현재는 basic 고정).
   const chestVariant: ChestVariant = "basic";
+  const visibleTreasureId = visibleCandidate?.id ?? null;
+  const visibleXOffset = xOffset;
+  const activeTreasureId = lockedTarget?.id ?? visibleTreasureId;
+  const activeXOffset = lockedTarget?.xOffset ?? visibleXOffset;
+  const resolvedTreasureId = activeTreasureId;
 
-  // 진입 시 카메라 초기화. treasureId 유무와 무관하게 항상 실행한다(BNB 직접 진입 지원, 지시서 2·15장).
+  // 진입 시 카메라 초기화. treasureId 유무와 무관하게 항상 실행한다.
   useEffect(() => {
     setStatus("camera_loading");
     void requestCamera();
   }, [requestCamera]);
 
-  // 카메라 상태 + target 상태 → AR 상태 반영.
+  // 카메라 상태 → AR 상태 반영. target이 없어도 nearest 자동 탐색/오버레이는 띄우지 않는다.
   useEffect(() => {
     if (cameraState === "denied") {
       setStatus("permission_denied");
@@ -114,38 +126,9 @@ function ArHuntContent() {
       if (prev === "claiming" || prev === "opening" || prev === "claimed" || prev === "failed") {
         return prev;
       }
-      if (resolveError) return "failed";
-      if (resolving || !resolvedTreasureId) return "target_resolving";
       return "ready";
     });
-  }, [cameraState, resolving, resolvedTreasureId, resolveError]);
-
-  // target 탐색 실패 → 오버레이(지시서 16·17장). 카메라 오류 표시 중이면 그 오버레이를 우선한다.
-  useEffect(() => {
-    if (!resolveError) return;
-    if (status === "permission_denied" || status === "unsupported" || status === "camera_error") {
-      return;
-    }
-    if (resolveError === "no_treasure") {
-      setArError({
-        title: "주변에 사냥할 수 있는 보물이 없어요.",
-        description: "지도에서 보물을 찾아보세요.",
-        kind: "map-only",
-      });
-    } else if (resolveError === "server_error") {
-      setArError({
-        title: "보물 정보를 불러오지 못했어요.",
-        description: "잠시 후 다시 시도해주세요.",
-        kind: "target-retry",
-      });
-    } else {
-      setArError({
-        title: "현재 위치를 확인할 수 없어요.",
-        description: "위치 권한을 확인한 뒤 다시 시도해주세요.",
-        kind: "target-retry",
-      });
-    }
-  }, [resolveError, status]);
+  }, [cameraState]);
 
   // 화면 이탈/백그라운드 시 카메라 정리.
   useARLifecycleCleanup(stopCamera);
@@ -163,27 +146,25 @@ function ArHuntContent() {
 
   const handleClaimRetry = useCallback(() => {
     setArError(null);
+    setLockedTarget(null);
     setStatus("ready");
   }, []);
 
-  // 보물 재탐색(server_error / location_error). 지도로 튕기지 않고 다시 시도한다.
-  // status를 target_resolving으로 되돌려야 카메라+target effect의 "failed" 가드를 벗어나
-  // 재조회 성공 시 ready로, 실패 시 다시 failed로 정상 재계산된다(재시도 데드락 방지).
-  const handleTargetRetry = useCallback(() => {
-    setArError(null);
-    setStatus("target_resolving");
-    retryResolve();
-  }, [retryResolve]);
+  const handleHeadingPermissionRequest = useCallback(() => {
+    void requestHeadingPermission();
+  }, [requestHeadingPermission]);
 
   // 상자 탭(controlled onTap) → 중복 잠금 → 햅틱 → GPS 재조회 → claim RPC(공식 명세 10.2 / 12.1).
   // controlled라 탭만으로는 상자가 열리지 않는다. claim 결과에 따라 open 여부를 승인한다.
-  // 대상은 resolvedTreasureId(지도 진입=query, BNB 진입=nearest). 지시서 19장.
+  // 대상은 현재 화면에 실제로 표시 중인 visibleCandidate.id를 사용한다.
   const handleChestTap = useCallback(async () => {
-    if (status !== "ready" || !resolvedTreasureId) return;
+    if (status !== "ready" || !visibleTreasureId || visibleXOffset === null) return;
+    const targetTreasureId = visibleTreasureId;
+    setLockedTarget({ id: targetTreasureId, xOffset: visibleXOffset });
     setStatus("claiming");
     void impact();
 
-    const outcome = await claimTreasure(resolvedTreasureId);
+    const outcome = await claimTreasure(targetTreasureId);
     if (outcome.kind === "failure") {
       // 운영/검증 실패: openSignal을 올리지 않아 상자는 idle 유지 + 오류 안내(open 금지).
       setStatus("failed");
@@ -195,10 +176,10 @@ function ArHuntContent() {
     setChestResult(outcome.result);
     setStatus("opening");
     setOpenSignal((n) => n + 1);
-  }, [status, resolvedTreasureId, impact, claimTreasure]);
+  }, [status, visibleTreasureId, visibleXOffset, impact, claimTreasure]);
 
   // 상자 Open 연출 완료(onOpenComplete) → 카메라 정리 후 결과 화면으로 이동(공식 명세 22·23장).
-  // resolvedTreasureId를 결과 화면에 전달한다(BNB 직접 진입도 실제 보물 참조, 지시서 19장).
+  // resolvedTreasureId를 결과 화면에 전달한다.
   const handleOpenComplete = useCallback(() => {
     if (!resolvedTreasureId) return;
     setStatus("claimed");
@@ -210,17 +191,24 @@ function ArHuntContent() {
     );
   }, [router, resolvedTreasureId, stopCamera, chestResult]);
 
-  // 운영/검증 실패 시에도 상자를 idle 상태로 계속 보여준다(리더 v2 — 실패 시 상자 idle 유지).
-  // target_resolving은 상자 대신 로딩을 보여주므로 제외한다.
+  // 실제 시야 후보가 있을 때만 상자와 클릭 영역을 렌더한다.
+  const hasVisibleTarget = activeTreasureId !== null && activeXOffset !== null;
   const showCanvas =
-    status === "ready" ||
-    status === "claiming" ||
-    status === "opening" ||
-    status === "claimed" ||
-    status === "failed";
+    hasVisibleTarget &&
+    Boolean(resolvedTreasureId) &&
+    (status === "ready" ||
+      status === "claiming" ||
+      status === "opening" ||
+      status === "claimed" ||
+      status === "failed");
+  const showHeadingPermissionPrompt = headingPermission === "unknown" && canRequestHeadingPermission;
 
   return (
-    <section className="relative h-[100dvh] w-screen overflow-hidden bg-black">
+    <section
+      className="relative h-[100dvh] w-screen overflow-hidden bg-black"
+      data-heading-ready={deviceHeading === null ? "false" : "true"}
+      data-heading-permission={headingPermission}
+    >
       {/* Layer 1: 카메라 배경 */}
       {stream ? <CameraVideoBackground stream={stream} /> : null}
 
@@ -231,21 +219,35 @@ function ArHuntContent() {
       />
 
       {/* Layer 3: 투명 R3F Canvas + 3D 상자 */}
-      {showCanvas ? (
-        <ARCanvas
-          variant={chestVariant}
-          result={chestResult}
-          disabled={status !== "ready"}
-          openSignal={openSignal}
-          onTap={handleChestTap}
-          onOpenComplete={handleOpenComplete}
-        />
-      ) : null}
+      <ARCanvas
+        visible={showCanvas}
+        xOffset={activeXOffset ?? 0}
+        variant={chestVariant}
+        result={chestResult}
+        disabled={status !== "ready"}
+        openSignal={openSignal}
+        onTap={handleChestTap}
+        onOpenComplete={handleOpenComplete}
+      />
 
       {/* Layer 4: AR UI */}
       <ARCloseButton onClose={handleClose} />
-      <ARInstructionCard text="상자를 터치해 열어보거라" />
-      {status === "ready" ? <ARTapIndicator /> : null}
+      {showHeadingPermissionPrompt ? (
+        <div className="absolute left-1/2 top-[calc(env(safe-area-inset-top)+56px)] z-30 w-full max-w-[320px] -translate-x-1/2 px-5 text-center">
+          <div className="rounded-[4px] border-2 border-black bg-[#f9f9f9] px-4 py-4 shadow-[4px_4px_0px_black]">
+            <p className="text-sm leading-5 text-[#1a1c1c]">AR 탐색을 위해 방향 센서 사용을 허용해주세요.</p>
+            <button
+              type="button"
+              onClick={handleHeadingPermissionRequest}
+              className="mt-3 h-10 rounded-[4px] border-2 border-black bg-[#1a1c1c] px-4 text-sm font-medium text-white"
+            >
+              방향 센서 허용
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {showCanvas && status === "ready" ? <ARInstructionCard text="상자를 터치해 열어보거라" /> : null}
+      {showCanvas && status === "ready" ? <ARTapIndicator /> : null}
       <ARStatusBadge
         label={status === "claiming" ? "보상 확인 중..." : "AR 사냥 모드 활성화"}
         active={status === "ready"}
@@ -256,10 +258,6 @@ function ArHuntContent() {
       {status === "camera_loading" && !arError ? (
         <ARLoadingOverlay message="카메라를 준비하고 있어요..." />
       ) : null}
-      {status === "target_resolving" && !arError ? (
-        <ARLoadingOverlay message="주변 보물을 찾고 있어요..." />
-      ) : null}
-
       {arError ? (
         <ARErrorFallback
           title={arError.title}
@@ -270,9 +268,7 @@ function ArHuntContent() {
               ? handleCameraRetry
               : arError.kind === "claim-retry"
                 ? handleClaimRetry
-                : arError.kind === "target-retry"
-                  ? handleTargetRetry
-                  : undefined
+                : undefined
           }
           secondaryLabel={arError.kind === "map-only" ? "지도에서 보물 찾기" : "지도로 돌아가기"}
           onSecondary={handleClose}

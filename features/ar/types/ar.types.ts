@@ -32,6 +32,7 @@ export type ChestResult = "win" | "lose";
 export type GeoCoords = {
   latitude: number;
   longitude: number;
+  accuracy?: number;
 };
 
 /**
