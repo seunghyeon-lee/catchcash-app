@@ -5,10 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:spike": "node scripts/build-native-spike-web.mjs",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
+    "@capacitor/android": "^7.6.8",
     "@capacitor/core": "^7.4.0",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
