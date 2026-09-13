@@ -9,6 +9,7 @@ import type { ChestResult, ChestVariant } from "@/features/ar/types/ar.types";
 type ARCanvasProps = {
   visible: boolean;
   xOffset: number;
+  distanceMeters: number;
   variant: ChestVariant;
   result?: ChestResult;
   disabled?: boolean;
@@ -20,9 +21,52 @@ type ARCanvasProps = {
 };
 
 const CHEST_X_RANGE = 1.3;
+const MIN_SCALE = 0.2;
+const MAX_SCALE = 1.0;
+const MAX_VISUAL_DISTANCE_METERS = 100;
+const MAX_DEPTH_OFFSET_Z = -0.45;
+const DISTANCE_SCALE_STOPS = [
+  { distanceMeters: 0, scale: 1.0 },
+  { distanceMeters: 10, scale: 1.0 },
+  { distanceMeters: 30, scale: 0.8 },
+  { distanceMeters: 50, scale: 0.55 },
+  { distanceMeters: 75, scale: 0.35 },
+  { distanceMeters: 100, scale: 0.2 },
+] as const;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
 
 function clampXOffset(value: number) {
-  return Math.min(1, Math.max(-1, value));
+  return clamp(value, -1, 1);
+}
+
+function clampVisualDistance(distanceMeters: number) {
+  if (!Number.isFinite(distanceMeters)) return MAX_VISUAL_DISTANCE_METERS;
+  return clamp(distanceMeters, 0, MAX_VISUAL_DISTANCE_METERS);
+}
+
+function calculateChestScale(distanceMeters: number) {
+  const distance = clampVisualDistance(distanceMeters);
+
+  for (let index = 1; index < DISTANCE_SCALE_STOPS.length; index += 1) {
+    const previous = DISTANCE_SCALE_STOPS[index - 1];
+    const next = DISTANCE_SCALE_STOPS[index];
+    if (distance > next.distanceMeters) continue;
+
+    const segmentLength = next.distanceMeters - previous.distanceMeters;
+    const progress = segmentLength === 0 ? 0 : (distance - previous.distanceMeters) / segmentLength;
+    const scale = previous.scale + (next.scale - previous.scale) * progress;
+    return clamp(scale, MIN_SCALE, MAX_SCALE);
+  }
+
+  return MIN_SCALE;
+}
+
+function calculateChestDepthOffsetZ(distanceMeters: number) {
+  const distance = clampVisualDistance(distanceMeters);
+  return (distance / MAX_VISUAL_DISTANCE_METERS) * MAX_DEPTH_OFFSET_Z;
 }
 
 /**
@@ -34,6 +78,7 @@ function clampXOffset(value: number) {
 export function ARCanvas({
   visible,
   xOffset,
+  distanceMeters,
   variant,
   result,
   disabled,
@@ -44,6 +89,8 @@ export function ARCanvas({
   if (!visible) return null;
 
   const chestWorldX = clampXOffset(xOffset) * CHEST_X_RANGE;
+  const chestScale = calculateChestScale(distanceMeters);
+  const chestWorldZ = calculateChestDepthOffsetZ(distanceMeters);
 
   return (
     <Canvas
@@ -59,7 +106,7 @@ export function ARCanvas({
       <directionalLight position={[-3, 2, -2]} intensity={0.4} />
 
       <Suspense fallback={null}>
-        <group position={[chestWorldX, 0, 0]}>
+        <group position={[chestWorldX, 0, chestWorldZ]} scale={[chestScale, chestScale, chestScale]}>
           <TreasureChest3D
             variant={variant}
             result={result}

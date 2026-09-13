@@ -78,14 +78,18 @@ function ArHuntContent() {
   const [arError, setArError] = useState<OverlayError | null>(null);
   // controlled 열림 승인 신호. 정상 claim(SUCCESS/EMPTY) 후 증가시켜 상자 open을 시작한다.
   const [openSignal, setOpenSignal] = useState(0);
-  const [lockedTarget, setLockedTarget] = useState<{ id: string; xOffset: number } | null>(null);
+  const [lockedTarget, setLockedTarget] = useState<{ id: string; xOffset: number; distanceMeters: number } | null>(
+    null,
+  );
 
   // 추후 보물/보상 정책에 따라 variant를 결정한다(현재는 basic 고정).
   const chestVariant: ChestVariant = "basic";
   const visibleTreasureId = visibleCandidate?.id ?? null;
   const visibleXOffset = xOffset;
+  const visibleDistanceMeters = visibleCandidate?.distanceMeters ?? null;
   const activeTreasureId = lockedTarget?.id ?? visibleTreasureId;
   const activeXOffset = lockedTarget?.xOffset ?? visibleXOffset;
+  const activeDistanceMeters = lockedTarget?.distanceMeters ?? visibleDistanceMeters;
   const resolvedTreasureId = activeTreasureId;
 
   // 진입 시 카메라 초기화. treasureId 유무와 무관하게 항상 실행한다.
@@ -158,9 +162,9 @@ function ArHuntContent() {
   // controlled라 탭만으로는 상자가 열리지 않는다. claim 결과에 따라 open 여부를 승인한다.
   // 대상은 현재 화면에 실제로 표시 중인 visibleCandidate.id를 사용한다.
   const handleChestTap = useCallback(async () => {
-    if (status !== "ready" || !visibleTreasureId || visibleXOffset === null) return;
+    if (status !== "ready" || !visibleTreasureId || visibleXOffset === null || visibleDistanceMeters === null) return;
     const targetTreasureId = visibleTreasureId;
-    setLockedTarget({ id: targetTreasureId, xOffset: visibleXOffset });
+    setLockedTarget({ id: targetTreasureId, xOffset: visibleXOffset, distanceMeters: visibleDistanceMeters });
     setStatus("claiming");
     void impact();
 
@@ -176,7 +180,7 @@ function ArHuntContent() {
     setChestResult(outcome.result);
     setStatus("opening");
     setOpenSignal((n) => n + 1);
-  }, [status, visibleTreasureId, visibleXOffset, impact, claimTreasure]);
+  }, [status, visibleTreasureId, visibleXOffset, visibleDistanceMeters, impact, claimTreasure]);
 
   // 상자 Open 연출 완료(onOpenComplete) → 카메라 정리 후 결과 화면으로 이동(공식 명세 22·23장).
   // resolvedTreasureId를 결과 화면에 전달한다.
@@ -192,7 +196,7 @@ function ArHuntContent() {
   }, [router, resolvedTreasureId, stopCamera, chestResult]);
 
   // 실제 시야 후보가 있을 때만 상자와 클릭 영역을 렌더한다.
-  const hasVisibleTarget = activeTreasureId !== null && activeXOffset !== null;
+  const hasVisibleTarget = activeTreasureId !== null && activeXOffset !== null && activeDistanceMeters !== null;
   const showCanvas =
     hasVisibleTarget &&
     Boolean(resolvedTreasureId) &&
@@ -222,6 +226,7 @@ function ArHuntContent() {
       <ARCanvas
         visible={showCanvas}
         xOffset={activeXOffset ?? 0}
+        distanceMeters={activeDistanceMeters ?? 100}
         variant={chestVariant}
         result={chestResult}
         disabled={status !== "ready"}
