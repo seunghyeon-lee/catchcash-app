@@ -5,11 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:ios-spike": "node scripts/build-native-ios-spike-web.mjs",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
     "@capacitor/core": "^7.4.0",
+    "@capacitor/ios": "7.6.8",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
     "@supabase/supabase-js": "^2.50.0",

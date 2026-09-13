@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>CatchCash Native AR iOS Spike</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="card" aria-labelledby="title">
+        <p class="eyebrow">CatchCash</p>
+        <h1 id="title">CatchCash Native AR iOS Spike</h1>
+        <p class="description">
+          ARKit + RealityKit World Anchor 검증을 위한 최소 Web shell입니다.
+        </p>
+
+        <div class="actions" aria-label="Native AR controls">
+          <button id="start-ar" type="button">Start AR</button>
+          <button id="place-cube" type="button">Place Test Cube</button>
+          <button id="stop-ar" type="button">Stop AR</button>
+        </div>
+
+        <section class="status-panel" aria-labelledby="status-title">
+          <h2 id="status-title">상태</h2>
+          <p id="status">NativeAR plugin 대기 중</p>
+        </section>
+      </section>
+    </main>
+    <script src="./main.js"></script>
+  </body>
+</html>
