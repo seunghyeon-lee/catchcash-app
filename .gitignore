@@ -6,6 +6,7 @@ out
 capacitor-cordova
 www
 *.log
+tsconfig.tsbuildinfo
 
 # Web QA automation artifacts (Playwright CLI)
 qa-artifacts/
